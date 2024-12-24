@@ -66,8 +66,8 @@ ETH_SEPOLIA_RPC_URL=Your node provider URL for Sepolia
 SCROLL_SEPOLIA_RPC_URL=Your node provider URL for Scroll-Sepolia
 PRIVATE_KEY=Your private key
 SCROLLSCAN_API_KEY=Your Scrollscan API key
-BACKEND_EOA=chatterpay's backend EOA wallet address
-BACKEND_PK=chatterpay's bachend private key (seed)
+BACKEND_EOA=chatterpay backend EOA wallet address
+BACKEND_PK=chatterpay bachend private key
 ```
 
 __4. Install Dependencies__:
