@@ -15,7 +15,6 @@ docs/
 
 # misc
 .DS_Store
-/.github
 node_modules
 
 #lock
