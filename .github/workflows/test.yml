@@ -8,9 +8,13 @@ on:
     branches:
       - develop
       - main
-
 env:
   FOUNDRY_PROFILE: ci
+  ETH_SEPOLIA_RPC_URL: ${{ secrets.ETH_SEPOLIA_RPC_URL }}
+  SCROLL_SEPOLIA_RPC_URL: ${{ secrets.SCROLL_SEPOLIA_RPC_URL }}
+  PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+  BACKEND_EOA: ${{ secrets.BACKEND_EOA }}
+  BACKEND_PK: ${{ secrets.BACKEND_PK }}
 
 jobs:
   check:
