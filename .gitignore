@@ -17,3 +17,6 @@ docs/
 .DS_Store
 /.github
 node_modules
+
+#lock
+package-lock.json
