@@ -1,0 +1,36 @@
+name: Slither Analysis
+on:
+  push:
+    branches:
+    - '*'
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js and Yarn
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20.15.0'
+        cache: 'yarn'
+
+    - name: Install dependencies with Yarn
+      run: |
+        yarn install
+
+    - name: Run Slither
+      uses: crytic/slither-action@v0.4.0
+      id: slither
+      with:
+        fail-on: none
+      continue-on-error: true

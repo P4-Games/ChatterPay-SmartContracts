@@ -29,7 +29,7 @@ __Components__:
 
 This repository contains the source code of the Smart Contracts.
 
-![ChatterPay Smart Contracts Workflow](imgs/ChatterPay%20Smart%20Contracts%20Flow.png)
+![ChatterPay Smart Contracts Workflow](./.doc/architecture/images/chatterpay-scs-flow.png)
 
 
 __Build With__:
@@ -66,8 +66,8 @@ ETH_SEPOLIA_RPC_URL=Your node provider URL for Sepolia
 SCROLL_SEPOLIA_RPC_URL=Your node provider URL for Scroll-Sepolia
 PRIVATE_KEY=Your private key
 SCROLLSCAN_API_KEY=Your Scrollscan API key
-BACKEND_EOA=chatterpay's backend EOA wallet address
-BACKEND_PK=chatterpay's bachend private key (seed)
+BACKEND_EOA=chatterpay backend EOA wallet address
+BACKEND_PK=chatterpay bachend private key
 ```
 
 __4. Install Dependencies__:
@@ -131,3 +131,13 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+
+_Static Checks_
+
+Solidity Static Analysis with [Slither](https://github.com/crytic/slither).  
+To install slither go to [this link](https://github.com/crytic/slither#how-to-install).
+
+```shell
+$ slither .
+```
+
