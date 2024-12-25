@@ -29,9 +29,6 @@ __Components__:
 
 This repository contains the source code of the Smart Contracts.
 
-![ChatterPay Smart Contracts Workflow](./.doc/architecture/images/chatterpay-scs-flow.png)
-
-
 __Build With__:
 
 - Framework: [Foundry](https://github.com/foundry-rs/foundry)
@@ -40,6 +37,10 @@ __Build With__:
 - L2 Blockchain: [Scroll](https://github.com/scroll-tech)
 - Account Abstraction L2 Keystore: [Scroll L1SLOAD](https://dev.to/turupawn/l1sload-el-nuevo-opcode-para-keystores-seguras-y-escalables-50of)
 - Web3 Data Feed: [api3](https://api3.org/)
+
+If you would like to explore the details of the contracts in-depth, you can review them at this [link](.doc/overview/overview.md).
+
+
 
 # Getting Started
 
