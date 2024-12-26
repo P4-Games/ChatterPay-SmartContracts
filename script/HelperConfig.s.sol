@@ -3,7 +3,7 @@ pragma solidity 0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {EntryPoint} from "lib/entry-point-v6/core/EntryPoint.sol";
-import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
+import {ERC20Mock} from "./utils/ERC20Mock.sol";
 
 contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
