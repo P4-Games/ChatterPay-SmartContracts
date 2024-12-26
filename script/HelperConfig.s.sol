@@ -3,7 +3,7 @@ pragma solidity 0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {EntryPoint} from "lib/entry-point-v6/core/EntryPoint.sol";
-import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
+import {ERC20Mock} from "./utils/ERC20Mock.sol";
 
 contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
@@ -161,13 +161,13 @@ contract HelperConfig is Script {
         vm.startBroadcast(ANVIL_DEFAULT_ACCOUNT);
         EntryPoint entryPoint = new EntryPoint();
         console.log("EntryPoint deployed! %s", address(entryPoint));
-        ERC20Mock usdcMock = new ERC20Mock();
+        ERC20Mock usdcMock = new ERC20Mock("Circle USD", "USDC");
         console.log("USDC deployed! %s", address(usdcMock));
-        ERC20Mock usdtMock = new ERC20Mock();
+        ERC20Mock usdtMock = new ERC20Mock("Tether USD", "USDT");
         console.log("USDT deployed! %s", address(usdtMock));
-        ERC20Mock wethMock = new ERC20Mock();
+        ERC20Mock wethMock = new ERC20Mock("Wrapped ETH", "WETH");
         console.log("WETH deployed! %s", address(wethMock));
-        ERC20Mock maticMock = new ERC20Mock();
+        ERC20Mock maticMock = new ERC20Mock("MATIC", "MATIC");
         console.log("MATIC deployed! %s", address(maticMock));
         vm.stopBroadcast();
         console.log("Mocks deployed!");
