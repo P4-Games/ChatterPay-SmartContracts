@@ -2,8 +2,8 @@
 
 ## Technical Overview
 
-* [Contracts Overview](./overview/overview.md)
-* [Contracts Details](./overview/contracts-details.md)
+* [Contracts Overview](./technical-overview/overview.md)
+* [Contracts Details](./technical-overview/contracts-details.md)
 
 ## Development
 
