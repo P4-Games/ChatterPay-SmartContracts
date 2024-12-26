@@ -2,22 +2,10 @@
 
 pragma solidity ^0.8.24;
 
-/*//////////////////////////////////////////////////////////////
-                            IMPORTS
-//////////////////////////////////////////////////////////////*/
-
 import {Ownable} from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ChatterPayWalletProxy} from "./ChatterPayWalletProxy.sol";
 
-/*//////////////////////////////////////////////////////////////
-                                ERRORS
-//////////////////////////////////////////////////////////////*/
-
 error ChatterPayWalletFactory__InvalidOwner();
-
-/*//////////////////////////////////////////////////////////////
-                            INTERFACES
-//////////////////////////////////////////////////////////////*/
 
 interface IChatterPayWalletFactory {
     function createProxy(address _owner) external returns (address);
@@ -33,43 +21,37 @@ interface IChatterPayWalletFactory {
     function getProxiesCount() external view returns (uint256);
 }
 
-/*//////////////////////////////////////////////////////////////
-                            CONTRACT
-//////////////////////////////////////////////////////////////*/
-
 contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
-    /*//////////////////////////////////////////////////////////////
-                            STATE VARIABLES
-    //////////////////////////////////////////////////////////////*/
-
     address[] public proxies;
     address immutable entryPoint;
     address public walletImplementation;
     address public paymaster;
 
-    /*//////////////////////////////////////////////////////////////
-                                 EVENTS
-    //////////////////////////////////////////////////////////////*/
-
     event ProxyCreated(address indexed owner, address indexed proxyAddress);
     event NewImplementation(address indexed _walletImplementation);
 
-    /*//////////////////////////////////////////////////////////////
-                               FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    constructor(address _walletImplementation, address _entryPoint, address _owner, address _paymaster) Ownable(_owner) {
+    constructor(
+        address _walletImplementation,
+        address _entryPoint,
+        address _owner,
+        address _paymaster
+    ) Ownable(_owner) {
         walletImplementation = _walletImplementation;
         entryPoint = _entryPoint;
         paymaster = _paymaster;
     }
 
-    /*//////////////////////////////////////////////////////////////
-                            PUBLIC FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
+    /**
+     * @notice Creates a new wallet proxy for a specified owner.
+     * @dev Deploys a new proxy contract and initializes it with the provided parameters.
+     * @param _owner The address of the owner for the new proxy.
+     * @return The address of the newly created proxy.
+     * @custom:events Emits a `ProxyCreated` event on success.
+     * @custom:reverts ChatterPayWalletFactory__InvalidOwner if the `_owner` address is zero.
+     */
     function createProxy(address _owner) public returns (address) {
-        if(_owner == address(0)) revert ChatterPayWalletFactory__InvalidOwner();
+        if (_owner == address(0))
+            revert ChatterPayWalletFactory__InvalidOwner();
         ChatterPayWalletProxy walletProxy = new ChatterPayWalletProxy{
             salt: keccak256(abi.encodePacked(_owner))
         }(
@@ -86,16 +68,36 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         return address(walletProxy);
     }
 
+    /**
+     * @notice Retrieves the owner of a specified proxy wallet.
+     * @dev Calls the `owner()` function on the proxy contract to fetch its owner.
+     * @param proxy The address of the proxy contract.
+     * @return The owner address as a bytes array.
+     */
     function getProxyOwner(address proxy) public returns (bytes memory) {
         (, bytes memory data) = proxy.call(abi.encodeWithSignature("owner()"));
         return data;
     }
 
-    function setImplementationAddress(address _walletImplementation) public onlyOwner {
+    /**
+     * @notice Updates the wallet implementation address used for deploying new proxies.
+     * @dev Only callable by the contract owner.
+     * @param _walletImplementation The new wallet implementation address.
+     * @custom:events Emits a `NewImplementation` event on success.
+     */
+    function setImplementationAddress(
+        address _walletImplementation
+    ) public onlyOwner {
         walletImplementation = _walletImplementation;
         emit NewImplementation(_walletImplementation);
     }
 
+    /**
+     * @notice Computes the deterministic address for a proxy based on the owner address.
+     * @dev Uses `CREATE2` hashing to compute the address without deploying the contract.
+     * @param _owner The address of the owner.
+     * @return The computed proxy address.
+     */
     function computeProxyAddress(address _owner) public view returns (address) {
         bytes memory bytecode = getProxyBytecode(_owner);
         bytes32 hash = keccak256(
@@ -109,31 +111,42 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         return address(uint160(uint256(hash)));
     }
 
-    /*//////////////////////////////////////////////////////////////
-                           INTERNAL FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    function getProxyBytecode(address _owner) internal view returns (bytes memory) {
+    /**
+     * @notice Retrieves the bytecode for a proxy contract initialized with a specific owner.
+     * @dev Combines the creation code of the proxy and the initialization code.
+     * @param _owner The address of the owner for which to generate the bytecode.
+     * @return The bytecode of the proxy contract.
+     */
+    function getProxyBytecode(
+        address _owner
+    ) internal view returns (bytes memory) {
         bytes memory initializationCode = abi.encodeWithSignature(
             "initialize(address,address,address)",
             entryPoint,
             _owner,
             paymaster
         );
-        return abi.encodePacked(
-            type(ChatterPayWalletProxy).creationCode,
-            abi.encode(walletImplementation, initializationCode)
-        );
+        return
+            abi.encodePacked(
+                type(ChatterPayWalletProxy).creationCode,
+                abi.encode(walletImplementation, initializationCode)
+            );
     }
 
-    /*//////////////////////////////////////////////////////////////
-                                GETTERS
-    //////////////////////////////////////////////////////////////*/
-
+    /**
+     * @notice Fetches all deployed proxy addresses.
+     * @dev Returns the array of proxy addresses stored in the `proxies` variable.
+     * @return An array of addresses representing all deployed proxies.
+     */
     function getProxies() public view returns (address[] memory) {
         return proxies;
     }
 
+    /**
+     * @notice Retrieves the total number of proxies deployed by the factory.
+     * @dev Counts the length of the `proxies` array.
+     * @return The total number of deployed proxies.
+     */
     function getProxiesCount() public view returns (uint256) {
         return proxies.length;
     }
