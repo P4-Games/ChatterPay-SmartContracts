@@ -17,6 +17,11 @@ error ChatterPayVault__InvalidId();
 error ChatterPayVault__InvalidCommitmentHash();
 error ChatterPayVault__UnauthorizedCancel();
 
+/**
+ * @title ChatterPayVault
+ * @notice A vault contract for reserving, committing, redeeming, and canceling payments with password-protected commitments.
+ * @dev Utilizes ERC20 tokens and includes commitment expiration for added security.
+ */
 contract ChatterPayVault {
     struct Payment {
         address wallet;
@@ -62,7 +67,16 @@ contract ChatterPayVault {
         uint256 amount
     );
 
-    /** Reserve Payment **/
+    /**
+     * @notice Reserves a payment with a specified ERC20 token, amount, and password hash.
+     * @dev Transfers the specified amount of tokens from the payer to the contract.
+     * @param _erc20 The address of the ERC20 token to be used.
+     * @param _id The unique identifier for the payment.
+     * @param _amount The amount of tokens to reserve.
+     * @param _passwordHash The keccak256 hash of the password for payment redemption.
+     * @custom:events Emits a `PaymentReserved` event on success.
+     * @custom:reverts ChatterPayVault__InvalidId if the payment ID is already reserved or redeemed.
+     */
     function reservePayment(
         address _erc20,
         uint256 _id,
@@ -86,6 +100,15 @@ contract ChatterPayVault {
         emit PaymentReserved(msg.sender, _erc20, _amount);
     }
 
+    /**
+     * @notice Commits a redeemer for a reserved payment by providing the correct commitment hash.
+     * @dev Updates the payment's redeemer and timestamp, locking it for redemption.
+     * @param _id The unique identifier for the payment.
+     * @param _commitmentHash The keccak256 hash of the password used for commitment verification.
+     * @custom:events Emits a `PaymentCommitted` event on success.
+     * @custom:reverts ChatterPayVault__InvalidId if the payment is already committed or redeemed.
+     * @custom:reverts ChatterPayVault__InvalidCommitmentHash if the commitment hash does not match.
+     */
     function commitForPayment(uint256 _id, bytes32 _commitmentHash) public {
         if (payments[_id].isCommited || payments[_id].isRedeemed)
             revert ChatterPayVault__InvalidId();
@@ -101,6 +124,18 @@ contract ChatterPayVault {
         );
     }
 
+    /**
+     * @notice Redeems a committed payment by providing the correct password.
+     * @dev Transfers the payment's balance to the redeemer after verifying the password.
+     * @param _id The unique identifier for the payment.
+     * @param _password The password corresponding to the payment's password hash.
+     * @custom:events Emits a `PaymentRedeemed` event on success.
+     * @custom:reverts ChatterPayVault__InvalidId if the payment is not committed or already redeemed.
+     * @custom:reverts ChatterPayVault__UnauthorizedRedeemer if the caller is not the redeemer.
+     * @custom:reverts ChatterPayVault__NoBalanceToRedeem if the payment balance is zero.
+     * @custom:reverts ChatterPayVault__CommitmentExpired if the commitment timeout has elapsed.
+     * @custom:reverts ChatterPayVault__IncorrectPassword if the password does not match the hash.
+     */
     function redeemPayment(uint256 _id, string memory _password) public {
         Payment storage payment = payments[_id];
         if (payment.isRedeemed || !payment.isCommited)
@@ -129,6 +164,16 @@ contract ChatterPayVault {
         emit PaymentRedeemed(payment.wallet, payment.token, msg.sender, amount);
     }
 
+    /**
+     * @notice Cancels a reserved payment and returns the funds to the payer.
+     * @dev Allows cancellation if no active commitment exists or if the commitment has expired.
+     * @param _erc20 The address of the ERC20 token used in the payment.
+     * @param _id The unique identifier for the payment.
+     * @custom:events Emits a `PaymentCancelled` event on success.
+     * @custom:reverts ChatterPayVault__UnauthorizedCancel if the caller is not the payer.
+     * @custom:reverts ChatterPayVault__NoBalanceToCancel if the payment balance is zero.
+     * @custom:reverts ChatterPayVault__CannotCancelActiveCommit if the commitment has not expired.
+     */
     function cancelPayment(address _erc20, uint256 _id) public {
         Payment storage payment = payments[_id];
         if (payment.wallet != msg.sender)
