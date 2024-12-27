@@ -8,6 +8,11 @@ error ChatterPayPaymaster__InvalidDataLength();
 error ChatterPayPaymaster__SignatureExpired();
 error ChatterPayPaymaster__InvalidSignature();
 
+/**
+ * @title ChatterPayPaymaster
+ * @notice A Paymaster contract for managing user operations with signature-based validation.
+ * @dev Integrates with the EntryPoint contract and validates operations signed by a backend signer.
+ */
 contract ChatterPayPaymaster is IPaymaster {
     address public owner;
     address public entryPoint;
@@ -28,6 +33,16 @@ contract ChatterPayPaymaster is IPaymaster {
 
     receive() external payable {}
 
+    /**
+     * @notice Validates a UserOperation for the Paymaster.
+     * @dev Ensures the operation is properly signed and not expired.
+     * @param userOp The UserOperation struct containing operation details.
+     * @return context Additional context for the operation (empty in this case).
+     * @return validationData A value indicating the validation status (0 = valid).
+     * @custom:reverts ChatterPayPaymaster__InvalidDataLength if `paymasterAndData` is malformed.
+     * @custom:reverts ChatterPayPaymaster__SignatureExpired if the signature expiration is reached.
+     * @custom:reverts ChatterPayPaymaster__InvalidSignature if the signature is invalid.
+     */
     function validatePaymasterUserOp(
         UserOperation calldata userOp,
         bytes32 /* userOpHash */,
@@ -73,6 +88,14 @@ contract ChatterPayPaymaster is IPaymaster {
         validationData = 0;
     }
 
+    /**
+     * @notice Recovers the signer of a hashed message.
+     * @dev Splits the signature into r, s, v and uses `ecrecover` to recover the signer address.
+     * @param messageHash The hash of the signed message.
+     * @param signature The signature to verify.
+     * @return The address of the recovered signer.
+     * @custom:reverts ChatterPayPaymaster__InvalidSignature if the signature length is invalid.
+     */
     function _recoverSigner(
         bytes32 messageHash,
         bytes memory signature
@@ -96,12 +119,27 @@ contract ChatterPayPaymaster is IPaymaster {
         return ecrecover(messageHash, v, r, s);
     }
 
+    /**
+     * @notice Handles the post-operation logic.
+     * @dev Currently not implemented but required by the `IPaymaster` interface.
+     * @param mode The mode of the post-operation.
+     * @param context Additional context provided during validation.
+     * @param actualGasCost The actual gas cost of the operation.
+     */
     function postOp(
         PostOpMode mode,
         bytes calldata context,
         uint256 actualGasCost
     ) external override {}
 
+    /**
+     * @notice Executes a low-level call to a specified address.
+     * @dev Only callable by the contract owner.
+     * @param dest The address to call.
+     * @param value The ETH value to send with the call.
+     * @param data The calldata for the function to execute.
+     * @custom:reverts ChatterPayPaymaster: execution failed if the call fails.
+     */
     function execute(
         address dest,
         uint256 value,
@@ -113,10 +151,20 @@ contract ChatterPayPaymaster is IPaymaster {
         }
     }
 
+    /**
+     * @notice Withdraws all ETH from the contract.
+     * @dev Transfers the entire balance to the contract owner.
+     * @custom:reverts ChatterPayPaymaster: only owner can call this function if the caller is not the owner.
+     */
     function withdraw() external onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
     }
 
+    /**
+     * @notice Ensures that the function is only callable by the EntryPoint contract.
+     * @dev Reverts if the caller is not the EntryPoint contract.
+     * @custom:reverts ChatterPayPaymaster: only entry point can call this function if the caller is not EntryPoint.
+     */
     function _requireFromEntryPoint() internal view {
         if (msg.sender != entryPoint) {
             revert(
