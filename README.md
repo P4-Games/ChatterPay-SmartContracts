@@ -7,7 +7,7 @@
 
 # ChatterPay
 
-Chatterpay is a Wallet for WhatsApp that integrates AI and Account Abstraction, enabling any user to use blockchain easily and securely without technical knowledge.
+[Chatterpay](chatterpay.net) is a Wallet for WhatsApp that integrates AI and Account Abstraction, enabling any user to use blockchain easily and securely without technical knowledge.
 
 > Built for: [Level Up Hackathon - Ethereum Argentina 2024](https://ethereumargentina.org/) 
 
@@ -39,7 +39,6 @@ __Build With__:
 - Web3 Data Feed: [api3](https://api3.org/)
 
 If you would like to explore the details of the contracts in-depth, you can review them at this [link](.doc/technical-overview/overview.md).
-
 
 
 # Getting Started
@@ -141,4 +140,25 @@ To install slither go to [this link](https://github.com/crytic/slither#how-to-in
 ```shell
 $ slither .
 ```
+
+# Additional Info
+
+## Technical Documentation
+
+If you would like to explore more details about the source code, you can review this [link](.doc/content.md).
+
+
+## Contribution
+
+Thank you for considering helping out with the source code! We welcome contributions from anyone on the internet, and are grateful for even the smallest of fixes!
+
+If you'd like to contribute to ChatterPay, please fork, fix, commit and send a pull request for the maintainers to review and merge into the main code base. If you wish to submit more complex changes though, please check up with the [core devs](https://github.com/P4-Games/chatterPay-SmartContracts/graphs/contributors) first to ensure those changes are in line with the general philosophy of the project and/or get some early feedback which can make both your efforts much lighter as well as our review and merge procedures quick and simple.
+
+Please make sure your contributions adhere to our [coding guidelines](./.doc/development/coding-guidelines.md).
+
+_Contributors_: 
+
+* [tomasfrancizco](https://github.com/tomasfrancizco) - [dappsar](https://github.com/dappsar) - [tomasDmArg](https://github.com/TomasDmArg) - 
+
+* See more in: <https://github.com/P4-Games/chatterPay-SmartContracts/graphs/contributors>
 
