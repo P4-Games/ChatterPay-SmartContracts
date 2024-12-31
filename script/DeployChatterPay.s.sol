@@ -10,7 +10,7 @@ contract DeployChatterPay is Script {
 
         ChatterPay chatterPay = new ChatterPay();
 
-        console.log("ChatterPay Proxy deployed to:", address(chatterPay));
+        console.log("ChatterPay implementation deployed to:", address(chatterPay));
 
         vm.stopBroadcast();
     }

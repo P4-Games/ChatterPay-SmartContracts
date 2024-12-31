@@ -2,34 +2,34 @@
 pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
-import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import {ChatterPayWalletFactory} from "../src/L2/ChatterPayWalletFactory.sol";
 import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
-import {HelperConfig} from "./HelperConfig.s.sol";
 import {ChatterPay} from "../src/L2/ChatterPay.sol";
 
-contract DeployChatterPay is Script {
-
-    HelperConfig helperConfig;
+contract UpdateChatterPay is Script {
     function run() external {
+        vm.startBroadcast();
 
-        helperConfig = new HelperConfig();
-        HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+        // Change this contract for the new version ChatterPay implementation contract you want to deploy
+        ChatterPay chatterPay = new ChatterPay();
 
-        // This will get the address of the most recent deployment of the ChatterPayPaymaster contract
-        // If you want to set the paymaster to a different address, you can do so here
-        address paymaster = DevOpsTools.get_most_recent_deployment(
-            "ChatterPayPaymaster",
+        // This will get the address of the most recent deployment of the ChatterPay Factory contract
+        // If you want to set the implementation to a different address, you can replace it here
+        address factoryAddress = DevOpsTools.get_most_recent_deployment(
+            "ChatterPayWalletFactory",
             block.chainid
         );
 
-        vm.startBroadcast();
-
-        address proxy = Upgrades.deployUUPSProxy(
-            "ChatterPay.sol",
-            abi.encodeCall(ChatterPay.initialize, (config.entryPoint, config.account, paymaster))
+        ChatterPayWalletFactory factory = ChatterPayWalletFactory(
+            factoryAddress
         );
+        
+        factory.setImplementationAddress(address(chatterPay));
 
-        console.log("ChatterPay Proxy deployed to:", address(proxy));
+        console.log(
+            "ChatterPay implementation updated to %s and updated in the factory",
+            address(chatterPay)
+        );
 
         vm.stopBroadcast();
     }

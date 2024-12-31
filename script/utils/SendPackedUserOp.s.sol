@@ -3,7 +3,7 @@ pragma solidity 0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {UserOperation} from "lib/entry-point-v6/interfaces/UserOperation.sol";
-import {HelperConfig} from "script/HelperConfig.s.sol";
+import {HelperConfig} from "script/utils/HelperConfig.s.sol";
 import {IEntryPoint} from "lib/entry-point-v6/interfaces/IEntryPoint.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
