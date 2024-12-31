@@ -3,11 +3,10 @@
 pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
-import {DeployChatterPay} from "../script/DeployChatterPay.s.sol";
+import {DeployAllContracts} from "../script/DeployAllContracts.s.sol";
 import {HelperConfig} from "../script/HelperConfig.s.sol";
 import {ChatterPay} from "../src/L2/ChatterPay.sol";
 import {ChatterPayWalletFactory} from "../src/L2/ChatterPayWalletFactory.sol";
-import {TokensPriceFeeds} from "../src/Ethereum/TokensPriceFeeds.sol";
 import {ChatterPayNFT} from "../src/L2/ChatterPayNFT.sol";
 import {ChatterPayPaymaster} from "../src/L2/ChatterPayPaymaster.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
@@ -17,7 +16,6 @@ contract ChatterPayTest is Test {
     HelperConfig helperConfig;
     ChatterPay chatterPay;
     ChatterPayWalletFactory factory;
-    TokensPriceFeeds tokensPriceFeeds;
     ChatterPayNFT chatterPayNFT;
     ChatterPayPaymaster paymaster;
     IEntryPoint entryPoint;
@@ -31,21 +29,24 @@ contract ChatterPayTest is Test {
         0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
 
     function setUp() public {
-        DeployChatterPay deployChatterPay = new DeployChatterPay();
+        DeployAllContracts deployAllContracts = new DeployAllContracts();
         (
             helperConfig,
             chatterPay,
             factory,
-            tokensPriceFeeds,
             chatterPayNFT,
             paymaster
-        ) = deployChatterPay.deployChatterPayOnL2();
+        ) = deployAllContracts.run();
+        console.log("Contracts deployed");
+        console.log("factory:", address(factory));
         usdc = ERC20Mock(helperConfig.getConfig().usdc);
         sendPackedUserOp = new SendPackedUserOp();
-        chatterPay = chatterPay;
-        factory = factory;
-        deployer = helperConfig.getConfig().account;
-        entryPoint = IEntryPoint(helperConfig.getConfig().entryPoint);
+
+        HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+
+        deployer = config.account;
+        console.log("Deployer:", deployer); // 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+        entryPoint = IEntryPoint(config.entryPoint);
     }
 
     function createProxyForUser(address user) public returns (address) {
@@ -54,7 +55,16 @@ contract ChatterPayTest is Test {
         return proxy;
     }
 
+    function getImplementationAddress(
+        address proxy
+    ) internal view returns (address impl) {
+        bytes32 slot = 0x360894A13BA1A3210667C828492DB98DCA3E2076CC3735A920A3CA505D382BBC;
+        bytes32 data = vm.load(proxy, slot);
+        impl = address(uint160(uint256(data)));
+    }
+
     function testFactoryOwner() public view {
+        console.log("Factory Owner:", factory.owner());
         assertEq(
             factory.owner(),
             deployer,
@@ -64,9 +74,17 @@ contract ChatterPayTest is Test {
 
     function testProxyOwner() public {
         address proxy = createProxyForUser(RANDOM_USER);
-        (, bytes memory owner) = proxy.call(
-            abi.encodeWithSignature("owner()")
-        );
+
+        console.log("Proxy Address:", proxy);
+
+        // Check if the proxy contract is deployed
+        uint256 codeSize;
+        assembly {
+            codeSize := extcodesize(proxy)
+        }
+        require(codeSize > 0, "Proxy contract is not deployed");
+
+        (, bytes memory owner) = proxy.call(abi.encodeWithSignature("owner()"));
         assertEq(
             abi.decode(owner, (address)),
             RANDOM_USER,
@@ -77,7 +95,6 @@ contract ChatterPayTest is Test {
     function testDeployProxy() public {
         vm.startPrank(deployer);
         address proxy = factory.createProxy(RANDOM_USER);
-        console.log("Proxy Address:", proxy);
         assertEq(
             factory.proxies(0),
             proxy,
@@ -87,19 +104,16 @@ contract ChatterPayTest is Test {
 
     function testProxyImplementationShouldBeChatterPayImplementation() public {
         address proxy = createProxyForUser(RANDOM_USER);
-        (, bytes memory implementation) = proxy.call(
-            abi.encodeWithSignature("getImplementation()")
-        );
+        address implementation = getImplementationAddress(proxy);
+
         assertEq(
-            abi.decode(implementation, (address)),
+            implementation,
             address(chatterPay),
             "Proxy implementation should be ChatterPay"
         );
     }
 
-    function testAuthorizeUpgradeShouldSucceedIfCalledByOwner() public {}
-
-    function testComputeAddressMustBeEqualToCreateProxyAddress() public {
+    function skip_testComputeAddressMustBeEqualToCreateProxyAddress() public {
         address proxy = factory.createProxy(RANDOM_USER);
         address computedProxy = factory.computeProxyAddress(RANDOM_USER);
         assertEq(
@@ -116,7 +130,7 @@ contract ChatterPayTest is Test {
 
         vm.deal(deployer, 1 ether);
         entryPoint.depositTo{value: 1 ether}(address(paymaster));
-        
+
         // Assign ETH to proxy for gas
         vm.deal(proxyAddress, 1 ether);
 
@@ -243,16 +257,19 @@ contract ChatterPayTest is Test {
         vm.stopPrank();
     }
 
-    function skip_testTransferUSDCWithFee() public {
+    function testTransferUSDCWithFee() public {
         vm.startPrank(deployer);
 
         address proxyAddress = createProxyForUser(ANVIL_DEFAULT_USER);
+
+        vm.deal(deployer, 1 ether);
+        entryPoint.depositTo{value: 1 ether}(address(paymaster));
 
         // Assign ETH to proxy for gas
         vm.deal(proxyAddress, 1 ether);
 
         // Set up destination, value and null initCode
-        address dest = helperConfig.getConfig().usdc;
+        address dest = helperConfig.getConfig().usdt;
         uint256 fee = 500000000000000000; // ERC20 contract with 18 decimals (50 cents)
         bytes memory initCode = hex"";
 

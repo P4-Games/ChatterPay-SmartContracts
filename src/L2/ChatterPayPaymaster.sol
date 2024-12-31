@@ -67,6 +67,7 @@ contract ChatterPayPaymaster is IPaymaster {
             signature[i] = paymasterAndData[offset + i];
         }
         offset += 65;
+
         // Extract expiration timestamp (uint64)
         uint64 expiration;
         assembly {
@@ -79,8 +80,10 @@ contract ChatterPayPaymaster is IPaymaster {
         bytes32 messageHash = keccak256(
             abi.encodePacked(userOp.sender, expiration)
         );
+
         // Recover the signer address
         address recoveredAddress = _recoverSigner(messageHash, signature);
+        
         if (recoveredAddress != backendSigner)
             revert ChatterPayPaymaster__InvalidSignature();
 

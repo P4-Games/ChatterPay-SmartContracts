@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "forge-std/Script.sol";
-import "../src/L2/ChatterPayVault.sol";
+import {Script, console} from "forge-std/Script.sol";
+import {ChatterPayVault} from "../src/L2/ChatterPayVault.sol";
 
 contract DeployChatterPayVault is Script {
     function run() external {
@@ -11,7 +11,7 @@ contract DeployChatterPayVault is Script {
 
         ChatterPayVault chatterPayVault = new ChatterPayVault();
 
-        console.log("ChatterPayVault deployed to:", address(chatterPayVault));
+        console.log("Vault deployed to:", address(chatterPayVault));
 
         vm.stopBroadcast();
     }
