@@ -35,6 +35,7 @@ contract HelperConfig is Script {
     address constant BURNER_WALLET = 0x08f88ef7ecD64a2eA1f3887d725F78DDF1bacDF1;
     address constant ANVIL_DEFAULT_ACCOUNT =
         0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    address immutable BACKEND_SIGNER;
 
     NetworkConfig public localNetworkConfig;
     mapping(uint256 chainId => NetworkConfig) public networkConfigs;
@@ -48,6 +49,7 @@ contract HelperConfig is Script {
         networkConfigs[SCROLL_DEVNET_CHAIN_ID] = getScrollDevnetConfig();
         networkConfigs[ARBITRUM_SEPOLIA_CHAIN_ID] = getArbitrumSepoliaConfig();
         networkConfigs[OPTIMISM_SEPOLIA_CHAIN_ID] = getOptimismSepoliaConfig();
+        BACKEND_SIGNER = vm.envAddress("BACKEND_EOA");
     }
 
     function getConfig() public returns (NetworkConfig memory) {
@@ -178,7 +180,7 @@ contract HelperConfig is Script {
             usdt: address(usdtMock),
             weth: address(wethMock),
             matic: address(maticMock),
-            account: ANVIL_DEFAULT_ACCOUNT
+            account: BACKEND_SIGNER
         });
         return localNetworkConfig;
     }

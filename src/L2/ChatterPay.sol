@@ -69,6 +69,10 @@ contract ChatterPay is IAccount, UUPSUpgradeable, OwnableUpgradeable {
         _;
     }
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @notice Initializes the ChatterPay contract.
      * @dev Sets up the owner, entry point, and paymaster, and initializes supported tokens.

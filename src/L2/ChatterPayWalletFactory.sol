@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 
 import {Ownable} from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ChatterPayWalletProxy} from "./ChatterPayWalletProxy.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 error ChatterPayWalletFactory__InvalidOwner();
 
@@ -52,7 +53,7 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
     function createProxy(address _owner) public returns (address) {
         if (_owner == address(0))
             revert ChatterPayWalletFactory__InvalidOwner();
-        ChatterPayWalletProxy walletProxy = new ChatterPayWalletProxy{
+        ERC1967Proxy walletProxy = new ERC1967Proxy{
             salt: keccak256(abi.encodePacked(_owner))
         }(
             walletImplementation,
@@ -128,7 +129,7 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         );
         return
             abi.encodePacked(
-                type(ChatterPayWalletProxy).creationCode,
+                type(ERC1967Proxy).creationCode,
                 abi.encode(walletImplementation, initializationCode)
             );
     }
