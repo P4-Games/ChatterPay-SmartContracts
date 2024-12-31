@@ -3,7 +3,7 @@ pragma solidity 0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {EntryPoint} from "lib/entry-point-v6/core/EntryPoint.sol";
-import {ERC20Mock} from "./utils/ERC20Mock.sol";
+import {ERC20Mock} from "./ERC20Mock.sol";
 
 contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
@@ -75,7 +75,7 @@ contract HelperConfig is Script {
 
     function getEthereumSepoliaConfig()
         public
-        pure
+        view
         returns (NetworkConfig memory)
     {
         return
@@ -85,13 +85,13 @@ contract HelperConfig is Script {
                 usdt: 0x7169D38820dfd117C3FA1f22a697dBA58d90BA06,
                 weth: 0x0000000000000000000000000000000000000000, // address TBD
                 matic: 0x0000000000000000000000000000000000000000, // address TBD
-                account: BURNER_WALLET
+                account: BACKEND_SIGNER
             });
     }
 
     function getArbitrumSepoliaConfig()
         public
-        pure
+        view
         returns (NetworkConfig memory)
     {
         return
@@ -101,13 +101,13 @@ contract HelperConfig is Script {
                 usdt: 0x961bf3bf61d3446907E0Db83C9c5D958c17A94f6, // address TBD
                 weth: 0x0000000000000000000000000000000000000000, // address TBD
                 matic: 0x0000000000000000000000000000000000000000, // address TBD
-                account: BURNER_WALLET
+                account: BACKEND_SIGNER
             });
     }
 
     function getScrollDevnetConfig()
         public
-        pure
+        view
         returns (NetworkConfig memory)
     {
         return
@@ -117,13 +117,13 @@ contract HelperConfig is Script {
                 usdt: 0x0000000000000000000000000000000000000000, // address TBD
                 weth: 0x0000000000000000000000000000000000000000, // address TBD
                 matic: 0x0000000000000000000000000000000000000000, // address TBD
-                account: BURNER_WALLET
+                account: BACKEND_SIGNER
             });
     }
 
     function getScrollSepoliaConfig()
         public
-        pure
+        view
         returns (NetworkConfig memory)
     {
         return
@@ -133,13 +133,13 @@ contract HelperConfig is Script {
                 usdt: 0x0000000000000000000000000000000000000000, // address TBD
                 weth: 0x0000000000000000000000000000000000000000, // address TBD
                 matic: 0x0000000000000000000000000000000000000000, // address TBD
-                account: BURNER_WALLET
+                account: BACKEND_SIGNER
             });
     }
 
     function getOptimismSepoliaConfig()
         public
-        pure
+        view
         returns (NetworkConfig memory)
     {
         return
@@ -149,7 +149,7 @@ contract HelperConfig is Script {
                 usdt: 0x0000000000000000000000000000000000000000, // address TBD
                 weth: 0x0000000000000000000000000000000000000000, // address TBD
                 matic: 0x0000000000000000000000000000000000000000, // address TBD
-                account: BURNER_WALLET
+                account: BACKEND_SIGNER
             });
     }
 

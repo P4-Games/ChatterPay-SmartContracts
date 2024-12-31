@@ -3,14 +3,14 @@
 pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
-import {DeployAllContracts} from "../script/DeployAllContracts.s.sol";
-import {HelperConfig} from "../script/HelperConfig.s.sol";
-import {ChatterPay} from "../src/L2/ChatterPay.sol";
-import {ChatterPayWalletFactory} from "../src/L2/ChatterPayWalletFactory.sol";
-import {ChatterPayNFT} from "../src/L2/ChatterPayNFT.sol";
-import {ChatterPayPaymaster} from "../src/L2/ChatterPayPaymaster.sol";
+import {DeployAllContracts} from "script/DeployAllContracts.s.sol";
+import {HelperConfig} from "script/utils/HelperConfig.s.sol";
+import {ChatterPay} from "src/L2/ChatterPay.sol";
+import {ChatterPayWalletFactory} from "src/L2/ChatterPayWalletFactory.sol";
+import {ChatterPayNFT} from "src/L2/ChatterPayNFT.sol";
+import {ChatterPayPaymaster} from "src/L2/ChatterPayPaymaster.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
-import {SendPackedUserOp, UserOperation, IEntryPoint} from "script/SendPackedUserOp.s.sol";
+import {SendPackedUserOp, UserOperation, IEntryPoint} from "script/utils/SendPackedUserOp.s.sol";
 
 contract ChatterPayTest is Test {
     HelperConfig helperConfig;
