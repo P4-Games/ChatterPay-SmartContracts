@@ -58,17 +58,8 @@ __2. Clone repository__:
 
 __3. Complete .env file__: 
 
-Create a .env file in the root folder and populate it with the following keys and values:
+Create a .env file in the root folder and populate it with the keys indicated in file [example_env](./example_env)
 
-
-```sh
-ETH_SEPOLIA_RPC_URL=Your node provider URL for Sepolia
-SCROLL_SEPOLIA_RPC_URL=Your node provider URL for Scroll-Sepolia
-PRIVATE_KEY=Your private key
-SCROLLSCAN_API_KEY=Your Scrollscan API key
-BACKEND_EOA=chatterpay backend EOA wallet address
-BACKEND_PK=chatterpay bachend private key
-```
 
 __4. Install Dependencies__:
 
@@ -85,51 +76,70 @@ __5. Usage__:
 _Build_
 
 ```shell
-$ forge clean && forge build
+forge clean && forge build
 ```
 
 _Test_
 
 ```shell
-$ forge test
+forge test
 ```
 
 _Format_
 
 ```shell
-$ forge fmt
+forge fmt
 ```
 
 _Gas Snapshots_
 
 ```shell
-$ forge snapshot
+forge snapshot
 ```
 
 _Anvil_
 
 ```shell
-$ anvil
-```
-
-_Deploy_
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+anvil
 ```
 
 _Cast_
 
 ```shell
-$ cast <subcommand>
+cast <subcommand>
+```
+
+_Deploy_
+
+```shell
+forge clean & forge build
+
+# Deploy Simulation
+forge script script/DeployAllContracts.s.sol \
+    --rpc-url $ARBITRUM_SEPOLIA_RPC_URL \
+    --private-key $PRIVATE_KEY
+
+# Real Deploy
+forge script script/DeployAllContracts.s.sol \
+    --rpc-url $ARBITRUM_SEPOLIA_RPC_URL \
+    --private-key $PRIVATE_KEY \
+    --broadcast
+
+# Real Deploy + Verify contracts in Etherscal
+forge script script/DeployAllContracts.s.sol \
+    --rpc-url $ARBITRUM_SEPOLIA_RPC_URL \
+    --private-key $PRIVATE_KEY \
+    --broadcast \
+    --verify \
+    --etherscan-api-key $ETHERSCAN_API_KEY
 ```
 
 _Help_
 
 ```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+forge --help
+anvil --help
+cast --help
 ```
 
 _Static Checks_
@@ -138,7 +148,7 @@ Solidity Static Analysis with [Slither](https://github.com/crytic/slither).
 To install slither go to [this link](https://github.com/crytic/slither#how-to-install).
 
 ```shell
-$ slither .
+slither .
 ```
 
 # Additional Info
