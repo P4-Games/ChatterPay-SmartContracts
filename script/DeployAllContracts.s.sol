@@ -37,11 +37,11 @@ contract DeployAllContracts is Script {
             ChatterPayPaymaster
         )
     {
+
         helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
         entryPoint = config.entryPoint;
         backendEOA = config.account;
-
         vm.startBroadcast(config.account);
 
         console.log(
@@ -68,7 +68,7 @@ contract DeployAllContracts is Script {
 
     function deployChatterPay() internal {
         chatterPay = new ChatterPay();
-        console.log("ChatterPay Proxy deployed to:", address(chatterPay));
+        console.log("ChatterPay Proxy deployed to address %s:", address(chatterPay));
         chatterPay = ChatterPay(payable(chatterPay));
     }
 
@@ -79,7 +79,7 @@ contract DeployAllContracts is Script {
             backendEOA,
             address(paymaster)
         );
-        console.log("Factory deployed to:", address(factory));
+        console.log("Factory deployed to address %s:", address(factory));
     }
 
     function deployNFT() internal {
@@ -87,12 +87,12 @@ contract DeployAllContracts is Script {
             "ChatterPayNFT.sol",
             abi.encodeCall(ChatterPayNFT.initialize, (backendEOA, NFTBaseUri))
         );
-        console.log("NFT deployed to:", address(proxy));
+        console.log("NFT deployed to address %s:", address(proxy));
         chatterPayNFT = ChatterPayNFT(proxy);
     }
 
     function deployVault() internal {
         vault = new ChatterPayVault();
-        console.log("Vault deployed to:", address(vault));
+        console.log("Vault deployed to address %s:", address(vault));
     }
 }
