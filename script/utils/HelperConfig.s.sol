@@ -44,12 +44,13 @@ contract HelperConfig is Script {
                                FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     constructor() {
+        BACKEND_SIGNER = vm.envAddress("BACKEND_EOA");
+        console.log('backend_signer account', BACKEND_SIGNER);
         networkConfigs[ETHEREUM_SEPOLIA_CHAIN_ID] = getEthereumSepoliaConfig();
         networkConfigs[SCROLL_SEPOLIA_CHAIN_ID] = getScrollSepoliaConfig();
         networkConfigs[SCROLL_DEVNET_CHAIN_ID] = getScrollDevnetConfig();
         networkConfigs[ARBITRUM_SEPOLIA_CHAIN_ID] = getArbitrumSepoliaConfig();
         networkConfigs[OPTIMISM_SEPOLIA_CHAIN_ID] = getOptimismSepoliaConfig();
-        BACKEND_SIGNER = vm.envAddress("BACKEND_EOA");
     }
 
     function getConfig() public returns (NetworkConfig memory) {
@@ -64,7 +65,7 @@ contract HelperConfig is Script {
         } else if (networkConfigs[chainId].account != address(0)) {
             return networkConfigs[chainId];
         } else {
-            console.log("Invalid chainId: %s", chainId);
+            console.log("Invalid account %s for chainId: %s", networkConfigs[chainId].account, chainId);
             revert HelperConfig__InvalidChainId();
         }
     }
