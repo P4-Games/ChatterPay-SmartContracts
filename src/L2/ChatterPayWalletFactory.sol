@@ -12,6 +12,8 @@ interface IChatterPayWalletFactory {
     function createProxy(address _owner) external returns (address);
 
     function getProxyOwner(address proxy) external returns (bytes memory);
+    
+    function getProxyOwnerAddress(address proxy) external returns (address);
 
     function computeProxyAddress(
         address _owner

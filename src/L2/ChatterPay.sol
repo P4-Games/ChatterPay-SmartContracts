@@ -7,10 +7,10 @@ import {OwnableUpgradeable} from "lib/openzeppelin-contracts-upgradeable/contrac
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IEntryPoint} from "lib/entry-point-v6/interfaces/IEntryPoint.sol";
-import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {AggregatorV3Interface} from "../interfaces/AggregatorV3Interface.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import {ISwapRouter} from "../interfaces/ISwapRouter.sol";
 import {IChatterPayWalletFactory} from "./ChatterPayWalletFactory.sol";
 
 error ChatterPay__NotFromEntryPoint();
@@ -26,6 +26,10 @@ error ChatterPay__TokenNotWhitelisted();
 error ChatterPay__DeadlineExpired();
 error ChatterPay__ZeroAmount();
 error ChatterPay__InvalidRouter();
+error ChatterPay__NotFeeAdmin();
+error ChatterPay__ExceedsMaxFee();
+error ChatterPay__ZeroAddress();     
+error ChatterPay__InvalidPriceFeed();
 
 interface IERC20Extended {
     function symbol() external view returns (string memory);
@@ -36,8 +40,14 @@ interface IERC20Extended {
     function allowance(address owner, address spender) external view returns (uint256);
 }
 
-contract ChatterPay {
+contract ChatterPay is 
+    IAccount, 
+    UUPSUpgradeable, 
+    OwnableUpgradeable, 
+    ReentrancyGuardUpgradeable 
+{
     using SafeERC20 for IERC20Extended;
+
 
     // Uniswap constants
     uint24 public constant POOL_FEE_LOW = 500;      // 0.05%
@@ -64,10 +74,44 @@ contract ChatterPay {
     );
 
     modifier onlyFactoryOwner() {
-        if(msg.sender != factory.owner()) {
+        if(msg.sender != factory.getProxyOwner(proxy)) {
             revert ChatterPay__NotFromFactoryOwner();
         }
         _;
+    }
+
+    modifier requireFromEntryPointOrOwner() {
+        if (msg.sender != address(s_entryPoint) && msg.sender != owner()) {
+            revert ChatterPay__NotFromEntryPointOrOwner();
+        }
+        _;
+    }
+
+    modifier onlyFeeAdmin() {
+        if (msg.sender != s_feeAdmin) {
+            revert ChatterPay__NotFeeAdmin();
+        }
+        _;
+    }
+
+    modifier requireFromEntryPoint() {
+        if (msg.sender != address(s_entryPoint)) {
+            revert ChatterPay__NotFromEntryPoint();
+        }
+        _;
+    }
+
+    /**
+    * @dev Verifica si un token es una stablecoin
+    */
+    function _isStableToken(address token) internal view returns (bool) {
+        string memory symbol = IERC20Extended(token).symbol();
+        bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+        return (
+            symbolHash == keccak256(abi.encodePacked("USDT")) ||
+            symbolHash == keccak256(abi.encodePacked("USDC")) ||
+            symbolHash == keccak256(abi.encodePacked("DAI"))
+        );
     }
 
     /**
@@ -82,7 +126,7 @@ contract ChatterPay {
         if (amount == 0) revert ChatterPay__ZeroAmount();
         if (!s_whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
 
-        IERC20Extended(token).safeApprove(address(swapRouter), amount);
+        IERC20Extended(token).safeIncreaseAllowance(address(swapRouter), amount);
         emit TokenApproved(token, address(swapRouter), amount);
     }
 
