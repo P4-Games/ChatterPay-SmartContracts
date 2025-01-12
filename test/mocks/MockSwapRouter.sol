@@ -19,8 +19,8 @@ contract MockSwapRouter {
     }
 
     function exactInput(
-        ISwapRouter.ExactInputParams calldata params
-    ) external returns (uint256 amountOut) {
-        revert("Not implemented");
+        ISwapRouter.ExactInputParams calldata /* params */
+    ) external pure returns (uint256 /* amountOut */) {
+        return 0;
     }
 }

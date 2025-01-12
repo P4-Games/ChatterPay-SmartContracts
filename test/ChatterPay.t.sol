@@ -107,7 +107,7 @@ contract ChatterPayTest is Test {
                            INITIALIZATION TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function test_Initialization() public {
+    function test_Initialization() public view {
         assertEq(address(chatterPay.swapRouter()), address(swapRouter));
         assertEq(address(chatterPay.factory()), address(factory));
         assertEq(chatterPay.s_feeInCents(), 50);

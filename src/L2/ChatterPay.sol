@@ -47,7 +47,7 @@ contract ChatterPay is
 
     ISwapRouter public swapRouter;
     IChatterPayWalletFactory public factory;
-    
+
     // Uniswap constants
     uint24 public constant POOL_FEE_LOW = 500;      // 0.05%
     uint24 public constant POOL_FEE_MEDIUM = 3000;  // 0.3%
@@ -213,7 +213,7 @@ contract ChatterPay is
     /**
      * @dev Determina el fee del pool basado en los tokens
      */
-    function _getPoolFee(address tokenIn, address tokenOut) internal pure returns (uint24) {
+    function _getPoolFee(address tokenIn, address tokenOut) internal view returns (uint24) {
         // Si ambos son stables, usar fee bajo
         if (_isStableToken(tokenIn) && _isStableToken(tokenOut)) {
             return POOL_FEE_LOW;
@@ -225,7 +225,7 @@ contract ChatterPay is
     /**
      * @dev Obtiene el slippage máximo permitido para un par de tokens
      */
-    function _getMaxSlippage(address tokenIn, address tokenOut) internal pure returns (uint256) {
+    function _getMaxSlippage(address tokenIn, address tokenOut) internal view returns (uint256) {
         if (_isStableToken(tokenIn) && _isStableToken(tokenOut)) {
             return SLIPPAGE_STABLES;
         }
@@ -238,7 +238,7 @@ contract ChatterPay is
     /**
      * @dev Verifica si un token es BTC o similar
      */
-    function _isBTCToken(address token) internal pure returns (bool) {
+    function _isBTCToken(address token) internal view returns (bool) {
         string memory symbol = IERC20Extended(token).symbol();
         bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
         return (
