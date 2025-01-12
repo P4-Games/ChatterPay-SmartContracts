@@ -74,7 +74,7 @@ contract ChatterPay is
     );
 
     modifier onlyFactoryOwner() {
-        if(msg.sender != factory.getProxyOwner(proxy)) {
+        if(msg.sender != factory.owner()) {
             revert ChatterPay__NotFromFactoryOwner();
         }
         _;
