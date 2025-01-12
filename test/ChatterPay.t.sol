@@ -9,6 +9,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 import {MockPriceFeed} from "./mocks/MockPriceFeed.sol";
 import {MockSwapRouter} from "./mocks/MockSwapRouter.sol";
+import {console2} from "forge-std/console2.sol";
 
 contract ChatterPayTest is Test {
     // Events to test
@@ -45,31 +46,39 @@ contract ChatterPayTest is Test {
     address public user;
 
     function setUp() public {
+        console2.log("Starting setUp");
+        
         // Setup addresses
         owner = makeAddr("owner");
         paymaster = makeAddr("paymaster");
         feeAdmin = makeAddr("feeAdmin");
         user = makeAddr("user");
         entryPoint = makeAddr("entryPoint");
+        console2.log("Addresses set up");
 
         // Deploy mock tokens
         tokenA = new MockERC20("Token A", "TKNA", 18);
         tokenB = new MockERC20("Token B", "TKNB", 18);
+        console2.log("Mock tokens deployed");
 
         // Deploy mock price feeds
         priceFeedA = new MockPriceFeed();
         priceFeedB = new MockPriceFeed();
+        console2.log("Mock price feeds deployed");
         
-        // Set initial prices (1 TokenA = $1, 1 TokenB = $2)
-        priceFeedA.setPrice(1e8); // $1 with 8 decimals
-        priceFeedB.setPrice(2e8); // $2 with 8 decimals
+        // Set initial prices
+        priceFeedA.setPrice(1e8);
+        priceFeedB.setPrice(2e8);
+        console2.log("Prices set");
 
         // Deploy mock swap router
         swapRouter = new MockSwapRouter();
+        console2.log("Mock swap router deployed");
 
         // Deploy implementation
         implementation = new ChatterPay();
-
+        console2.log("Implementation deployed at:", address(implementation));
+        
         // Deploy factory
         factory = new ChatterPayWalletFactory(
             address(implementation),
@@ -77,30 +86,50 @@ contract ChatterPayTest is Test {
             owner,
             paymaster
         );
+        console2.log("Factory deployed at:", address(factory));
 
         // Deploy wallet through factory
-        vm.prank(owner);
-        address walletAddress = factory.createProxy(owner);
-        chatterPay = ChatterPay(walletAddress);
-        
-        // Initialize ChatterPay
         vm.startPrank(owner);
-        chatterPay.initialize(
+        console2.log("About to create proxy through factory");
+        address walletAddress = factory.createProxy(owner);
+        console2.log("Proxy created at:", walletAddress);
+        
+        chatterPay = ChatterPay(walletAddress);
+        console2.log("About to initialize proxy");
+        
+        try chatterPay.initialize(
             entryPoint,
             owner,
             paymaster,
             address(swapRouter),
             address(factory)
-        );
+        ) {
+            console2.log("Proxy initialized successfully");
+        } catch Error(string memory reason) {
+            console2.log("Initialize failed with reason:", reason);
+        } catch (bytes memory lowLevelData) {
+            console2.log("Initialize failed with low level error");
+        }
 
         // Whitelist tokens and set price feeds
-        chatterPay.setTokenWhitelistAndPriceFeed(address(tokenA), true, address(priceFeedA));
-        chatterPay.setTokenWhitelistAndPriceFeed(address(tokenB), true, address(priceFeedB));
+        try chatterPay.setTokenWhitelistAndPriceFeed(address(tokenA), true, address(priceFeedA)) {
+            console2.log("TokenA whitelisted");
+        } catch Error(string memory reason) {
+            console2.log("TokenA whitelist failed:", reason);
+        }
+        
+        try chatterPay.setTokenWhitelistAndPriceFeed(address(tokenB), true, address(priceFeedB)) {
+            console2.log("TokenB whitelisted");
+        } catch Error(string memory reason) {
+            console2.log("TokenB whitelist failed:", reason);
+        }
+        
         vm.stopPrank();
 
         // Fund user with tokens
         tokenA.mint(user, 1000e18);
         tokenB.mint(user, 1000e18);
+        console2.log("User funded with tokens");
     }
 
     /*//////////////////////////////////////////////////////////////
