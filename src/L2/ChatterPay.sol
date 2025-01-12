@@ -10,6 +10,7 @@ import {IEntryPoint} from "lib/entry-point-v6/interfaces/IEntryPoint.sol";
 import {AggregatorV3Interface} from "../interfaces/AggregatorV3Interface.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISwapRouter} from "../interfaces/ISwapRouter.sol";
 import {IChatterPayWalletFactory} from "./ChatterPayWalletFactory.sol";
 
@@ -31,13 +32,9 @@ error ChatterPay__ExceedsMaxFee();
 error ChatterPay__ZeroAddress();     
 error ChatterPay__InvalidPriceFeed();
 
-interface IERC20Extended {
+interface IERC20Extended is IERC20 {
     function symbol() external view returns (string memory);
     function decimals() external view returns (uint8);
-    function balanceOf(address account) external view returns (uint256);
-    function transfer(address to, uint256 value) external returns (bool);
-    function approve(address spender, uint256 value) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint256);
 }
 
 contract ChatterPay is 
@@ -46,9 +43,11 @@ contract ChatterPay is
     OwnableUpgradeable, 
     ReentrancyGuardUpgradeable 
 {
-    using SafeERC20 for IERC20Extended;
+    using SafeERC20 for IERC20;
 
-
+    ISwapRouter public swapRouter;
+    IChatterPayWalletFactory public factory;
+    
     // Uniswap constants
     uint24 public constant POOL_FEE_LOW = 500;      // 0.05%
     uint24 public constant POOL_FEE_MEDIUM = 3000;  // 0.3%
@@ -60,9 +59,6 @@ contract ChatterPay is
     uint256 public constant SLIPPAGE_BTC = 150;      // 1.5%
     
     uint256 public constant MAX_DEADLINE = 3 minutes;
-    
-    ISwapRouter public immutable swapRouter;
-    IChatterPayWalletFactory public immutable factory;
     
     event TokenApproved(address indexed token, address indexed spender, uint256 amount);
     event SwapExecuted(
@@ -126,7 +122,7 @@ contract ChatterPay is
         if (amount == 0) revert ChatterPay__ZeroAmount();
         if (!s_whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
 
-        IERC20Extended(token).safeIncreaseAllowance(address(swapRouter), amount);
+        IERC20(token).safeIncreaseAllowance(address(swapRouter), amount);
         emit TokenApproved(token, address(swapRouter), amount);
     }
 
@@ -160,7 +156,7 @@ contract ChatterPay is
         _validateSlippage(tokenIn, tokenOut, amountIn, amountOutMin);
 
         // Transferir tokens al contrato
-        IERC20Extended(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
 
         // Parámetros del swap
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
@@ -294,6 +290,14 @@ contract ChatterPay is
     event PriceFeedUpdated(address indexed token, address indexed priceFeed);
     event FeeAdminUpdated(address indexed oldAdmin, address indexed newAdmin);
 
+    /**
+     * @notice Initializes the contract
+     * @param _entryPoint The EntryPoint contract address
+     * @param _newOwner The owner address
+     * @param _paymaster The Paymaster contract address
+     * @param _router The Uniswap V3 Router address
+     * @param _factory The ChatterPay Factory address
+     */
     /**
      * @notice Initializes the contract
      * @param _entryPoint The EntryPoint contract address
@@ -443,7 +447,7 @@ contract ChatterPay is
      * @dev Transfers fee to paymaster
      */
     function _transferFee(address token, uint256 amount) internal {
-        IERC20Extended(token).safeTransfer(s_paymaster, amount);
+        IERC20(token).safeTransfer(s_paymaster, amount);
     }
 
     /**

@@ -69,7 +69,7 @@ contract DeployAllContracts is Script {
     function deployChatterPay() internal {
         chatterPay = new ChatterPay();
         console.log("ChatterPay Proxy deployed to address %s:", address(chatterPay));
-        chatterPay = ChatterPay(payable(chatterPay));
+        chatterPay = ChatterPay(payable(address(chatterPay)));
     }
 
     function deployFactory() internal {

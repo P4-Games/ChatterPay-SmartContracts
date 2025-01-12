@@ -40,6 +40,10 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         paymaster = _paymaster;
     }
 
+    function owner() public view virtual override(Ownable, IChatterPayWalletFactory) returns (address) {
+        return super.owner();
+    }
+
     function createProxy(address _owner) public returns (address) {
         if (_owner == address(0)) revert ChatterPayWalletFactory__InvalidOwner();
         
@@ -69,11 +73,11 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
     function getProxyOwnerAddress(address proxy) public returns (address) {
         bytes memory ownerBytes = getProxyOwner(proxy);
         if (ownerBytes.length != 32) revert ChatterPayWalletFactory__InvalidProxyCall();
-        address owner;
+        address ownerAddress;  // Cambiado el nombre de la variable
         assembly {
-            owner := mload(add(ownerBytes, 32))
+            ownerAddress := mload(add(ownerBytes, 32))
         }
-        return owner;
+        return ownerAddress;
     }
 
     function setImplementationAddress(address _walletImplementation) public onlyOwner {

@@ -26,6 +26,7 @@ contract ChatterPayTest is Test {
     event FeeAdminUpdated(address indexed oldAdmin, address indexed newAdmin);
 
     // Test contracts
+    ChatterPay public implementation;
     ChatterPay public chatterPay;
     ChatterPayWalletFactory public factory;
     MockSwapRouter public swapRouter;
@@ -66,9 +67,21 @@ contract ChatterPayTest is Test {
         // Deploy mock swap router
         swapRouter = new MockSwapRouter();
 
-        // Deploy factory and ChatterPay
-        factory = new ChatterPayWalletFactory(owner);
-        chatterPay = new ChatterPay();
+        // Deploy implementation
+        implementation = new ChatterPay();
+
+        // Deploy factory
+        factory = new ChatterPayWalletFactory(
+            address(implementation),
+            entryPoint,
+            owner,
+            paymaster
+        );
+
+        // Deploy wallet through factory
+        vm.prank(owner);
+        address walletAddress = factory.createProxy(owner);
+        chatterPay = ChatterPay(walletAddress);
         
         // Initialize ChatterPay
         vm.startPrank(owner);
