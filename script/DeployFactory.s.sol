@@ -7,7 +7,7 @@ import {ChatterPayWalletFactory} from "../src/L2/ChatterPayWalletFactory.sol";
 import {ChatterPay} from "../src/L2/ChatterPay.sol";
 
 contract DeployFactory is Script {
-    ChatterPayWalletFactory public chatterPayWalletFactory;
+    ChatterPayWalletFactory public factory;  // Cambiado el nombre para evitar shadowing
     HelperConfig helperConfig;
     ChatterPay implementation;
     address entryPoint;
@@ -20,7 +20,7 @@ contract DeployFactory is Script {
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
         entryPoint = config.entryPoint;
         backendEOA = config.account;
-        paymaster = config.paymaster;
+        paymaster = vm.envAddress("PAYMASTER_ADDRESS");  // Obtener del env en lugar de config
         router = vm.envAddress("ROUTER_ADDRESS");
 
         vm.startBroadcast(config.account);
@@ -30,7 +30,7 @@ contract DeployFactory is Script {
         console.log("ChatterPay implementation deployed at:", address(implementation));
 
         // Deploy factory with all required parameters
-        ChatterPayWalletFactory chatterPayWalletFactory = new ChatterPayWalletFactory(
+        factory = new ChatterPayWalletFactory(
             address(implementation),
             entryPoint,
             backendEOA,
@@ -38,9 +38,9 @@ contract DeployFactory is Script {
             router
         );
 
-        console.log("Factory deployed at:", address(chatterPayWalletFactory));
+        console.log("Factory deployed at:", address(factory));
 
         vm.stopBroadcast();
-        return chatterPayWalletFactory;
+        return factory;
     }
 }
