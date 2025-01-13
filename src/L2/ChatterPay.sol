@@ -149,14 +149,17 @@ contract ChatterPay is
         uint256 fee = _calculateFee(tokenIn, s_feeInCents);
         _transferFee(tokenIn, fee);
 
+        // Calcular cantidad real para el swap (después de la fee)
+        uint256 swapAmount = amountIn - fee;
+        
         // Calcular deadline
         uint256 deadline = block.timestamp + MAX_DEADLINE;
         
         // Verificar slippage basado en el tipo de token
-        _validateSlippage(tokenIn, tokenOut, amountIn, amountOutMin);
+        _validateSlippage(tokenIn, tokenOut, swapAmount, amountOutMin);
 
-        // Transferir tokens al contrato
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+        // Aprobar el router para usar los tokens
+        IERC20(tokenIn).approve(address(swapRouter), swapAmount);
 
         // Parámetros del swap
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
@@ -166,14 +169,14 @@ contract ChatterPay is
                 fee: _getPoolFee(tokenIn, tokenOut),
                 recipient: recipient,
                 deadline: deadline,
-                amountIn: amountIn,
+                amountIn: swapAmount, 
                 amountOutMinimum: amountOutMin,
                 sqrtPriceLimitX96: 0
             });
 
         // Ejecutar swap
         try swapRouter.exactInputSingle(params) returns (uint256 amountOut) {
-            emit SwapExecuted(tokenIn, tokenOut, amountIn, amountOut, recipient);
+            emit SwapExecuted(tokenIn, tokenOut, swapAmount, amountOut, recipient);  // Emitir swapAmount
         } catch {
             revert ChatterPay__SwapFailed();
         }

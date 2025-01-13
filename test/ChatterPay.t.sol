@@ -154,26 +154,43 @@ contract ChatterPayTest is Test {
 
     function test_ExecuteSwap() public {
         uint256 amountIn = 100e18;
-        uint256 amountOutMin = 45e18;
+        uint256 fee = (50 * 10 ** (18 - 2)) / 1e8;  // 50 cents en tokens (precio = $1)
+        uint256 swapAmount = amountIn - fee;
         
-        // Setup approvals
+        // Según el mock router, el output es la mitad del input
+        uint256 amountOut = swapAmount / 2;
+        
+        // Guardar balance inicial
+        uint256 initialBalance = tokenB.balanceOf(user);
+        
+        // Setup: Transfer tokens to the proxy first
         vm.startPrank(user);
-        tokenA.approve(address(chatterPay), amountIn);
+        tokenA.transfer(address(chatterPay), amountIn);
         vm.stopPrank();
         
         // Execute swap from EntryPoint context
         vm.startPrank(entryPoint);
         vm.expectEmit(true, true, false, true);
-        emit SwapExecuted(address(tokenA), address(tokenB), amountIn, amountOutMin, user);
+        emit SwapExecuted(
+            address(tokenA), 
+            address(tokenB), 
+            swapAmount,
+            amountOut,
+            user
+        );
         
         chatterPay.executeSwap(
             address(tokenA),
             address(tokenB),
             amountIn,
-            amountOutMin,
+            amountOut,  // exactamente lo que esperamos recibir
             user
         );
         vm.stopPrank();
+
+        // Verificar el cambio en el balance, no el balance total
+        uint256 finalBalance = tokenB.balanceOf(user);
+        assertEq(finalBalance - initialBalance, amountOut, "Invalid output amount");
     }
 
     function testFail_SwapInvalidSlippage() public {
