@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
@@ -10,6 +9,7 @@ import {ChatterPayPaymaster} from "../src/L2/ChatterPayPaymaster.sol";
 import {ChatterPayNFT} from "../src/L2/ChatterPayNFT.sol";
 import {ChatterPayVault} from "../src/L2/ChatterPayVault.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import {ISwapRouter} from "../src/interfaces/ISwapRouter.sol";
 
 contract DeployAllContracts is Script {
     uint256 ethSepoliaChainId = 11155111;
@@ -18,6 +18,7 @@ contract DeployAllContracts is Script {
     uint256 arbitrumSepoliaChainId = 421614;
 
     HelperConfig helperConfig;
+    ChatterPay implementation;  // Added implementation variable
     ChatterPay chatterPay;
     ChatterPayWalletFactory factory;
     ChatterPayPaymaster paymaster;
@@ -25,6 +26,7 @@ contract DeployAllContracts is Script {
     ChatterPayVault vault;
     address entryPoint;
     address backendEOA;
+    address router;  // Added router variable
     string NFTBaseUri = "https://back.chatterpay.net/nft/metadata/opensea/";
 
     function run()
@@ -37,11 +39,12 @@ contract DeployAllContracts is Script {
             ChatterPayPaymaster
         )
     {
-
         helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
         entryPoint = config.entryPoint;
         backendEOA = config.account;
+        router = vm.envAddress("ROUTER_ADDRESS");  // Get router from env
+
         vm.startBroadcast(config.account);
 
         console.log(
@@ -67,17 +70,18 @@ contract DeployAllContracts is Script {
     }
 
     function deployChatterPay() internal {
-        chatterPay = new ChatterPay();
-        console.log("ChatterPay Proxy deployed to address %s:", address(chatterPay));
-        chatterPay = ChatterPay(payable(address(chatterPay)));
+        implementation = new ChatterPay();  // Deploy implementation first
+        console.log("ChatterPay implementation deployed to address %s:", address(implementation));
+        chatterPay = ChatterPay(payable(address(implementation)));
     }
 
     function deployFactory() internal {
         factory = new ChatterPayWalletFactory(
-            address(chatterPay),
+            address(implementation),
             entryPoint,
             backendEOA,
-            address(paymaster)
+            address(paymaster),
+            router
         );
         console.log("Factory deployed to address %s:", address(factory));
     }

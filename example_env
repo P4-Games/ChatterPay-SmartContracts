@@ -5,3 +5,4 @@ PRIVATE_KEY=Your private key
 BACKEND_EOA=chatterpay backend EOA wallet address
 BACKEND_PK=chatterpay bachend private key
 ETHERSCAN_API_KEY=Your etherscan api key, if you want to verify contracts
+ROUTER_ADDRESS=Uniswap SwapRouter02 address

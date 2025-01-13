@@ -25,6 +25,7 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
     address immutable entryPoint;
     address public walletImplementation;
     address public paymaster;
+    address public immutable router;
 
     event ProxyCreated(address indexed owner, address indexed proxyAddress);
     event NewImplementation(address indexed _walletImplementation);
@@ -33,11 +34,13 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         address _walletImplementation,
         address _entryPoint,
         address _owner,
-        address _paymaster
+        address _paymaster,
+        address _router
     ) Ownable(_owner) {
         walletImplementation = _walletImplementation;
         entryPoint = _entryPoint;
         paymaster = _paymaster;
+        router = _router;
     }
 
     function owner() public view virtual override(Ownable, IChatterPayWalletFactory) returns (address) {
@@ -52,10 +55,12 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         }(
             walletImplementation,
             abi.encodeWithSignature(
-                "initialize(address,address,address)",
+                "initialize(address,address,address,address,address)",
                 entryPoint,
                 _owner,
-                paymaster
+                paymaster,
+                router,
+                address(this)
             )
         );
         

@@ -84,7 +84,8 @@ contract ChatterPayTest is Test {
             address(implementation),
             entryPoint,
             owner,
-            paymaster
+            paymaster,
+            address(swapRouter)
         );
         console2.log("Factory deployed at:", address(factory));
 
