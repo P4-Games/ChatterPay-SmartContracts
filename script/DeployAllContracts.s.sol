@@ -8,8 +8,7 @@ import {ChatterPayWalletFactory} from "../src/L2/ChatterPayWalletFactory.sol";
 import {ChatterPayPaymaster} from "../src/L2/ChatterPayPaymaster.sol";
 import {ChatterPayNFT} from "../src/L2/ChatterPayNFT.sol";
 import {ChatterPayVault} from "../src/L2/ChatterPayVault.sol";
-import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
-import {ISwapRouter} from "../src/interfaces/ISwapRouter.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployAllContracts is Script {
     uint256 ethSepoliaChainId = 11155111;
@@ -18,15 +17,16 @@ contract DeployAllContracts is Script {
     uint256 arbitrumSepoliaChainId = 421614;
 
     HelperConfig helperConfig;
-    ChatterPay implementation;  // Added implementation variable
+    ChatterPay implementation;
     ChatterPay chatterPay;
     ChatterPayWalletFactory factory;
     ChatterPayPaymaster paymaster;
+    ChatterPayNFT nftImplementation;
     ChatterPayNFT chatterPayNFT;
     ChatterPayVault vault;
     address entryPoint;
     address backendEOA;
-    address router;  // Added router variable
+    address router;
     string NFTBaseUri = "https://back.chatterpay.net/nft/metadata/opensea/";
 
     function run()
@@ -43,7 +43,7 @@ contract DeployAllContracts is Script {
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
         entryPoint = config.entryPoint;
         backendEOA = config.account;
-        router = vm.envAddress("ROUTER_ADDRESS");  // Get router from env
+        router = vm.envAddress("ROUTER_ADDRESS");
 
         vm.startBroadcast(config.account);
 
@@ -53,29 +53,15 @@ contract DeployAllContracts is Script {
             config.account
         );
 
-        deployPaymaster();
-        deployChatterPay();
-        deployFactory();
-        deployNFT();
-        deployVault();
-
-        vm.stopBroadcast();
-
-        return (helperConfig, chatterPay, factory, chatterPayNFT, paymaster);
-    }
-
-    function deployPaymaster() internal {
+        // 1. Deploy Paymaster first
         paymaster = new ChatterPayPaymaster(entryPoint, backendEOA);
         console.log("Paymaster deployed to address %s", address(paymaster));
-    }
 
-    function deployChatterPay() internal {
-        implementation = new ChatterPay();  // Deploy implementation first
-        console.log("ChatterPay implementation deployed to address %s:", address(implementation));
-        chatterPay = ChatterPay(payable(address(implementation)));
-    }
+        // 2. Deploy ChatterPay implementation
+        implementation = new ChatterPay();
+        console.log("ChatterPay implementation deployed to address %s", address(implementation));
 
-    function deployFactory() internal {
+        // 3. Deploy Factory
         factory = new ChatterPayWalletFactory(
             address(implementation),
             entryPoint,
@@ -83,20 +69,49 @@ contract DeployAllContracts is Script {
             address(paymaster),
             router
         );
-        console.log("Factory deployed to address %s:", address(factory));
-    }
+        console.log("Factory deployed to address %s", address(factory));
 
-    function deployNFT() internal {
-        address proxy = Upgrades.deployUUPSProxy(
-            "ChatterPayNFT.sol",
-            abi.encodeCall(ChatterPayNFT.initialize, (backendEOA, NFTBaseUri))
+        // 4. Deploy ChatterPay Proxy and initialize
+        bytes memory chatterPayInitData = abi.encodeCall(
+            ChatterPay.initialize,
+            (
+                entryPoint,
+                backendEOA,
+                address(paymaster),
+                router,
+                address(factory)
+            )
         );
-        console.log("NFT deployed to address %s:", address(proxy));
-        chatterPayNFT = ChatterPayNFT(proxy);
-    }
+        
+        ERC1967Proxy chatterPayProxy = new ERC1967Proxy(
+            address(implementation),
+            chatterPayInitData
+        );
+        chatterPay = ChatterPay(payable(address(chatterPayProxy)));
+        console.log("ChatterPay proxy deployed to address %s", address(chatterPayProxy));
 
-    function deployVault() internal {
+        // 5. Deploy NFT implementation and proxy
+        nftImplementation = new ChatterPayNFT();
+        console.log("NFT implementation deployed to address %s", address(nftImplementation));
+
+        bytes memory nftInitData = abi.encodeCall(
+            ChatterPayNFT.initialize,
+            (backendEOA, NFTBaseUri)
+        );
+
+        ERC1967Proxy nftProxy = new ERC1967Proxy(
+            address(nftImplementation),
+            nftInitData
+        );
+        chatterPayNFT = ChatterPayNFT(address(nftProxy));
+        console.log("NFT proxy deployed to address %s", address(nftProxy));
+
+        // 6. Deploy Vault
         vault = new ChatterPayVault();
-        console.log("Vault deployed to address %s:", address(vault));
+        console.log("Vault deployed to address %s", address(vault));
+
+        vm.stopBroadcast();
+
+        return (helperConfig, chatterPay, factory, chatterPayNFT, paymaster);
     }
 }
