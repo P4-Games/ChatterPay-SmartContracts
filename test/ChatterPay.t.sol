@@ -78,7 +78,7 @@ contract ChatterPayTest is Test {
         // Deploy implementation
         implementation = new ChatterPay();
         console2.log("Implementation deployed at:", address(implementation));
-        
+
         // Deploy factory
         factory = new ChatterPayWalletFactory(
             address(implementation),
@@ -89,41 +89,15 @@ contract ChatterPayTest is Test {
         );
         console2.log("Factory deployed at:", address(factory));
 
-        // Deploy wallet through factory
+        // Deploy wallet through factory (which handles initialization)
         vm.startPrank(owner);
-        console2.log("About to create proxy through factory");
         address walletAddress = factory.createProxy(owner);
-        console2.log("Proxy created at:", walletAddress);
-        
         chatterPay = ChatterPay(walletAddress);
-        console2.log("About to initialize proxy");
-        
-        try chatterPay.initialize(
-            entryPoint,
-            owner,
-            paymaster,
-            address(swapRouter),
-            address(factory)
-        ) {
-            console2.log("Proxy initialized successfully");
-        } catch Error(string memory reason) {
-            console2.log("Initialize failed with reason:", reason);
-        } catch (bytes memory lowLevelData) {
-            console2.log("Initialize failed with low level error");
-        }
+        console2.log("Proxy created at:", walletAddress);
 
         // Whitelist tokens and set price feeds
-        try chatterPay.setTokenWhitelistAndPriceFeed(address(tokenA), true, address(priceFeedA)) {
-            console2.log("TokenA whitelisted");
-        } catch Error(string memory reason) {
-            console2.log("TokenA whitelist failed:", reason);
-        }
-        
-        try chatterPay.setTokenWhitelistAndPriceFeed(address(tokenB), true, address(priceFeedB)) {
-            console2.log("TokenB whitelisted");
-        } catch Error(string memory reason) {
-            console2.log("TokenB whitelist failed:", reason);
-        }
+        chatterPay.setTokenWhitelistAndPriceFeed(address(tokenA), true, address(priceFeedA));
+        chatterPay.setTokenWhitelistAndPriceFeed(address(tokenB), true, address(priceFeedB));
         
         vm.stopPrank();
 
@@ -150,7 +124,9 @@ contract ChatterPayTest is Test {
 
     function test_ApproveToken() public {
         uint256 amount = 100e18;
-        vm.startPrank(user);
+        
+        // Simulate call from EntryPoint
+        vm.startPrank(entryPoint);
         
         vm.expectEmit(true, true, false, true);
         emit TokenApproved(address(tokenA), address(swapRouter), amount);
@@ -178,11 +154,15 @@ contract ChatterPayTest is Test {
 
     function test_ExecuteSwap() public {
         uint256 amountIn = 100e18;
-        uint256 amountOutMin = 45e18; // Considering exchange rate and slippage
+        uint256 amountOutMin = 45e18;
         
+        // Setup approvals
         vm.startPrank(user);
         tokenA.approve(address(chatterPay), amountIn);
+        vm.stopPrank();
         
+        // Execute swap from EntryPoint context
+        vm.startPrank(entryPoint);
         vm.expectEmit(true, true, false, true);
         emit SwapExecuted(address(tokenA), address(tokenB), amountIn, amountOutMin, user);
         
