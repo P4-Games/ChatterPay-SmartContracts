@@ -98,7 +98,7 @@ contract ChatterPay is
     }
 
     /**
-    * @dev Verifica si un token es una stablecoin
+    * @dev Verify whether a token is a stablecoin
     */
     function _isStableToken(address token) internal view returns (bool) {
         string memory symbol = IERC20Extended(token).symbol();
@@ -111,9 +111,9 @@ contract ChatterPay is
     }
 
     /**
-     * @notice Aprueba un token para ser gastado por el router de Uniswap
-     * @param token Token a aprobar
-     * @param amount Cantidad a aprobar
+     * @notice Approves a token to be spent by the Uniswap Router
+     * @param token Token to approve
+     * @param amount Amount to approve
      */
     function approveToken(
         address token,
@@ -127,12 +127,12 @@ contract ChatterPay is
     }
 
     /**
-     * @notice Ejecuta un swap a través de Uniswap V3
-     * @param tokenIn Token de entrada
-     * @param tokenOut Token de salida
-     * @param amountIn Cantidad de tokens de entrada
-     * @param amountOutMin Cantidad mínima de tokens de salida esperada
-     * @param recipient Dirección que recibirá los tokens
+     * @notice Executes a swap through Uniswap V3
+     * @param tokenIn Input token
+     * @param tokenOut Output token
+     * @param amountIn Number of input tokens
+     * @param amountOutMin Minimum amount of output tokens expected
+     * @param recipient Address that will receive tokens
      */
     function executeSwap(
         address tokenIn,
@@ -141,27 +141,27 @@ contract ChatterPay is
         uint256 amountOutMin,
         address recipient
     ) external requireFromEntryPointOrOwner nonReentrant {
-        // Validaciones
+        // Validations
         if (amountIn == 0) revert ChatterPay__ZeroAmount();
         if (!s_whitelistedTokens[tokenIn]) revert ChatterPay__TokenNotWhitelisted();
         
-        // Verificar y cobrar fee
+        // Verifies and charges fee
         uint256 fee = _calculateFee(tokenIn, s_feeInCents);
         _transferFee(tokenIn, fee);
 
-        // Calcular cantidad real para el swap (después de la fee)
+        // Calculate actual amount for swap (after fee)
         uint256 swapAmount = amountIn - fee;
         
-        // Calcular deadline
+        // Calculates deadline
         uint256 deadline = block.timestamp + MAX_DEADLINE;
         
-        // Verificar slippage basado en el tipo de token
+        // Verify slippage based on token type
         _validateSlippage(tokenIn, tokenOut, swapAmount, amountOutMin);
 
-        // Aprobar el router para usar los tokens
+        // Approve the router to use the tokens
         IERC20(tokenIn).approve(address(swapRouter), swapAmount);
 
-        // Parámetros del swap
+        // Swap parameters
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
                 tokenIn: tokenIn,
@@ -174,7 +174,7 @@ contract ChatterPay is
                 sqrtPriceLimitX96: 0
             });
 
-        // Ejecutar swap
+        // Executes swap
         try swapRouter.exactInputSingle(params) returns (uint256 amountOut) {
             emit SwapExecuted(tokenIn, tokenOut, swapAmount, amountOut, recipient);  // Emitir swapAmount
         } catch {
@@ -183,8 +183,8 @@ contract ChatterPay is
     }
 
     /**
-     * @notice Permite al owner del factory ejecutar llamadas arbitrarias
-     * @dev Solo para uso en emergencias o casos especiales
+     * @notice Allows the owner of the factory to execute arbitrary calls
+     * @dev Only for use in emergencies or special cases
      */
     function execute(
         address dest,
@@ -195,10 +195,10 @@ contract ChatterPay is
         if (!success) revert ChatterPay__ExecuteCallFailed(result);
     }
 
-    // FUNCIONES INTERNAS
+    // INTERNAL FUNCTIONS
 
     /**
-     * @dev Valida el slippage basado en el tipo de token
+     * @dev Validate slippage based on token type
      */
     function _validateSlippage(
         address tokenIn,
@@ -214,19 +214,19 @@ contract ChatterPay is
     }
 
     /**
-     * @dev Determina el fee del pool basado en los tokens
+     * @dev Determines the pool fee based on tokens
      */
     function _getPoolFee(address tokenIn, address tokenOut) internal view returns (uint24) {
-        // Si ambos son stables, usar fee bajo
+        // If both are stable, use low fee
         if (_isStableToken(tokenIn) && _isStableToken(tokenOut)) {
             return POOL_FEE_LOW;
         }
-        // Para otros pares, usar fee medio
+        // For other pairs, use medium fee
         return POOL_FEE_MEDIUM;
     }
 
     /**
-     * @dev Obtiene el slippage máximo permitido para un par de tokens
+     * @dev Gets the maximum slippage allowed for a pair of tokens
      */
     function _getMaxSlippage(address tokenIn, address tokenOut) internal view returns (uint256) {
         if (_isStableToken(tokenIn) && _isStableToken(tokenOut)) {
@@ -239,7 +239,7 @@ contract ChatterPay is
     }
 
     /**
-     * @dev Verifica si un token es BTC o similar
+     * @dev Verify if a token is BTC or similar
      */
     function _isBTCToken(address token) internal view returns (bool) {
         string memory symbol = IERC20Extended(token).symbol();
