@@ -29,7 +29,7 @@ error ChatterPay__ZeroAmount();
 error ChatterPay__InvalidRouter();
 error ChatterPay__NotFeeAdmin();
 error ChatterPay__ExceedsMaxFee();
-error ChatterPay__ZeroAddress();     
+error ChatterPay__ZeroAddress();
 error ChatterPay__InvalidPriceFeed();
 
 interface IERC20Extended is IERC20 {
@@ -37,11 +37,11 @@ interface IERC20Extended is IERC20 {
     function decimals() external view returns (uint8);
 }
 
-contract ChatterPay is 
-    IAccount, 
-    UUPSUpgradeable, 
-    OwnableUpgradeable, 
-    ReentrancyGuardUpgradeable 
+contract ChatterPay is
+    IAccount,
+    UUPSUpgradeable,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable
 {
     using SafeERC20 for IERC20;
 
@@ -49,18 +49,22 @@ contract ChatterPay is
     IChatterPayWalletFactory public factory;
 
     // Uniswap constants
-    uint24 public constant POOL_FEE_LOW = 500;      // 0.05%
-    uint24 public constant POOL_FEE_MEDIUM = 3000;  // 0.3%
-    uint24 public constant POOL_FEE_HIGH = 10000;   // 1%
-    
+    uint24 public constant POOL_FEE_LOW = 500; // 0.05%
+    uint24 public constant POOL_FEE_MEDIUM = 3000; // 0.3%
+    uint24 public constant POOL_FEE_HIGH = 10000; // 1%
+
     // Slippage constants (in basis points, 1 bp = 0.01%)
-    uint256 public constant SLIPPAGE_STABLES = 50;   // 0.5%
-    uint256 public constant SLIPPAGE_ETH = 100;      // 1%
-    uint256 public constant SLIPPAGE_BTC = 150;      // 1.5%
-    
+    uint256 public constant SLIPPAGE_STABLES = 50; // 0.5%
+    uint256 public constant SLIPPAGE_ETH = 100; // 1%
+    uint256 public constant SLIPPAGE_BTC = 150; // 1.5%
+
     uint256 public constant MAX_DEADLINE = 3 minutes;
-    
-    event TokenApproved(address indexed token, address indexed spender, uint256 amount);
+
+    event TokenApproved(
+        address indexed token,
+        address indexed spender,
+        uint256 amount
+    );
     event SwapExecuted(
         address indexed tokenIn,
         address indexed tokenOut,
@@ -70,7 +74,7 @@ contract ChatterPay is
     );
 
     modifier onlyFactoryOwner() {
-        if(msg.sender != factory.owner()) {
+        if (msg.sender != factory.owner()) {
             revert ChatterPay__NotFromFactoryOwner();
         }
         _;
@@ -98,16 +102,14 @@ contract ChatterPay is
     }
 
     /**
-    * @dev Verify whether a token is a stablecoin
-    */
+     * @dev Verify whether a token is a stablecoin
+     */
     function _isStableToken(address token) internal view returns (bool) {
         string memory symbol = IERC20Extended(token).symbol();
         bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-        return (
-            symbolHash == keccak256(abi.encodePacked("USDT")) ||
+        return (symbolHash == keccak256(abi.encodePacked("USDT")) ||
             symbolHash == keccak256(abi.encodePacked("USDC")) ||
-            symbolHash == keccak256(abi.encodePacked("DAI"))
-        );
+            symbolHash == keccak256(abi.encodePacked("DAI")));
     }
 
     /**
@@ -120,7 +122,8 @@ contract ChatterPay is
         uint256 amount
     ) external requireFromEntryPointOrOwner nonReentrant {
         if (amount == 0) revert ChatterPay__ZeroAmount();
-        if (!s_whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
+        if (!s_whitelistedTokens[token])
+            revert ChatterPay__TokenNotWhitelisted();
 
         IERC20(token).safeIncreaseAllowance(address(swapRouter), amount);
         emit TokenApproved(token, address(swapRouter), amount);
@@ -143,18 +146,19 @@ contract ChatterPay is
     ) external requireFromEntryPointOrOwner nonReentrant {
         // Validations
         if (amountIn == 0) revert ChatterPay__ZeroAmount();
-        if (!s_whitelistedTokens[tokenIn]) revert ChatterPay__TokenNotWhitelisted();
-        
+        if (!s_whitelistedTokens[tokenIn])
+            revert ChatterPay__TokenNotWhitelisted();
+
         // Verifies and charges fee
         uint256 fee = _calculateFee(tokenIn, s_feeInCents);
         _transferFee(tokenIn, fee);
 
         // Calculate actual amount for swap (after fee)
         uint256 swapAmount = amountIn - fee;
-        
+
         // Calculates deadline
         uint256 deadline = block.timestamp + MAX_DEADLINE;
-        
+
         // Verify slippage based on token type
         _validateSlippage(tokenIn, tokenOut, swapAmount, amountOutMin);
 
@@ -169,14 +173,20 @@ contract ChatterPay is
                 fee: _getPoolFee(tokenIn, tokenOut),
                 recipient: recipient,
                 deadline: deadline,
-                amountIn: swapAmount, 
+                amountIn: swapAmount,
                 amountOutMinimum: amountOutMin,
                 sqrtPriceLimitX96: 0
             });
 
         // Executes swap
         try swapRouter.exactInputSingle(params) returns (uint256 amountOut) {
-            emit SwapExecuted(tokenIn, tokenOut, swapAmount, amountOut, recipient);  // Emitir swapAmount
+            emit SwapExecuted(
+                tokenIn,
+                tokenOut,
+                swapAmount,
+                amountOut,
+                recipient
+            ); // Emitir swapAmount
         } catch {
             revert ChatterPay__SwapFailed();
         }
@@ -209,14 +219,17 @@ contract ChatterPay is
         uint256 expectedOut = _getExpectedOutput(tokenIn, tokenOut, amountIn);
         uint256 maxSlippage = _getMaxSlippage(tokenIn, tokenOut);
         uint256 minAcceptable = (expectedOut * (10000 - maxSlippage)) / 10000;
-        
+
         if (amountOutMin < minAcceptable) revert ChatterPay__InvalidSlippage();
     }
 
     /**
      * @dev Determines the pool fee based on tokens
      */
-    function _getPoolFee(address tokenIn, address tokenOut) internal view returns (uint24) {
+    function _getPoolFee(
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (uint24) {
         // If both are stable, use low fee
         if (_isStableToken(tokenIn) && _isStableToken(tokenOut)) {
             return POOL_FEE_LOW;
@@ -228,7 +241,10 @@ contract ChatterPay is
     /**
      * @dev Gets the maximum slippage allowed for a pair of tokens
      */
-    function _getMaxSlippage(address tokenIn, address tokenOut) internal view returns (uint256) {
+    function _getMaxSlippage(
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (uint256) {
         if (_isStableToken(tokenIn) && _isStableToken(tokenOut)) {
             return SLIPPAGE_STABLES;
         }
@@ -244,10 +260,8 @@ contract ChatterPay is
     function _isBTCToken(address token) internal view returns (bool) {
         string memory symbol = IERC20Extended(token).symbol();
         bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-        return (
-            symbolHash == keccak256(abi.encodePacked("WBTC")) ||
-            symbolHash == keccak256(abi.encodePacked("renBTC"))
-        );
+        return (symbolHash == keccak256(abi.encodePacked("WBTC")) ||
+            symbolHash == keccak256(abi.encodePacked("renBTC")));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -259,7 +273,7 @@ contract ChatterPay is
 
     /// @notice The Paymaster contract address
     address public s_paymaster;
-    
+
     /// @notice Current fee in USD cents
     uint256 public s_feeInCents;
 
@@ -268,13 +282,13 @@ contract ChatterPay is
 
     /// @notice Maximum fee that can be set (in cents)
     uint256 public constant MAX_FEE_IN_CENTS = 1000; // $10.00
-    
+
     /// @notice Mapping of whitelisted tokens
     mapping(address => bool) public s_whitelistedTokens;
 
     /// @notice Mapping of token price feeds
     mapping(address => address) public s_priceFeeds;
-    
+
     /// @notice Maximum time before price is considered stale
     uint256 public constant PRICE_FRESHNESS_THRESHOLD = 1 hours;
 
@@ -321,7 +335,7 @@ contract ChatterPay is
         if (_paymaster == address(0)) revert ChatterPay__ZeroAddress();
         if (_router == address(0)) revert ChatterPay__ZeroAddress();
         if (_factory == address(0)) revert ChatterPay__ZeroAddress();
-        
+
         __Ownable_init(_newOwner);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
@@ -343,7 +357,8 @@ contract ChatterPay is
      * @param _newFeeInCents New fee in cents
      */
     function updateFee(uint256 _newFeeInCents) external onlyFeeAdmin {
-        if (_newFeeInCents > MAX_FEE_IN_CENTS) revert ChatterPay__ExceedsMaxFee();
+        if (_newFeeInCents > MAX_FEE_IN_CENTS)
+            revert ChatterPay__ExceedsMaxFee();
         uint256 oldFee = s_feeInCents;
         s_feeInCents = _newFeeInCents;
         emit FeeUpdated(oldFee, _newFeeInCents);
@@ -367,21 +382,22 @@ contract ChatterPay is
      * @param priceFeed Oracle price feed address
      */
     function setTokenWhitelistAndPriceFeed(
-        address token, 
-        bool status, 
+        address token,
+        bool status,
         address priceFeed
     ) external onlyOwner {
         if (token == address(0)) revert ChatterPay__ZeroAddress();
         if (priceFeed == address(0)) revert ChatterPay__ZeroAddress();
-        
+
         // Validate price feed
         AggregatorV3Interface feed = AggregatorV3Interface(priceFeed);
         try feed.decimals() returns (uint8 decimals) {
-            if (decimals != PRICE_FEED_PRECISION) revert ChatterPay__InvalidPriceFeed();
+            if (decimals != PRICE_FEED_PRECISION)
+                revert ChatterPay__InvalidPriceFeed();
         } catch {
             revert ChatterPay__InvalidPriceFeed();
         }
-        
+
         s_whitelistedTokens[token] = status;
         if (status) {
             s_priceFeeds[token] = priceFeed;
@@ -396,10 +412,10 @@ contract ChatterPay is
      */
     function removeTokenFromWhitelist(address token) external onlyOwner {
         if (token == address(0)) revert ChatterPay__ZeroAddress();
-        
+
         delete s_whitelistedTokens[token];
         delete s_priceFeeds[token];
-        
+
         emit TokenWhitelisted(token, false);
         emit PriceFeedUpdated(token, address(0));
     }
@@ -413,23 +429,26 @@ contract ChatterPay is
      */
     function _getTokenPrice(address token) internal view returns (uint256) {
         address priceFeedAddress = s_priceFeeds[token];
-        if (priceFeedAddress == address(0)) revert ChatterPay__PriceFeedNotSet();
+        if (priceFeedAddress == address(0))
+            revert ChatterPay__PriceFeedNotSet();
 
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(priceFeedAddress);
-        
-        (
-            uint80 roundId,
-            int256 price,
-            ,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        ) = priceFeed.latestRoundData();
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            priceFeedAddress
+        );
 
-        if (updatedAt == 0 || answeredInRound < roundId) revert ChatterPay__InvalidPrice();
-        if (block.timestamp - updatedAt > PRICE_FRESHNESS_THRESHOLD) revert ChatterPay__StalePrice();
-        if (price <= 0) revert ChatterPay__InvalidPrice();
+        // Ignore roundId y answeredInRound
+        (, /* */ int256 answer /* */, , uint256 updatedAt /* */, ) = priceFeed
+            .latestRoundData();
 
-        return uint256(price);
+        if (block.timestamp - updatedAt > PRICE_FRESHNESS_THRESHOLD) {
+            revert ChatterPay__StalePrice();
+        }
+
+        if (answer <= 0) {
+            revert ChatterPay__InvalidPrice();
+        }
+
+        return uint256(answer);
     }
 
     /**
@@ -442,8 +461,14 @@ contract ChatterPay is
     ) internal view returns (uint256) {
         uint256 priceIn = _getTokenPrice(tokenIn);
         uint256 priceOut = _getTokenPrice(tokenOut);
-        
-        return (amountIn * priceIn) / priceOut;
+        uint8 decimalsIn = IERC20Extended(tokenIn).decimals();
+        uint8 decimalsOut = IERC20Extended(tokenOut).decimals();
+
+        // Ajustar por la diferencia en decimales entre tokens
+        uint256 normalizedAmount = (amountIn * priceIn * (10 ** decimalsOut)) /
+            (priceOut * (10 ** decimalsIn));
+
+        return normalizedAmount;
     }
 
     /**
@@ -461,10 +486,10 @@ contract ChatterPay is
         uint256 cents
     ) internal view returns (uint256) {
         uint256 price = _getTokenPrice(token);
-        uint256 decimals = IERC20Extended(token).decimals();
-        
-        // Convert cents to full units with token decimals
-        uint256 fee = (cents * 10 ** (decimals - 2)) / price;
+        uint8 tokenDecimals = IERC20Extended(token).decimals();
+
+        uint256 fee = (cents * (10 ** tokenDecimals)) / (price * 100);
+
         return fee;
     }
 
