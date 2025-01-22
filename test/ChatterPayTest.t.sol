@@ -10,6 +10,9 @@ import {ChatterPayWalletFactory} from "src/L2/ChatterPayWalletFactory.sol";
 import {ChatterPayNFT} from "src/L2/ChatterPayNFT.sol";
 import {ChatterPayPaymaster} from "src/L2/ChatterPayPaymaster.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
+import {USDT} from "../src/L2/USDT.sol";
+import {WETH} from "../src/L2/WETH.sol";
+import {SimpleSwap} from "../src/L2/SimpleSwap.sol";
 import {SendPackedUserOp, UserOperation, IEntryPoint} from "script/utils/SendPackedUserOp.s.sol";
 
 contract ChatterPayTest is Test {
@@ -20,6 +23,9 @@ contract ChatterPayTest is Test {
     ChatterPayPaymaster paymaster;
     IEntryPoint entryPoint;
     ERC20Mock usdc;
+    SimpleSwap simpleSwap;
+    USDT usdt;
+    WETH weth;
     SendPackedUserOp sendPackedUserOp;
     address deployer;
     address RANDOM_USER = makeAddr("randomUser");
@@ -35,7 +41,10 @@ contract ChatterPayTest is Test {
             chatterPay,
             factory,
             chatterPayNFT,
-            paymaster
+            paymaster,
+            usdt, 
+            weth, 
+            simpleSwap
         ) = deployAllContracts.run();
         console.log("Contracts deployed");
         console.log("factory:", address(factory));
