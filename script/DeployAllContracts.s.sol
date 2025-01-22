@@ -25,7 +25,7 @@ contract DeployAllContracts is Script {
     ChatterPayVault vault;
     address entryPoint;
     address backendEOA;
-    string NFTBaseUri = "https://back.chatterpay.net/nft/metadata/opensea/";
+    string NFTBaseUri = vm.envString("NFT_BASE_URI");
 
     function run()
         public
