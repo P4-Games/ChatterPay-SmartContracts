@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+/**
+ * @title ChatterPay
+ * @author ChatterPay Team
+ * @notice Smart contract wallet implementation for ChatterPay, supporting ERC-4337 account abstraction
+ * @dev This contract implements a smart wallet with Uniswap integration, fee management, and token whitelisting
+ */
+
 import {IAccount, UserOperation} from "lib/entry-point-v6/interfaces/IAccount.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
@@ -13,14 +20,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISwapRouter} from "../interfaces/ISwapRouter.sol";
 import {IChatterPayWalletFactory} from "./ChatterPayWalletFactory.sol";
-import "forge-std/console2.sol";
-
-/**
- * @title ChatterPay
- * @author ChatterPay Team
- * @notice Smart contract wallet implementation for ChatterPay, supporting ERC-4337 account abstraction
- * @dev This contract implements a smart wallet with Uniswap integration, fee management, and token whitelisting
- */
 
 error ChatterPay__NotFromEntryPoint();
 error ChatterPay__NotFromEntryPointOrOwner();
@@ -40,6 +39,7 @@ error ChatterPay__InvalidPriceFeed();
 error ChatterPay__AmountTooLow();
 error ChatterPay__InvalidTarget();
 error ChatterPay__InsufficientBalance();
+error ChatterPay__InvalidArrayLengths();
 
 interface IERC20Extended is IERC20 {
     function symbol() external view returns (string memory);
@@ -211,6 +211,81 @@ contract ChatterPay is
     }
 
     /**
+     * @notice Executes a token transfer with fee deduction
+     * @param token Token address to transfer
+     * @param recipient Address that will receive tokens
+     * @param amount Amount of tokens to transfer
+     */
+    function executeTokenTransfer(
+        address token,
+        address recipient,
+        uint256 amount
+    ) external requireFromEntryPoint nonReentrant {
+        if (amount == 0) revert ChatterPay__ZeroAmount();
+        if (recipient == address(0)) revert ChatterPay__ZeroAddress();
+        if (!s_whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
+        
+        // Check balance
+        if(IERC20(token).balanceOf(address(this)) < amount) 
+            revert ChatterPay__InsufficientBalance();
+
+        // Calculate fee
+        uint256 fee = _calculateFee(token, s_feeInCents);
+        if (amount < fee * 2) revert ChatterPay__AmountTooLow();
+
+        // Transfer fee first
+        _transferFee(token, fee);
+
+        // Transfer remaining amount to recipient
+        uint256 transferAmount = amount - fee;
+        IERC20(token).safeTransfer(recipient, transferAmount);
+    }
+
+    /**
+     * @notice Executes multiple token transfers with fee deduction
+     * @param tokens Array of token addresses to transfer
+     * @param recipients Array of addresses that will receive tokens
+     * @param amounts Array of token amounts to transfer
+     * @dev All arrays must have the same length
+     */
+    function executeBatchTokenTransfer(
+        address[] calldata tokens,
+        address[] calldata recipients,
+        uint256[] calldata amounts
+    ) external requireFromEntryPoint nonReentrant {
+        // Check array lengths match
+        if (tokens.length != recipients.length || tokens.length != amounts.length) 
+            revert ChatterPay__InvalidArrayLengths();
+        
+        // Process each transfer
+        for (uint256 i = 0; i < tokens.length; i++) {
+            address token = tokens[i];
+            address recipient = recipients[i];
+            uint256 amount = amounts[i];
+
+            // Validate parameters
+            if (amount == 0) revert ChatterPay__ZeroAmount();
+            if (recipient == address(0)) revert ChatterPay__ZeroAddress();
+            if (!s_whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
+            
+            // Check balance
+            if(IERC20(token).balanceOf(address(this)) < amount) 
+                revert ChatterPay__InsufficientBalance();
+
+            // Calculate fee
+            uint256 fee = _calculateFee(token, s_feeInCents);
+            if (amount < fee * 2) revert ChatterPay__AmountTooLow();
+
+            // Transfer fee first
+            _transferFee(token, fee);
+
+            // Transfer remaining amount to recipient
+            uint256 transferAmount = amount - fee;
+            IERC20(token).safeTransfer(recipient, transferAmount);
+        }
+    }
+
+    /**
      * @notice Executes a swap through Uniswap V3
      * @param tokenIn Input token
      * @param tokenOut Output token
@@ -258,10 +333,8 @@ contract ChatterPay is
         try ISwapRouter(swapRouter).exactInputSingle(params) returns (uint256 amountOut) {
             emit SwapExecuted(tokenIn, tokenOut, amountIn, amountOut, recipient);
         } catch Error(string memory reason) {
-            console2.log("Uniswap error reason:", reason);
             revert ChatterPay__SwapFailed();
         } catch (bytes memory errorData) {
-            console2.log("Uniswap low-level error:", string(errorData));
             revert ChatterPay__SwapFailed();
         }
     }
@@ -478,7 +551,7 @@ contract ChatterPay is
      * @param amount Amount to transfer
      */
     function _transferFee(address token, uint256 amount) internal {
-        IERC20(token).safeTransfer(s_paymaster, amount);
+        IERC20(token).safeTransfer(s_feeAdmin, amount);
     }
 
     /**
