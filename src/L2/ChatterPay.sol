@@ -25,7 +25,6 @@ error ChatterPay__InvalidPrice();
 error ChatterPay__InvalidSlippage();
 error ChatterPay__SwapFailed();
 error ChatterPay__TokenNotWhitelisted();
-error ChatterPay__DeadlineExpired();
 error ChatterPay__ZeroAmount();
 error ChatterPay__InvalidRouter();
 error ChatterPay__NotFeeAdmin();
@@ -51,8 +50,8 @@ contract ChatterPay is
     IChatterPayWalletFactory public factory;
 
     // Uniswap constants
-    uint24 public constant POOL_FEE_LOW = 100; // 0.3%
-    uint24 public constant POOL_FEE_MEDIUM = 100; // 0.3%
+    uint24 public constant POOL_FEE_LOW = 3000; // 0.3%
+    uint24 public constant POOL_FEE_MEDIUM = 3000; // 0.3%
     uint24 public constant POOL_FEE_HIGH = 10000; // 1%
 
     // Slippage constants (in basis points, 1 bp = 0.01%)
@@ -165,7 +164,6 @@ contract ChatterPay is
         console2.log("Amount min out:", amountOutMin);
 
         // Swap setup
-        uint256 deadline = block.timestamp + MAX_DEADLINE;
         IERC20(tokenIn).approve(address(swapRouter), swapAmount);
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
@@ -217,22 +215,6 @@ contract ChatterPay is
         }
         // For other pairs, use medium fee
         return POOL_FEE_MEDIUM;
-    }
-
-    /**
-     * @dev Gets the maximum slippage allowed for a pair of tokens
-     */
-    function _getMaxSlippage(
-        address tokenIn,
-        address tokenOut
-    ) internal view returns (uint256) {
-        if (_isStableToken(tokenIn) && _isStableToken(tokenOut)) {
-            return SLIPPAGE_STABLES;
-        }
-        if (_isBTCToken(tokenIn) || _isBTCToken(tokenOut)) {
-            return SLIPPAGE_BTC;
-        }
-        return SLIPPAGE_ETH;
     }
 
     /**

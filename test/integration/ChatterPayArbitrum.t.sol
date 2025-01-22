@@ -32,18 +32,15 @@ interface IUniswapV3Pool {
     // Initializes the pool with an initial price
     function initialize(uint160 sqrtPriceX96) external;
 
-    function slot0()
-        external
-        view
-        returns (
-            uint160 sqrtPriceX96,
-            int24 tick,
-            uint16 observationIndex,
-            uint16 observationCardinality,
-            uint16 observationCardinalityNext,
-            uint8 feeProtocol,
-            bool unlocked
-        );
+    function slot0() external view returns (
+        uint160 sqrtPriceX96,
+        int24 tick,
+        uint16 observationIndex,
+        uint16 observationCardinality,
+        uint16 observationCardinalityNext,
+        uint8 feeProtocol,
+        bool unlocked
+    );
 }
 
 interface INonfungiblePositionManager {
@@ -90,8 +87,8 @@ contract ChatterPayArbitrumTest is Test {
         0x248AB79Bbb9bC29bB72f7Cd42F17e054Fc40188e;
     address constant POSITION_MANAGER =
         0x6b2937Bde17889EDCf8fbD8dE31C3C2a70Bc4d65;
-    address constant USDC = 0xCB269E6f05146bFb378d999EAec06b3fF708c279; // 6 Decimals
-    address constant USDT = 0xF08d6E2b3e15776286FDCc6a77e85EF70Bf61e84; // 18 decimals
+    address constant USDC = 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d; // 6 Decimals
+    address constant USDT = 0xe6B817E31421929403040c3e42A6a5C5D2958b4A; // 18 decimals
     address constant USDC_USD_FEED = 0x0153002d20B96532C639313c2d54c3dA09109309;
     address constant USDT_USD_FEED = 0x80EDee6f667eCc9f63a0a6f55578F870651f06A4;
 
@@ -136,9 +133,9 @@ contract ChatterPayArbitrumTest is Test {
         );
         console.log("Factory deployed at:", address(factory));
 
-        /*// Setup pool with liquidity
+        // Setup pool with liquidity
         uint256 usdcAmount = 1000000e6;    // 1M USDC
-        uint256 usdtAmount = 1000000e6;   // 1M USDT
+        uint256 usdtAmount = 1000000e18;   // 1M USDT
 
         deal(USDC, owner, usdcAmount);
         deal(USDT, owner, usdtAmount);
@@ -147,33 +144,38 @@ contract ChatterPayArbitrumTest is Test {
         address pool = IUniswapV3Factory(UNISWAP_FACTORY).createPool(
             USDC,
             USDT,
-            100
+            3000
         );
         console.log("Pool created at:", pool);
 
         // 2. Initialize the pool with initial price
-        uint160 sqrtPriceX96 = 79228162514264337593543950336;
+        uint160 sqrtPriceX96 = 79228162514264337593543950336;  // 2^96
+        sqrtPriceX96 = uint160(uint256(sqrtPriceX96) * 1000000); // Multiply by sqrt(10^12)
         IUniswapV3Pool(pool).initialize(sqrtPriceX96);
 
         // 3. Approve tokens before adding liquidity
         IERC20(USDC).approve(POSITION_MANAGER, type(uint256).max);
         IERC20(USDT).approve(POSITION_MANAGER, type(uint256).max);
 
-        // 4. Add liquidity
-        INonfungiblePositionManager.MintParams
-            memory params = INonfungiblePositionManager.MintParams({
-                token0: USDC < USDT ? USDC : USDT,
-                token1: USDC < USDT ? USDT : USDC,
-                fee: 100,
-                tickLower: -60,
-                tickUpper: 60,
-                amount0Desired: USDC < USDT ? usdcAmount : usdtAmount,
-                amount1Desired: USDC < USDT ? usdtAmount : usdcAmount,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: owner,
-                deadline: block.timestamp + 1000
-            });
+        // 4. Add liquidity with proper tick spacing
+        int24 tickSpacing = 60;
+        // Ensure ticks are multiples of tickSpacing
+        int24 tickLower = (-887220 / tickSpacing) * tickSpacing;
+        int24 tickUpper = (887220 / tickSpacing) * tickSpacing;
+
+        INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams({
+            token0: USDC < USDT ? USDC : USDT,
+            token1: USDC < USDT ? USDT : USDC,
+            fee: 3000,
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            amount0Desired: USDC < USDT ? usdcAmount : usdtAmount,
+            amount1Desired: USDC < USDT ? usdtAmount : usdcAmount,
+            amount0Min: 0,
+            amount1Min: 0,
+            recipient: owner,
+            deadline: block.timestamp + 1000
+        });
 
         // Mint position and log results
         (
@@ -186,7 +188,7 @@ contract ChatterPayArbitrumTest is Test {
         console.log("Position created - tokenId:", tokenId);
         console.log("Liquidity added:", liquidity);
         console.log("Amount0 used:", amount0);
-        console.log("Amount1 used:", amount1);*/
+        console.log("Amount1 used:", amount1);
 
         vm.stopPrank();
     }
@@ -207,22 +209,6 @@ contract ChatterPayArbitrumTest is Test {
     function testTokenSetupAndSwap() public {
         vm.warp(1737341661);
 
-        // Check pool and liquidity
-        address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(USDC, USDT, 100);
-        console.log("Pool address:", pool);
-        require(pool != address(0), "Pool does not exist");
-
-        // Check pool state
-        (uint160 sqrtPriceX96, int24 tick, , , , , ) = IUniswapV3Pool(pool).slot0();
-        console.log("Pool current price:", sqrtPriceX96);
-        console.log("Pool current tick:", tick);
-
-        // Check balances
-        uint256 usdcBalance = IERC20(USDC).balanceOf(pool);
-        uint256 usdtBalance = IERC20(USDT).balanceOf(pool);
-        console.log("Pool USDC balance:", usdcBalance);
-        console.log("Pool USDT balance:", usdtBalance);
-
         vm.startPrank(owner);
         address walletAddress = factory.createProxy(owner);
         ChatterPay wallet = ChatterPay(payable(walletAddress));
@@ -231,39 +217,53 @@ contract ChatterPayArbitrumTest is Test {
         wallet.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         wallet.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
 
-        uint256 amountIn = 1000000;
-        uint256 fee = amountIn / 2;
+        uint256 amountIn = 1000e6; 
+
+        uint256 fee = 50e6; // 50 cents in USDC
+
         uint256 swapAmount = amountIn - fee;
         
-        // Min out is 1% of swap amount just for testing
-        uint256 minOut = swapAmount / 100;
+        // Set minOut to a very conservative value to ensure the test passes
+        uint256 minOut = (swapAmount * 1e12) * 7 / 10;
         
-        console.log("=== Swap Parameters ===");
-        console.log("Amount in:", amountIn);
-        console.log("Fee amount:", fee);
-        console.log("Swap amount:", swapAmount);
-        console.log("Min out:", minOut);
+        // Log initial state
+        console.log("=== Initial State ===");
+        console.log("Wallet address:", walletAddress);
+        console.log("USDC address:", USDC);
+        console.log("Initial USDC balance of wallet:", IERC20(USDC).balanceOf(walletAddress));
         
-        // Fund wallet
+        // Fund wallet using alternative method
         deal(USDC, owner, amountIn);
         IERC20(USDC).transfer(walletAddress, amountIn);
         
-        vm.stopPrank();
+        // Verify funding
+        console.log("=== After Funding ===");
+        console.log("USDC balance after funding:", IERC20(USDC).balanceOf(walletAddress));
+        require(IERC20(USDC).balanceOf(walletAddress) == amountIn, "Funding failed");
 
-        // Verify allowance
-        console.log("=== Allowances ===");
-        console.log("USDC allowance before:", IERC20(USDC).allowance(walletAddress, UNISWAP_ROUTER));
+        // Log router info
+        console.log("=== Router Info ===");
+        console.log("Router address:", address(UNISWAP_ROUTER));
+        console.log("USDC allowance before approval:", IERC20(USDC).allowance(walletAddress, UNISWAP_ROUTER));
+
+        vm.stopPrank();
 
         vm.prank(ENTRY_POINT);
         wallet.approveToken(USDC, amountIn);
 
-        console.log("USDC allowance after:", IERC20(USDC).allowance(walletAddress, UNISWAP_ROUTER));
+        console.log("=== After Approval ===");
+        console.log("USDC allowance after approval:", IERC20(USDC).allowance(walletAddress, UNISWAP_ROUTER));
 
-        // Execute swap
+        // Pool info
+        address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(USDC, USDT, 3000);
+        (uint160 sqrtPriceX96, int24 tick, , , , , ) = IUniswapV3Pool(pool).slot0();
+        console.log("=== Pool State ===");
+        console.log("Pool initialized price:", sqrtPriceX96);
+        console.log("Pool current tick:", tick);
+
         vm.prank(ENTRY_POINT);
         wallet.executeSwap(USDC, USDT, amountIn, minOut, owner);
 
-        // Log / Verify results
         console.log("=== Final State ===");
         console.log("Final USDC Balance of wallet:", IERC20(USDC).balanceOf(walletAddress));
         console.log("Final USDT Balance of owner:", IERC20(USDT).balanceOf(owner));
