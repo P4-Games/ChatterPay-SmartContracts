@@ -64,6 +64,7 @@ contract DeployAllContracts is Script {
     function deployPaymaster() internal {
         paymaster = new ChatterPayPaymaster(entryPoint, backendEOA);
         console.log("Paymaster deployed to address %s", address(paymaster));
+        console.log("Entrypint used address %s", address(entryPoint));
     }
 
     function deployChatterPay() internal {
