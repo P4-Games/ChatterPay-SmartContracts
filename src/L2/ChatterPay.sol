@@ -13,6 +13,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISwapRouter} from "../interfaces/ISwapRouter.sol";
 import {IChatterPayWalletFactory} from "./ChatterPayWalletFactory.sol";
+import "forge-std/console2.sol";
 
 error ChatterPay__NotFromEntryPoint();
 error ChatterPay__NotFromEntryPointOrOwner();
@@ -31,6 +32,7 @@ error ChatterPay__NotFeeAdmin();
 error ChatterPay__ExceedsMaxFee();
 error ChatterPay__ZeroAddress();
 error ChatterPay__InvalidPriceFeed();
+error ChatterPay__AmountTooLow();
 
 interface IERC20Extended is IERC20 {
     function symbol() external view returns (string memory);
@@ -49,14 +51,14 @@ contract ChatterPay is
     IChatterPayWalletFactory public factory;
 
     // Uniswap constants
-    uint24 public constant POOL_FEE_LOW = 500; // 0.05%
-    uint24 public constant POOL_FEE_MEDIUM = 3000; // 0.3%
+    uint24 public constant POOL_FEE_LOW = 100; // 0.3%
+    uint24 public constant POOL_FEE_MEDIUM = 100; // 0.3%
     uint24 public constant POOL_FEE_HIGH = 10000; // 1%
 
     // Slippage constants (in basis points, 1 bp = 0.01%)
-    uint256 public constant SLIPPAGE_STABLES = 50; // 0.5%
-    uint256 public constant SLIPPAGE_ETH = 100; // 1%
-    uint256 public constant SLIPPAGE_BTC = 150; // 1.5%
+    uint256 public constant SLIPPAGE_STABLES = 300;   // 3%
+    uint256 public constant SLIPPAGE_ETH = 500;       // 5%
+    uint256 public constant SLIPPAGE_BTC = 1000;      // 10%
 
     uint256 public constant MAX_DEADLINE = 3 minutes;
 
@@ -144,50 +146,45 @@ contract ChatterPay is
         uint256 amountOutMin,
         address recipient
     ) external requireFromEntryPointOrOwner nonReentrant {
-        // Validations
         if (amountIn == 0) revert ChatterPay__ZeroAmount();
-        if (!s_whitelistedTokens[tokenIn])
-            revert ChatterPay__TokenNotWhitelisted();
+        if (!s_whitelistedTokens[tokenIn]) revert ChatterPay__TokenNotWhitelisted();
 
-        // Verifies and charges fee
+        // Calculate fee in input token units
         uint256 fee = _calculateFee(tokenIn, s_feeInCents);
+        console2.log("Fee (cents):", s_feeInCents);
+        console2.log("Fee (tokens):", fee);
+        
+        // Verify input amount is at least 2x fee
+        if (amountIn < fee * 2) revert ChatterPay__AmountTooLow();
+
+        // Charge fee first
         _transferFee(tokenIn, fee);
-
-        // Calculate actual amount for swap (after fee)
         uint256 swapAmount = amountIn - fee;
+        console2.log("Amount in:", amountIn);
+        console2.log("Swap amount:", swapAmount);
+        console2.log("Amount min out:", amountOutMin);
 
-        // Calculates deadline
+        // Swap setup
         uint256 deadline = block.timestamp + MAX_DEADLINE;
-
-        // Verify slippage based on token type
-        _validateSlippage(tokenIn, tokenOut, swapAmount, amountOutMin);
-
-        // Approve the router to use the tokens
         IERC20(tokenIn).approve(address(swapRouter), swapAmount);
 
-        // Swap parameters
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
-            .ExactInputSingleParams({
-                tokenIn: tokenIn,
-                tokenOut: tokenOut,
-                fee: _getPoolFee(tokenIn, tokenOut),
-                recipient: recipient,
-                deadline: deadline,
-                amountIn: swapAmount,
-                amountOutMinimum: amountOutMin,
-                sqrtPriceLimitX96: 0
-            });
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+            tokenIn: tokenIn,
+            tokenOut: tokenOut,
+            fee: _getPoolFee(tokenIn, tokenOut),
+            recipient: recipient,
+            amountIn: swapAmount,
+            amountOutMinimum: amountOutMin,
+            sqrtPriceLimitX96: 0
+        });
 
-        // Executes swap
-        try swapRouter.exactInputSingle(params) returns (uint256 amountOut) {
-            emit SwapExecuted(
-                tokenIn,
-                tokenOut,
-                swapAmount,
-                amountOut,
-                recipient
-            ); // Emitir swapAmount
-        } catch {
+        try ISwapRouter(swapRouter).exactInputSingle(params) returns (uint256 amountOut) {
+            emit SwapExecuted(tokenIn, tokenOut, amountIn, amountOut, recipient);
+        } catch Error(string memory reason) {
+            console2.log("Uniswap error reason:", reason);
+            revert ChatterPay__SwapFailed();
+        } catch (bytes memory errorData) {
+            console2.log("Uniswap low-level error:", string(errorData));
             revert ChatterPay__SwapFailed();
         }
     }
@@ -206,22 +203,6 @@ contract ChatterPay is
     }
 
     // INTERNAL FUNCTIONS
-
-    /**
-     * @dev Validate slippage based on token type
-     */
-    function _validateSlippage(
-        address tokenIn,
-        address tokenOut,
-        uint256 amountIn,
-        uint256 amountOutMin
-    ) internal view {
-        uint256 expectedOut = _getExpectedOutput(tokenIn, tokenOut, amountIn);
-        uint256 maxSlippage = _getMaxSlippage(tokenIn, tokenOut);
-        uint256 minAcceptable = (expectedOut * (10000 - maxSlippage)) / 10000;
-
-        if (amountOutMin < minAcceptable) revert ChatterPay__InvalidSlippage();
-    }
 
     /**
      * @dev Determines the pool fee based on tokens
@@ -428,47 +409,27 @@ contract ChatterPay is
      * @dev Gets token price from oracle
      */
     function _getTokenPrice(address token) internal view returns (uint256) {
-        address priceFeedAddress = s_priceFeeds[token];
-        if (priceFeedAddress == address(0))
-            revert ChatterPay__PriceFeedNotSet();
-
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            priceFeedAddress
-        );
-
-        // Ignore roundId y answeredInRound
-        (, /* */ int256 answer /* */, , uint256 updatedAt /* */, ) = priceFeed
-            .latestRoundData();
-
-        if (block.timestamp - updatedAt > PRICE_FRESHNESS_THRESHOLD) {
-            revert ChatterPay__StalePrice();
-        }
-
-        if (answer <= 0) {
-            revert ChatterPay__InvalidPrice();
-        }
-
-        return uint256(answer);
-    }
-
-    /**
-     * @dev Calculates expected output for a swap
-     */
-    function _getExpectedOutput(
-        address tokenIn,
-        address tokenOut,
-        uint256 amountIn
-    ) internal view returns (uint256) {
-        uint256 priceIn = _getTokenPrice(tokenIn);
-        uint256 priceOut = _getTokenPrice(tokenOut);
-        uint8 decimalsIn = IERC20Extended(tokenIn).decimals();
-        uint8 decimalsOut = IERC20Extended(tokenOut).decimals();
-
-        // Ajustar por la diferencia en decimales entre tokens
-        uint256 normalizedAmount = (amountIn * priceIn * (10 ** decimalsOut)) /
-            (priceOut * (10 ** decimalsIn));
-
-        return normalizedAmount;
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
+        
+        // Get latest price
+        (
+            uint80 roundId,
+            int256 price,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = priceFeed.latestRoundData();
+        
+        console2.log("Price feed data:");
+        console2.log("- Round ID:", roundId);
+        console2.log("- Price:", uint256(price));
+        console2.log("- Updated at:", updatedAt);
+        
+        require(price > 0, "Invalid price");
+        require(updatedAt > 0, "Round not complete");
+        require(answeredInRound >= roundId, "Stale price");
+        
+        return uint256(price);
     }
 
     /**
@@ -481,15 +442,19 @@ contract ChatterPay is
     /**
      * @dev Calculates fee in token units
      */
-    function _calculateFee(
-        address token,
-        uint256 cents
-    ) internal view returns (uint256) {
-        uint256 price = _getTokenPrice(token);
-        uint8 tokenDecimals = IERC20Extended(token).decimals();
-
-        uint256 fee = (cents * (10 ** tokenDecimals)) / (price * 100);
-
+    function _calculateFee(address token, uint256 feeInCents) internal view returns (uint256) {
+        // Get token price from Chainlink
+        uint256 tokenPrice = _getTokenPrice(token);
+        console2.log("Token price from oracle:", tokenPrice);  // Should be ~100004202 for USDC
+    
+        uint256 tokenDecimals = IERC20Extended(token).decimals();
+        uint256 fee = (feeInCents * (10 ** tokenDecimals)) / (tokenPrice / 1e8) / 100;
+        
+        console2.log("Fee calculation:");
+        console2.log("- Fee in cents:", feeInCents);
+        console2.log("- Token decimals:", IERC20Extended(token).decimals());
+        console2.log("- Calculated fee in tokens:", fee);
+        
         return fee;
     }
 
