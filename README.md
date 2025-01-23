@@ -82,7 +82,7 @@ forge clean && forge build
 _Test_
 
 ```shell
-forge test
+yarn run test:modules
 ```
 
 _Format_
