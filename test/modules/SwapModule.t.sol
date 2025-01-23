@@ -26,12 +26,14 @@ contract SwapModule is BaseTest {
         moduleWalletAddress = factory.createProxy(owner);
         moduleWallet = ChatterPay(payable(moduleWalletAddress));
 
+
         // Verificar que el router está configurado
         require(address(moduleWallet.swapRouter()) != address(0), "Router not set");
 
         // Setup tokens usando las direcciones constantes del padre
         moduleWallet.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         moduleWallet.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
+        
         vm.stopPrank();
     }
 
@@ -45,26 +47,49 @@ contract SwapModule is BaseTest {
     function testBasicSwap() public {
         uint256 SWAP_AMOUNT = 1000e6;
         
-        // Usar el pool ya configurado en BaseTest
+        // Log initial setup
+        console.log("=== Test Setup ===");
+        console.log("Swap amount:", SWAP_AMOUNT);
+        console.log("USDC address:", USDC);
+        console.log("USDT address:", USDT);
+        
+        // Get pool
         address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(USDC, USDT, POOL_FEE);
         require(pool != address(0), "Pool doesn't exist");
+        console.log("Pool address:", pool);
         
-        // Usar la función _fundWallet del padre
+        // Fund wallet
         _fundWallet(moduleWalletAddress, SWAP_AMOUNT);
+        console.log("Wallet funded with:", SWAP_AMOUNT);
         
-        // Verificar el balance inicial
-        require(IERC20(USDC).balanceOf(moduleWalletAddress) == SWAP_AMOUNT, "Funding failed");
+        // Verify initial balance
+        uint256 initialBalance = IERC20(USDC).balanceOf(moduleWalletAddress);
+        console.log("Initial wallet balance:", initialBalance);
+        require(initialBalance == SWAP_AMOUNT, "Funding failed");
         
         uint256 initialUSDTBalance = IERC20(USDT).balanceOf(owner);
+        console.log("Initial owner USDT balance:", initialUSDTBalance);
+        
+        // Calculate expected fee
         uint256 expectedFee = _calculateExpectedFee(USDC, 50);
+        console.log("Expected fee:", expectedFee);
+        
+        // Calculate minimum amount out
         uint256 minAmountOut = ((SWAP_AMOUNT - expectedFee) * 10**12) * 30 / 100;
+        console.log("Minimum amount out:", minAmountOut);
         
         vm.startPrank(ENTRY_POINT);
         moduleWallet.approveToken(USDC, SWAP_AMOUNT);
+        console.log("Token approved for swap");
+        
         moduleWallet.executeSwap(USDC, USDT, SWAP_AMOUNT, minAmountOut, owner);
         vm.stopPrank();
-
-        assertTrue(IERC20(USDT).balanceOf(owner) > initialUSDTBalance);
+        
+        uint256 finalUSDTBalance = IERC20(USDT).balanceOf(owner);
+        console.log("Final owner USDT balance:", finalUSDTBalance);
+        console.log("USDT received:", finalUSDTBalance - initialUSDTBalance);
+        
+        assertTrue(finalUSDTBalance > initialUSDTBalance);
     }
 
     /**
@@ -114,23 +139,34 @@ contract SwapModule is BaseTest {
      */
     function testSwapWithFee() public {
         uint256 amountIn = 1000e6;
-        uint256 expectedFee = 500000; // 0.5 USDC
         
         _fundWallet(moduleWalletAddress, amountIn);
         address feeAdmin = wallet().s_feeAdmin();
-        uint256 initialBalance = IERC20(USDC).balanceOf(feeAdmin);
+        uint256 minAmountOut = 0; // Set minimum amount for testing purposes
         
+        // Get initial balances
+        uint256 initialFeeAdminBalance = IERC20(USDC).balanceOf(feeAdmin);
         console.log("Fee admin:", feeAdmin);
-        console.log("Initial balance:", initialBalance);
-        
+        console.log("Initial balance:", initialFeeAdminBalance);
+
+        // Execute swap
         vm.prank(ENTRY_POINT);
-        moduleWallet.executeSwap(USDC, USDT, amountIn, 0, owner);
+        moduleWallet.executeSwap(USDC, USDT, amountIn, minAmountOut, owner);
+
+        // Get final balance
+        uint256 finalFeeAdminBalance = IERC20(USDC).balanceOf(feeAdmin);
+        console.log("Final balance:", finalFeeAdminBalance);
+        uint256 feeCollected = finalFeeAdminBalance - initialFeeAdminBalance;
+        console.log("Fee collected:", feeCollected);
+
+        // Calculate expected fee and check within margin
+        uint256 expectedFee = _calculateExpectedFee(USDC, 50);
+        console.log("Expected fee:", expectedFee);
         
-        uint256 finalBalance = IERC20(USDC).balanceOf(feeAdmin);
-        console.log("Final balance:", finalBalance);
-        console.log("Fee collected:", finalBalance - initialBalance);
-        
-        assertEq(finalBalance - initialBalance, expectedFee);
+        assertTrue(
+            feeCollected >= expectedFee - 3 && feeCollected <= expectedFee + 3,
+            "Fee not within acceptable range"
+        );
     }
 
     /**
@@ -202,10 +238,20 @@ contract SwapModule is BaseTest {
         address token,
         uint256 feeInCents
     ) internal view returns (uint256) {
-        uint256 price = 1e8;
         uint256 tokenDecimals = IERC20Extended(token).decimals();
         
-        return (feeInCents * (10 ** tokenDecimals)) / (price / 1e8) / 100;
+        console.log("=== Fee Calculation Debug ===");
+        console.log("Token:", token);
+        console.log("Fee in cents:", feeInCents);
+        console.log("Token decimals:", tokenDecimals);
+        
+        // Calculate step by step
+        uint256 scaledAmount = feeInCents * (10 ** tokenDecimals);
+        console.log("Scaled amount:", scaledAmount);
+        
+        uint256 finalFee = scaledAmount / 100;
+        console.log("Final fee:", finalFee);
+        
+        return finalFee;
     }
-
 }

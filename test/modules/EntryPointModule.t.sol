@@ -281,9 +281,8 @@ contract EntryPointModule is BaseTest {
         address token,
         uint256 feeInCents
     ) internal view returns (uint256) {
-        uint256 price = 1e8;
         uint256 tokenDecimals = IERC20Extended(token).decimals();
         
-        return (feeInCents * (10 ** tokenDecimals)) / (price / 1e8) / 100;
+        return (feeInCents * (10 ** tokenDecimals)) / 100;
     }
 }

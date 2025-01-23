@@ -372,9 +372,9 @@ contract ChatterPay is
 
         try ISwapRouter(swapRouter).exactInputSingle(params) returns (uint256 amountOut) {
             emit SwapExecuted(tokenIn, tokenOut, amountIn, amountOut, recipient);
-        } catch Error(string memory reason) {
+        } catch Error(string memory) {
             revert ChatterPay__SwapFailed();
-        } catch (bytes memory errorData) {
+        } catch (bytes memory) {
             revert ChatterPay__SwapFailed();
         }
     }
@@ -619,9 +619,11 @@ contract ChatterPay is
      * @return uint256 Fee amount in token units
      */
     function _calculateFee(address token, uint256 feeInCents) internal view returns (uint256) {
-        uint256 tokenPrice = _getTokenPrice(token);
+        uint256 tokenPrice = _getTokenPrice(token);  // Price has 8 decimals from Chainlink
         uint256 tokenDecimals = IERC20Extended(token).decimals();
-        uint256 fee = (feeInCents * (10 ** tokenDecimals)) / (tokenPrice / 1e8) / 100;
+        
+        uint256 fee = (feeInCents * (10 ** tokenDecimals) * 1e8) / (tokenPrice * 100);
+        
         return fee;
     }
 
