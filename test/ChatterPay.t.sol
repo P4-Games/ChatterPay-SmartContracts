@@ -72,9 +72,6 @@ contract ChatterPayTest is BaseTest {
     /**
      * @notice Runs all swap-related tests
      */
-        /**
-     * @notice Runs all swap-related tests
-     */
     function testSwapFeatures() public {
         // Test basic swap functionality
         swapTests.testBasicSwap();

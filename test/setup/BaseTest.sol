@@ -256,9 +256,7 @@ contract BaseTest is Test {
      */
     function _fundWallet(address _wallet, uint256 _amount) internal {
         require(_wallet != address(0), "Cannot fund zero address");
-        vm.startPrank(owner);
-        IERC20(USDC).transfer(_wallet, _amount);
-        vm.stopPrank();
+        deal(USDC, _wallet, _amount);
     }
 
     /**

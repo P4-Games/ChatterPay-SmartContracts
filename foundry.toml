@@ -10,6 +10,10 @@ remappings = [
   '@openzeppelin/contracts=lib/openzeppelin-contracts/contracts',
   '@openzeppelin/contracts-upgradeable=lib/openzeppelin-contracts-upgradeable/contracts',
 ]
+via_ir = false
+optimizer = false
+
+[profile.production]
 via_ir = true
 optimizer = true
 optimizer_runs = 200

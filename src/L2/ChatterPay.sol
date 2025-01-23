@@ -40,6 +40,7 @@ error ChatterPay__AmountTooLow();
 error ChatterPay__InvalidTarget();
 error ChatterPay__InsufficientBalance();
 error ChatterPay__InvalidArrayLengths();
+error ChatterPay__InvalidPoolFee();
 
 interface IERC20Extended is IERC20 {
     function symbol() external view returns (string memory);
@@ -439,9 +440,11 @@ contract ChatterPay is
         address tokenB,
         uint24 fee
     ) external onlyOwner {
+        if (fee > POOL_FEE_HIGH) revert ChatterPay__InvalidPoolFee();
+        
         bytes32 pairHash = _getPairHash(tokenA, tokenB);
         s_customPoolFees[pairHash] = fee;
-                emit CustomPoolFeeSet(tokenA, tokenB, fee);
+        emit CustomPoolFeeSet(tokenA, tokenB, fee);
     }
 
     /**
@@ -592,11 +595,8 @@ contract ChatterPay is
      * @param missingAccountFunds Amount of funds to prefund
      */
     function _payPrefund(uint256 missingAccountFunds) internal {
-        if (missingAccountFunds != 0) {
-            (bool success, ) = payable(msg.sender).call{
-                value: missingAccountFunds,
-                gas: type(uint256).max
-            }("");
+        if (missingAccountFunds > 0) {
+            (bool success, ) = payable(msg.sender).call{value: missingAccountFunds}("");
             require(success, "ETH transfer failed");
         }
     }
@@ -608,6 +608,8 @@ contract ChatterPay is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
+
+    receive() external payable {}
 
     // Gap for future upgrades
     uint256[45] private __gap;

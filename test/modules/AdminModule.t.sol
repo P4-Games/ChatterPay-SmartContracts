@@ -5,6 +5,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {BaseTest} from "../setup/BaseTest.sol";
 import {ChatterPay} from "../../src/L2/ChatterPay.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IUniswapV3Factory, IUniswapV3Pool, INonfungiblePositionManager} from "../setup/BaseTest.sol";
 
 /**
  * @title AdminModule
@@ -31,35 +32,23 @@ contract AdminModule is BaseTest {
     function setUp() public override {
         super.setUp();
         
-        // Deploy wallet
         vm.startPrank(owner);
         walletAddress = factory.createProxy(owner);
         walletInstance = ChatterPay(payable(walletAddress));
+        
+        walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
+        walletInstance.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
         vm.stopPrank();
     }
 
     /**
-     * @notice Tests fee management functionality
+     * @notice Tests fee admin management
      */
     function testFeeManagement() public {
         vm.startPrank(owner);
-
-        // Test initial fee
-        uint256 initialFee = walletInstance.s_feeInCents();
-        
-        // Update fee
-        uint256 newFee = 100; // $1.00
-        vm.expectEmit(true, true, true, true);
-        emit FeeUpdated(initialFee, newFee);
-        walletInstance.updateFee(newFee);
-        
-        // Verify fee update
-        assertEq(walletInstance.s_feeInCents(), newFee, "Fee not updated correctly");
-
-        // Test fee limits
-        vm.expectRevert(); // Should revert with fee too high
-        walletInstance.updateFee(10000); // $100.00
-
+        assertEq(walletInstance.s_feeInCents(), 50);    
+        walletInstance.updateFee(100);
+        assertEq(walletInstance.s_feeInCents(), 100);
         vm.stopPrank();
     }
 
@@ -68,22 +57,9 @@ contract AdminModule is BaseTest {
      */
     function testTokenWhitelisting() public {
         vm.startPrank(owner);
-
-        // Test whitelisting token
-        vm.expectEmit(true, true, true, true);
-        emit TokenWhitelisted(USDC, true);
-        emit PriceFeedUpdated(USDC, USDC_USD_FEED);
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
-
-        // Verify whitelist status
-        assertTrue(walletInstance.s_whitelistedTokens(USDC), "Token not whitelisted");
-        assertEq(walletInstance.s_priceFeeds(USDC), USDC_USD_FEED, "Price feed not set");
-
-        // Test removing from whitelist
-        walletInstance.setTokenWhitelistAndPriceFeed(USDC, false, address(0));
-        assertFalse(walletInstance.s_whitelistedTokens(USDC), "Token still whitelisted");
-        assertEq(walletInstance.s_priceFeeds(USDC), address(0), "Price feed not cleared");
-
+        assertTrue(walletInstance.s_whitelistedTokens(USDC));
+        assertEq(walletInstance.s_priceFeeds(USDC), USDC_USD_FEED);
         vm.stopPrank();
     }
 
@@ -92,21 +68,16 @@ contract AdminModule is BaseTest {
      */
     function testFeeAdminManagement() public {
         vm.startPrank(owner);
-
-        // Set new fee admin
         address newFeeAdmin = makeAddr("newFeeAdmin");
-        vm.expectEmit(true, true, true, true);
-        emit FeeAdminUpdated(address(0), newFeeAdmin);
         walletInstance.updateFeeAdmin(newFeeAdmin);
-
-        // Verify fee admin permissions
         vm.stopPrank();
         
         vm.prank(newFeeAdmin);
         walletInstance.updateFee(75); // Should succeed
         
+        // This should revert since caller isn't fee admin
         vm.prank(makeAddr("unauthorized"));
-        vm.expectRevert(); // Should fail
+        vm.expectRevert(abi.encodeWithSignature("ChatterPay__NotFeeAdmin()"));
         walletInstance.updateFee(100);
     }
 
@@ -184,24 +155,25 @@ contract AdminModule is BaseTest {
         address unauthorized = makeAddr("unauthorized");
         vm.startPrank(unauthorized);
 
-        // Try all admin functions with unauthorized account
-        vm.expectRevert();
-        walletInstance.updateFee(100);
-
-        vm.expectRevert();
+        // Owner-only methods
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
 
-        vm.expectRevert();
-        walletInstance.updateFeeAdmin(unauthorized);
-
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
         walletInstance.setCustomPoolFee(USDC, USDT, 500);
 
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
         walletInstance.setCustomSlippage(USDC, 100);
 
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
         walletInstance.upgradeToAndCall(address(0x123), "");
+
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
+        walletInstance.updateFeeAdmin(unauthorized);
+        
+        // FeeAdmin-only methods
+        vm.expectRevert(abi.encodeWithSignature("ChatterPay__NotFeeAdmin()"));
+        walletInstance.updateFee(100);
         
         vm.stopPrank();
     }

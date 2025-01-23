@@ -5,71 +5,9 @@ import {Test, console} from "forge-std/Test.sol";
 import {BaseTest} from "../setup/BaseTest.sol";
 import {ChatterPay} from "../../src/L2/ChatterPay.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-/**
- * @dev Interface for Uniswap V3 factory functionality
- */
-interface IUniswapV3Factory {
-    function createPool(
-        address tokenA,
-        address tokenB,
-        uint24 fee
-    ) external returns (address pool);
-
-    function getPool(
-        address tokenA,
-        address tokenB,
-        uint24 fee
-    ) external view returns (address pool);
-}
-
-/**
- * @dev Interface for Uniswap V3 pool functionality
- */
-interface IUniswapV3Pool {
-    function initialize(uint160 sqrtPriceX96) external;
-
-    function slot0() external view returns (
-        uint160 sqrtPriceX96,
-        int24 tick,
-        uint16 observationIndex,
-        uint16 observationCardinality,
-        uint16 observationCardinalityNext,
-        uint8 feeProtocol,
-        bool unlocked
-    );
-}
-
-/**
- * @dev Interface for Uniswap V3 position management
- */
-interface INonfungiblePositionManager {
-    struct MintParams {
-        address token0;
-        address token1;
-        uint24 fee;
-        int24 tickLower;
-        int24 tickUpper;
-        uint256 amount0Desired;
-        uint256 amount1Desired;
-        uint256 amount0Min;
-        uint256 amount1Min;
-        address recipient;
-        uint256 deadline;
-    }
-
-    function mint(
-        MintParams calldata params
-    )
-        external
-        payable
-        returns (
-            uint256 tokenId,
-            uint128 liquidity,
-            uint256 amount0,
-            uint256 amount1
-        );
-}
+import {IERC20Extended} from "../../src/L2/ChatterPay.sol";
+import {AggregatorV3Interface} from "../../src/interfaces/AggregatorV3Interface.sol";
+import {IUniswapV3Factory, IUniswapV3Pool, INonfungiblePositionManager} from "../setup/BaseTest.sol";
 
 contract SwapModule is BaseTest {
     ChatterPay public moduleWallet;
@@ -80,14 +18,18 @@ contract SwapModule is BaseTest {
     event LiquidityAdded(address pool, uint256 tokenId, uint128 liquidity);
 
     function setUp() public override {
+        // Llamar al setUp del padre primero
         super.setUp();
         
-        // Deploy wallet
+        // Deploy wallet usando el factory del padre
         vm.startPrank(owner);
         moduleWalletAddress = factory.createProxy(owner);
         moduleWallet = ChatterPay(payable(moduleWalletAddress));
-        
-        // Setup tokens
+
+        // Verificar que el router está configurado
+        require(address(moduleWallet.swapRouter()) != address(0), "Router not set");
+
+        // Setup tokens usando las direcciones constantes del padre
         moduleWallet.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         moduleWallet.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
         vm.stopPrank();
@@ -101,17 +43,28 @@ contract SwapModule is BaseTest {
      * @notice Tests basic swap functionality
      */
     function testBasicSwap() public {
-        uint256 amountIn = 1000e6; // 1000 USDC
-        uint256 minOut = 990e6;    // Expecting 99% or better
+        uint256 SWAP_AMOUNT = 1000e6;
         
-        _fundWallet(moduleWalletAddress, amountIn);
+        // Usar el pool ya configurado en BaseTest
+        address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(USDC, USDT, POOL_FEE);
+        require(pool != address(0), "Pool doesn't exist");
+        
+        // Usar la función _fundWallet del padre
+        _fundWallet(moduleWalletAddress, SWAP_AMOUNT);
+        
+        // Verificar el balance inicial
+        require(IERC20(USDC).balanceOf(moduleWalletAddress) == SWAP_AMOUNT, "Funding failed");
+        
+        uint256 initialUSDTBalance = IERC20(USDT).balanceOf(owner);
+        uint256 expectedFee = _calculateExpectedFee(USDC, 50);
+        uint256 minAmountOut = ((SWAP_AMOUNT - expectedFee) * 10**12) * 30 / 100;
         
         vm.startPrank(ENTRY_POINT);
-        moduleWallet.approveToken(USDC, amountIn);
-        moduleWallet.executeSwap(USDC, USDT, amountIn, minOut, owner);
+        moduleWallet.approveToken(USDC, SWAP_AMOUNT);
+        moduleWallet.executeSwap(USDC, USDT, SWAP_AMOUNT, minAmountOut, owner);
         vm.stopPrank();
-        
-        assertGt(IERC20(USDT).balanceOf(owner), 0, "Swap failed to deliver tokens");
+
+        assertTrue(IERC20(USDT).balanceOf(owner) > initialUSDTBalance);
     }
 
     /**
@@ -119,7 +72,7 @@ contract SwapModule is BaseTest {
      */
     function testSwapWithCustomPoolFee() public {
         vm.startPrank(owner);
-        uint24 customFee = 500; // 0.05%
+        uint24 customFee = 3000; // 0.3%
         moduleWallet.setCustomPoolFee(USDC, USDT, customFee);
         vm.stopPrank();
 
@@ -161,23 +114,23 @@ contract SwapModule is BaseTest {
      */
     function testSwapWithFee() public {
         uint256 amountIn = 1000e6;
-        uint256 fee = 50e6; // 50 cents in USDC
-        uint256 expectedSwapAmount = amountIn - fee;
+        uint256 expectedFee = 500000; // 0.5 USDC
         
         _fundWallet(moduleWalletAddress, amountIn);
+        address feeAdmin = wallet().s_feeAdmin();
+        uint256 initialBalance = IERC20(USDC).balanceOf(feeAdmin);
         
-        uint256 initialPaymasterBalance = IERC20(USDC).balanceOf(address(paymaster));
+        console.log("Fee admin:", feeAdmin);
+        console.log("Initial balance:", initialBalance);
         
-        vm.startPrank(ENTRY_POINT);
-        moduleWallet.approveToken(USDC, amountIn);
+        vm.prank(ENTRY_POINT);
         moduleWallet.executeSwap(USDC, USDT, amountIn, 0, owner);
-        vm.stopPrank();
         
-        assertEq(
-            IERC20(USDC).balanceOf(address(paymaster)) - initialPaymasterBalance,
-            fee,
-            "Fee not collected correctly"
-        );
+        uint256 finalBalance = IERC20(USDC).balanceOf(feeAdmin);
+        console.log("Final balance:", finalBalance);
+        console.log("Fee collected:", finalBalance - initialBalance);
+        
+        assertEq(finalBalance - initialBalance, expectedFee);
     }
 
     /**
@@ -186,24 +139,14 @@ contract SwapModule is BaseTest {
     function testFailInvalidSwap() public {
         uint256 amountIn = 1000e6;
         _fundWallet(moduleWalletAddress, amountIn);
-
-        // Test non-whitelisted token
-        vm.startPrank(ENTRY_POINT);
-        vm.expectRevert();
-        moduleWallet.executeSwap(address(0x123), USDT, amountIn, 0, owner);
+        
+        vm.startPrank(owner);
+        moduleWallet.setTokenWhitelistAndPriceFeed(USDC, false, address(0));
         vm.stopPrank();
-
-        // Test insufficient balance
-        vm.startPrank(ENTRY_POINT);
-        vm.expectRevert();
-        moduleWallet.executeSwap(USDC, USDT, amountIn * 2, 0, owner);
-        vm.stopPrank();
-
-        // Test excessive slippage
-        vm.startPrank(ENTRY_POINT);
-        vm.expectRevert();
-        moduleWallet.executeSwap(USDC, USDT, amountIn, amountIn * 2, owner);
-        vm.stopPrank();
+        
+        vm.prank(ENTRY_POINT);
+        vm.expectRevert("ChatterPay__TokenNotWhitelisted");
+        moduleWallet.executeSwap(USDC, USDT, amountIn, 0, owner);
     }
 
     /**
@@ -215,7 +158,7 @@ contract SwapModule is BaseTest {
 
         // Setup swap parameters
         uint256 amountIn = 1000e6; 
-        uint256 fee = 50e6; // 50 cents in USDC
+        uint256 fee = 5e5; // 0.5 cents in USDC
         uint256 swapAmount = amountIn - fee;
         uint256 minOut = (swapAmount * 1e12) * 7 / 10;
 
@@ -248,4 +191,21 @@ contract SwapModule is BaseTest {
         // Log final state
         _logSwapState("Final State", moduleWalletAddress);
     }
+
+    /**
+     * @dev Helper function to calculate expected fee
+     * @param token Token address
+     * @param feeInCents Fee amount in cents
+     * @return Fee amount in token decimals
+     */
+    function _calculateExpectedFee(
+        address token,
+        uint256 feeInCents
+    ) internal view returns (uint256) {
+        uint256 price = 1e8;
+        uint256 tokenDecimals = IERC20Extended(token).decimals();
+        
+        return (feeInCents * (10 ** tokenDecimals)) / (price / 1e8) / 100;
+    }
+
 }

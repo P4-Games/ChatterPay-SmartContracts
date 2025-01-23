@@ -20,8 +20,8 @@ contract SecurityModule is BaseTest {
     address public walletAddress;
 
     // Test accounts
-    address attacker;
-    address maliciousContract;
+    address public attacker;
+    address public maliciousContract;
 
     // Events
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -111,7 +111,7 @@ contract SecurityModule is BaseTest {
      */
     function testReentrancyProtection() public {
         // Deploy malicious contract that attempts reentrancy
-        MaliciousContract malicious = new MaliciousContract(address(wallet));
+        MaliciousContract malicious = new MaliciousContract(walletAddress);        
         
         // Fund wallet
         _fundWallet(walletAddress, 1000e6);
@@ -225,14 +225,14 @@ contract MaliciousContract {
     bool private attacked;
 
     constructor(address _wallet) {
-        walletInstance = ChatterPay(payable(_wallet));
+        wallet = ChatterPay(payable(_wallet));
     }
 
     receive() external payable {
         if (!attacked) {
             attacked = true;
             // Try to execute another transfer during the first transfer
-            walletInstance.executeTokenTransfer(
+            wallet.executeTokenTransfer(
                 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d, // USDC
                 address(this),
                 100e6
