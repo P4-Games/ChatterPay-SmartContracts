@@ -13,7 +13,8 @@
         "deploy:simulate": "bash script/deploy.sh simulate",
         "deploy:prod": "bash script/deploy.sh prod",
         "deploy:chatterpay": "bash script/deploy.sh chatterpay",
-        "generate-types": "typechain --target=ethers-v5 './src/artifacts/**/*.json'"
+        "generate-types": "typechain --target=ethers-v5 './src/artifacts/**/*.json'",
+        "generate:abis": "bash script/generate_abis.sh"
     },
     "devDependencies": {
         "@types/bun": "latest",
