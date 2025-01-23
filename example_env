@@ -6,3 +6,5 @@ BACKEND_EOA=chatterpay backend EOA wallet address
 BACKEND_PK=chatterpay bachend private key
 ETHERSCAN_API_KEY=Your etherscan api key, if you want to verify contracts
 ROUTER_ADDRESS=Uniswap SwapRouter02 address
+ARBISCAN_API_KEY=Your Aribtrum api key, if you want to verify contracts
+NFT_BASE_URI=https://dev.back.chatterpay.net/nft/metadata/opensea/
