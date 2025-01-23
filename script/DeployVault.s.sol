@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
-import {ChatterPayVault} from "../src/L2/ChatterPayVault.sol";
+import {ChatterPayVault} from "../src/ChatterPayVault.sol";
 
 contract DeployChatterPayVault is Script {
     function run() external {

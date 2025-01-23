@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
-import {ChatterPayWalletFactory} from "../src/L2/ChatterPayWalletFactory.sol";
+import {ChatterPayWalletFactory} from "../src/ChatterPayWalletFactory.sol";
 import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
-import {ChatterPay} from "../src/L2/ChatterPay.sol";
+import {ChatterPay} from "../src/ChatterPay.sol";
 
 contract UpdateChatterPay is Script {
     function run() external {

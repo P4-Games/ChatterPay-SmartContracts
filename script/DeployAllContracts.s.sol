@@ -3,14 +3,11 @@ pragma solidity 0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {HelperConfig} from "./utils/HelperConfig.s.sol";
-import {ChatterPay} from "../src/L2/ChatterPay.sol";
-import {ChatterPayWalletFactory} from "../src/L2/ChatterPayWalletFactory.sol";
-import {ChatterPayPaymaster} from "../src/L2/ChatterPayPaymaster.sol";
-import {ChatterPayNFT} from "../src/L2/ChatterPayNFT.sol";
-import {ChatterPayVault} from "../src/L2/ChatterPayVault.sol";
-import {USDT} from "../src/L2/USDT.sol";
-import {WETH} from "../src/L2/WETH.sol";
-import {SimpleSwap} from "../src/L2/SimpleSwap.sol";
+import {ChatterPay} from "../src/ChatterPay.sol";
+import {ChatterPayWalletFactory} from "../src/ChatterPayWalletFactory.sol";
+import {ChatterPayPaymaster} from "../src/ChatterPayPaymaster.sol";
+import {ChatterPayNFT} from "../src/ChatterPayNFT.sol";
+import {ChatterPayVault} from "../src/ChatterPayVault.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 contract DeployAllContracts is Script {
@@ -27,9 +24,6 @@ contract DeployAllContracts is Script {
     ChatterPayNFT nftImplementation;
     ChatterPayNFT chatterPayNFT;
     ChatterPayVault vault;
-    SimpleSwap simpleSwap;
-    USDT usdt;
-    WETH weth;
     address entryPoint;
     address backendEOA;
     string NFTBaseUri = vm.envString("NFT_BASE_URI");
@@ -41,17 +35,13 @@ contract DeployAllContracts is Script {
             ChatterPay,
             ChatterPayWalletFactory,
             ChatterPayNFT,
-            ChatterPayPaymaster,
-            USDT,
-            WETH,
-            SimpleSwap
+            ChatterPayPaymaster
         )
     {
         helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
         entryPoint = config.entryPoint;
         backendEOA = config.account;
-        router = vm.envAddress("ROUTER_ADDRESS");
 
         vm.startBroadcast(config.account);
 
@@ -66,13 +56,10 @@ contract DeployAllContracts is Script {
         deployFactory();
         deployNFT();
         deployVault();
-        deployUSDT();
-        deployWETH();
-        deploySimpleSwap();
 
         vm.stopBroadcast();
 
-        return (helperConfig, chatterPay, factory, chatterPayNFT, paymaster, usdt, weth, simpleSwap);
+        return (helperConfig, chatterPay, factory, chatterPayNFT, paymaster);
     }
 
     function deployPaymaster() internal {
@@ -88,11 +75,14 @@ contract DeployAllContracts is Script {
     }
 
     function deployFactory() internal {
+        address router = vm.envAddress("UNISWAP_ROUTER");
+        
         factory = new ChatterPayWalletFactory(
             address(chatterPay),
             entryPoint,
             backendEOA,
-            address(paymaster)
+            address(paymaster),
+            router
         );
         console.log("Wallet Factory deployed to address %s:", address(factory));
     }
@@ -109,20 +99,5 @@ contract DeployAllContracts is Script {
     function deployVault() internal {
         vault = new ChatterPayVault();
         console.log("Vault deployed to address %s:", address(vault));
-    }
-
-    function deployUSDT() internal {
-        usdt = new USDT(backendEOA);
-        console.log("USDT deployed to address %s:", address(usdt));
-    }
-
-    function deployWETH() internal {
-        weth = new WETH(backendEOA);
-        console.log("WETH deployed to address %s:", address(weth));
-    }
-
-    function deploySimpleSwap() internal {
-        simpleSwap = new SimpleSwap(address(weth), address(usdt));
-        console.log("SimpleSwap deployed to address %s:", address(simpleSwap));
     }
 }

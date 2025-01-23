@@ -2,8 +2,20 @@
     "name": "chatterpay-contracts",
     "type": "module",
     "scripts": {
+        "build:local": "FOUNDRY_PROFILE=local forge build",
+        "build:prod": "FOUNDRY_PROFILE=production forge build",
+        "test:local": "FOUNDRY_PROFILE=local bash test/run_all_tests.sh",
+        "test:prod": "FOUNDRY_PROFILE=production bash test/run_all_tests.sh",
+        "test:coverage": "forge coverage --profile local --fork-url $ARBITRUM_SEPOLIA_RPC_URL --match-path 'test/modules/*'",
+        "test:gas": "REPORT_GAS=true FOUNDRY_PROFILE=production bash test/run_all_tests.sh",
+        "clean": "forge clean",
+        "clean:full": "forge clean && rm -rf cache .forge-cache",
+        "deploy:simulate": "forge script script/DeployAllContracts.s.sol --rpc-url $ARBITRUM_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY",
+        "deploy:prod": "forge script script/DeployAllContracts.s.sol --rpc-url $ARBITRUM_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast",
+        "deploy:verify": "forge script script/DeployAllContracts.s.sol --rpc-url $ARBITRUM_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY",
+        "deploy:chatterpay": "forge script script/DeployChatterPay.s.sol --rpc-url $ARBITRUM_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast",
         "generate-types": "typechain --target=ethers-v5 './src/artifacts/**/*.json'",
-        "test:modules": "bash script/run_module_tests.sh"
+        "deploy:chatterpay:verify": "forge script script/DeployChatterPay.s.sol --rpc-url $ARBITRUM_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY"
     },
     "devDependencies": {
         "@types/bun": "latest",

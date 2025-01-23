@@ -14,11 +14,11 @@ import {OwnableUpgradeable} from "lib/openzeppelin-contracts-upgradeable/contrac
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IEntryPoint} from "lib/entry-point-v6/interfaces/IEntryPoint.sol";
-import {AggregatorV3Interface} from "../interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "./interfaces/AggregatorV3Interface.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ISwapRouter} from "../interfaces/ISwapRouter.sol";
+import {ISwapRouter} from "./interfaces/ISwapRouter.sol";
 import {IChatterPayWalletFactory} from "./ChatterPayWalletFactory.sol";
 
 error ChatterPay__NotFromEntryPoint();

@@ -1,21 +1,37 @@
 [profile.default]
 src = "src"
 out = "out"
-ffi = true
-ast = true
-build_info = true
-optimizer_runs = 200
-via_ir = true
-extra_output = ["storageLayout"]
 libs = ["lib"]
 remappings = [
-  '@openzeppelin/contracts=lib/openzeppelin-contracts/contracts',
-  '@openzeppelin/contracts-upgradeable=lib/openzeppelin-contracts-upgradeable/contracts',
+    '@openzeppelin/contracts=lib/openzeppelin-contracts/contracts',
+    '@openzeppelin/contracts-upgradeable=lib/openzeppelin-contracts-upgradeable/contracts',
 ]
-via_ir = false
-optimizer = false
 
+# Local development profile - optimized for faster builds
+[profile.local]
+ffi = true
+ast = true
+via_ir = false # Disabled for faster compilation
+optimizer = true
+optimizer_runs = 50
+build_info = true
+extra_output = ["storageLayout"]
+verbosity = 3
+gas_reports = ["*"]
+cache = true
+cache_path = 'cache'
+
+# Production profile - optimized for deployment
 [profile.production]
+ffi = false
+ast = false
 via_ir = true
 optimizer = true
-optimizer_runs = 200
+optimizer_runs = 1000
+build_info = false
+extra_output = ["storageLayout"]
+verbosity = 0
+gas_reports = ["*"]
+deny_warnings = true
+force = true
+cache = false

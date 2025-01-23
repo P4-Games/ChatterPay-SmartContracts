@@ -2,9 +2,9 @@
 pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
-import {ChatterPay} from "../../src/L2/ChatterPay.sol";
-import {ChatterPayWalletFactory} from "../../src/L2/ChatterPayWalletFactory.sol";
-import {ChatterPayPaymaster} from "../../src/L2/ChatterPayPaymaster.sol";
+import {ChatterPay} from "../../src/ChatterPay.sol";
+import {ChatterPayWalletFactory} from "../../src/ChatterPayWalletFactory.sol";
+import {ChatterPayPaymaster} from "../../src/ChatterPayPaymaster.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 

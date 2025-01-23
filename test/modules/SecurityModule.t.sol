@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
 import {BaseTest} from "../setup/BaseTest.sol";
-import {ChatterPay} from "../../src/L2/ChatterPay.sol";
+import {ChatterPay} from "../../src/ChatterPay.sol";
 import {UserOperation} from "lib/entry-point-v6/interfaces/IAccount.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";

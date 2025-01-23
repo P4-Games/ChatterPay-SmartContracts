@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Script, console} from "forge-std/Script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {HelperConfig} from "./utils/HelperConfig.s.sol";
-import {ChatterPayNFT} from "../src/L2/ChatterPayNFT.sol";
+import {ChatterPayNFT} from "../src/ChatterPayNFT.sol";
 
 contract DeployChatterPay is Script {
     
