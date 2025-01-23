@@ -3,7 +3,7 @@
     "type": "module",
     "scripts": {
         "generate-types": "typechain --target=ethers-v5 './src/artifacts/**/*.json'",
-        "test:modules": "./script/run_module_tests.sh"
+        "test:modules": "bash script/run_module_tests.sh"
     },
     "devDependencies": {
         "@types/bun": "latest",

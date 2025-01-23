@@ -25,6 +25,7 @@ contract TransferModule is BaseTest {
     // Test constants
     uint256 constant TRANSFER_AMOUNT = 1000e6; // 1000 USDC
     uint256 EXPECTED_FEE = 5e5; // 0.5 cents in USDC
+    uint256 constant FEE_TOLERANCE = 1e4; // 0.01 USDC tolerance for price fluctuations
 
     ChatterPay walletInstance;
     address walletAddress;
@@ -53,7 +54,9 @@ contract TransferModule is BaseTest {
         vm.prank(ENTRY_POINT);
         walletInstance.executeTokenTransfer(USDC, user, TRANSFER_AMOUNT);
 
-        assertEq(IERC20(USDC).balanceOf(user), initialRecipientBalance + TRANSFER_AMOUNT - expectedFee);
+        uint256 actualReceivedAmount = IERC20(USDC).balanceOf(user) - initialRecipientBalance;
+        uint256 expectedReceivedAmount = TRANSFER_AMOUNT - expectedFee;
+        assertApproxEqAbs(actualReceivedAmount, expectedReceivedAmount, FEE_TOLERANCE);
     }
 
     /**
@@ -84,7 +87,7 @@ contract TransferModule is BaseTest {
 
         uint256 finalFeeBalance = IERC20(USDC).balanceOf(feeAdmin);
         uint256 feesCollected = finalFeeBalance - initialFeeBalance;
-        assertEq(feesCollected, EXPECTED_FEE * 3, "Incorrect fees collected");
+        assertApproxEqAbs(feesCollected, EXPECTED_FEE * 3, FEE_TOLERANCE * 3, "Incorrect fees collected");
     }
 
     /**
@@ -156,9 +159,10 @@ contract TransferModule is BaseTest {
             uint256 feeCollected = IERC20(USDC).balanceOf(
                 walletInstance.s_feeAdmin()
             ) - initialFeeAdminBalance;
-            assertEq(
+            assertApproxEqAbs(
                 feeCollected,
                 EXPECTED_FEE,
+                FEE_TOLERANCE,
                 "Incorrect fee amount collected"
             );
         }
@@ -185,17 +189,19 @@ contract TransferModule is BaseTest {
         uint256 fee = _calculateExpectedFee(USDC, 50);
 
         // Verify fee was taken
-        assertEq(
+        assertApproxEqAbs(
             IERC20(USDC).balanceOf(walletInstance.s_feeAdmin()) -
                 initialFeeAdminBalance,
             fee,
+            FEE_TOLERANCE,
             "Fee not transferred correctly"
         );
 
         // Verify recipient received correct amount
-        assertEq(
+        assertApproxEqAbs(
             IERC20(USDC).balanceOf(user) - initialRecipientBalance,
             100e6 - fee,
+            FEE_TOLERANCE,
             "Recipient received wrong amount"
         );
     }
