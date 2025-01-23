@@ -104,9 +104,9 @@ contract ChatterPayTest is BaseTest {
         transferTests.testTransferFees();
         
         // Test failure cases
-        transferTests.testFailInsufficientBalance();
-        transferTests.testFailNonWhitelistedToken();
-        transferTests.testFailZeroAmount();
+        transferTests.testInsufficientBalance();
+        transferTests.testNonWhitelistedToken();
+        transferTests.testZeroAmount();
     }
 
     /**

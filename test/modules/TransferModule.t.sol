@@ -90,49 +90,44 @@ contract TransferModule is BaseTest {
     /**
      * @notice Tests transfer with insufficient balance
      */
-    function testFailInsufficientBalance() public {
-        // Fund walletInstance with insufficient amount
-        _fundWallet(walletAddress, EXPECTED_FEE); // Only fund fee amount
+    function testInsufficientBalance() public {
+        _fundWallet(walletAddress, EXPECTED_FEE);
 
-        // Should revert
+        vm.expectRevert();
         vm.prank(ENTRY_POINT);
-        vm.expectRevert(); // Should revert with insufficient balance
         walletInstance.executeTokenTransfer(USDC, user, TRANSFER_AMOUNT);
     }
 
     /**
      * @notice Tests transfer with non-whitelisted token
      */
-    function testFailNonWhitelistedToken() public {
+    function testNonWhitelistedToken() public {
         vm.startPrank(owner);
-        walletInstance.setTokenWhitelistAndPriceFeed(USDC, false, address(0));
+        walletInstance.setTokenWhitelistAndPriceFeed(USDC, false, USDC_USD_FEED);
         vm.stopPrank();
 
+        vm.expectRevert(abi.encodeWithSignature("ChatterPay__TokenNotWhitelisted()"));
         vm.prank(ENTRY_POINT);
-        vm.expectRevert(); // Should revert with token not whitelisted
         walletInstance.executeTokenTransfer(USDC, user, TRANSFER_AMOUNT);
     }
 
     /**
      * @notice Tests transfer with zero amount
      */
-    function testFailZeroAmount() public {
-        // Try to transfer zero amount
+    function testZeroAmount() public {
+        vm.expectRevert();
         vm.prank(ENTRY_POINT);
-        vm.expectRevert(); // Should revert with zero amount
         walletInstance.executeTokenTransfer(USDC, user, 0);
     }
 
     /**
      * @notice Tests transfer to zero address
      */
-    function testFailZeroAddress() public {
-        // Fund wallet
+    function testZeroAddress() public {
         _fundWallet(walletAddress, TRANSFER_AMOUNT);
 
-        // Try to transfer to zero address
+        vm.expectRevert();
         vm.prank(ENTRY_POINT);
-        vm.expectRevert(); // Should revert with zero address
         walletInstance.executeTokenTransfer(USDC, address(0), TRANSFER_AMOUNT);
     }
 
