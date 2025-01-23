@@ -7,7 +7,7 @@ source .env
 echo "🧪 Running module tests..."
 
 # Execute tests with forge using environment variable
-forge test --fork-url $ARBITRUM_SEPOLIA_RPC_URL -vvv --match-path "test/modules/*"
+forge test --fork-url $ARBITRUM_SEPOLIA_RPC_URL -vvv --match-path "test/modules/*" --ffi -j 5
 
 # Verify result
 if [ $? -eq 0 ]; then

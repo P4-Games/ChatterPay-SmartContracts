@@ -42,6 +42,7 @@ error ChatterPay__InsufficientBalance();
 error ChatterPay__InvalidArrayLengths();
 error ChatterPay__InvalidPoolFee();
 error ChatterPay__ReentrantCall();
+error ChatterPay__TransferFailed();
 
 interface IERC20Extended is IERC20 {
     function symbol() external view returns (string memory);
@@ -62,10 +63,6 @@ contract ChatterPay is
 
     ISwapRouter public swapRouter;
     IChatterPayWalletFactory public factory;
-
-    /// @notice Internal flag to prevent reentrancy during token transfers
-    /// @dev Tracks whether a transfer is currently in progress to block nested calls
-    bool private _isReceiveInProgress;
 
     /// @notice The EntryPoint contract address
     IEntryPoint private s_entryPoint;
@@ -217,68 +214,32 @@ contract ChatterPay is
     }
 
     /**
-    * @notice Tracks and prevents reentrancy during token transfers
-    * @dev Adds an extra layer of protection against recursive calls
-    * @param token Address of the token to transfer
-    * @param recipient Address receiving the tokens
-    * @param amount Amount of tokens to transfer
-    */
+     * @notice Executes a token transfer from this contract to a recipient
+     * @dev Only callable by the EntryPoint contract and protected against reentrancy
+     * @param token The ERC20 token address to transfer
+     * @param recipient The address that will receive the tokens
+     * @param amount The total amount of tokens to transfer (including fee)
+     */
     function executeTokenTransfer(
         address token,
         address recipient,
         uint256 amount
     ) external requireFromEntryPoint nonReentrant {
-        // Prevent nested calls
-        if (_isReceiveInProgress) revert ChatterPay__ReentrantCall();
-
-        // Set flag before transfer
-        _isReceiveInProgress = true;
-
-        try this._executeTokenTransferInternal(token, recipient, amount) {
-            // Reset flag after successful transfer
-            _isReceiveInProgress = false;
-        } catch Error(string memory reason) {
-            // Reset flag and re-throw the specific error
-            _isReceiveInProgress = false;
-            revert(reason);
-        } catch (bytes memory lowLevelData) {
-            // Reset flag and re-throw with original error data
-            _isReceiveInProgress = false;
-            revert ChatterPay__ExecuteCallFailed(lowLevelData);
-        }
-    }
-
-    /**
-    * @notice Internal implementation of token transfer with all existing checks
-    * @dev Separated to allow try-catch in main transfer method
-    * @param token Address of the token to transfer
-    * @param recipient Address receiving the tokens
-    * @param amount Amount of tokens to transfer
-    */
-    function _executeTokenTransferInternal(
-        address token,
-        address recipient,
-        uint256 amount
-    ) external {
-        // Existing transfer logic from original method
         if (amount == 0) revert ChatterPay__ZeroAmount();
         if (recipient == address(0)) revert ChatterPay__ZeroAddress();
         if (!s_whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
         
-        // Check balance
         if(IERC20(token).balanceOf(address(this)) < amount) 
             revert ChatterPay__InsufficientBalance();
 
-        // Calculate fee
         uint256 fee = _calculateFee(token, s_feeInCents);
         if (amount < fee * 2) revert ChatterPay__AmountTooLow();
 
-        // Transfer fee first
         _transferFee(token, fee);
-
-        // Transfer remaining amount to recipient
         uint256 transferAmount = amount - fee;
-        IERC20(token).safeTransfer(recipient, transferAmount);
+
+        bool success = IERC20(token).transfer(recipient, transferAmount);
+        if (!success) revert ChatterPay__TransferFailed();
     }
 
     /**

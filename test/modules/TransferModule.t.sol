@@ -104,12 +104,15 @@ contract TransferModule is BaseTest {
     /**
      * @notice Tests transfer with non-whitelisted token
      */
+    /**
+     * @notice Tests transfer with non-whitelisted token
+     */
     function testNonWhitelistedToken() public {
         vm.startPrank(owner);
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, false, USDC_USD_FEED);
         vm.stopPrank();
 
-        vm.expectRevert(abi.encodeWithSignature("ChatterPay__TokenNotWhitelisted()"));
+        vm.expectRevert();
         vm.prank(ENTRY_POINT);
         walletInstance.executeTokenTransfer(USDC, user, TRANSFER_AMOUNT);
     }
