@@ -24,7 +24,7 @@ cache_path = 'cache'
 # Production profile - optimized for deployment
 [profile.production]
 ffi = false
-ast = false
+ast = true
 via_ir = true
 optimizer = true
 optimizer_runs = 1000

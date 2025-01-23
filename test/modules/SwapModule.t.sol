@@ -9,40 +9,52 @@ import {IERC20Extended} from "../../src/ChatterPay.sol";
 import {AggregatorV3Interface} from "../../src/interfaces/AggregatorV3Interface.sol";
 import {IUniswapV3Factory, IUniswapV3Pool, INonfungiblePositionManager} from "../setup/BaseTest.sol";
 
+/**
+ * @title SwapModule Test Contract
+ * @notice Test contract for validating ChatterPay's swap functionality
+ * @dev Contains tests for token swaps, custom fees, slippage protection and error cases
+ */
 contract SwapModule is BaseTest {
+    /// @notice Instance of the ChatterPay wallet being tested
     ChatterPay public moduleWallet;
+    
+    /// @notice Address of the deployed wallet instance
     address public moduleWalletAddress;
 
-    // Events for test tracking
+    /// @notice Events emitted during swap operations
     event SwapExecuted(address indexed tokenIn, address indexed tokenOut, uint256 amountIn, uint256 amountOut);
     event LiquidityAdded(address pool, uint256 tokenId, uint128 liquidity);
 
+    /// @notice Sets up the test environment
+    /// @dev Deploys a new wallet instance and configures initial token settings
     function setUp() public override {
-        // Llamar al setUp del padre primero
+        // Call parent setup first
         super.setUp();
         
-        // Deploy wallet usando el factory del padre
+        // Deploy wallet using parent factory
         vm.startPrank(owner);
         moduleWalletAddress = factory.createProxy(owner);
         moduleWallet = ChatterPay(payable(moduleWalletAddress));
 
-
-        // Verificar que el router está configurado
+        // Verify router configuration
         require(address(moduleWallet.swapRouter()) != address(0), "Router not set");
 
-        // Setup tokens usando las direcciones constantes del padre
+        // Setup tokens using parent contract constants
         moduleWallet.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         moduleWallet.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
         
         vm.stopPrank();
     }
 
+    /// @notice Getter function for the wallet instance
+    /// @return ChatterPay The current wallet instance
     function wallet() public view returns (ChatterPay) {
         return moduleWallet;
     }
 
     /**
-     * @notice Tests basic swap functionality
+     * @notice Tests basic swap functionality between USDC and USDT
+     * @dev Executes a swap with logging of key steps and balance verification
      */
     function testBasicSwap() public {
         uint256 SWAP_AMOUNT = 1000e6;
@@ -93,7 +105,8 @@ contract SwapModule is BaseTest {
     }
 
     /**
-     * @notice Tests swap with custom pool fee
+     * @notice Tests swap execution with a custom pool fee
+     * @dev Sets a custom 0.3% pool fee and verifies swap succeeds
      */
     function testSwapWithCustomPoolFee() public {
         vm.startPrank(owner);
@@ -115,7 +128,8 @@ contract SwapModule is BaseTest {
     }
 
     /**
-     * @notice Tests swap with custom slippage
+     * @notice Tests swap execution with custom slippage settings
+     * @dev Sets a custom 1% slippage tolerance and executes swap
      */
     function testSwapWithCustomSlippage() public {
         vm.startPrank(owner);
@@ -135,7 +149,8 @@ contract SwapModule is BaseTest {
     }
 
     /**
-     * @notice Tests swap with fee calculation
+     * @notice Tests swap execution with fee calculation verification
+     * @dev Executes swap and verifies collected fees match expected amounts
      */
     function testSwapWithFee() public {
         uint256 amountIn = 1000e6;
@@ -170,7 +185,8 @@ contract SwapModule is BaseTest {
     }
 
     /**
-     * @notice Tests swap failure cases
+     * @notice Tests swap failure scenarios
+     * @dev Attempts swap with non-whitelisted token to verify proper error handling
      */
     function testFailInvalidSwap() public {
         uint256 amountIn = 1000e6;
@@ -186,7 +202,8 @@ contract SwapModule is BaseTest {
     }
 
     /**
-     * @notice Tests complete swap workflow including setup and execution
+     * @notice Tests complete swap workflow from setup to execution
+     * @dev Validates entire swap process including setup, funding, approval and execution
      */
     function testTokenSetupAndSwap() public {
         // Set block timestamp
@@ -229,10 +246,11 @@ contract SwapModule is BaseTest {
     }
 
     /**
-     * @dev Helper function to calculate expected fee
-     * @param token Token address
-     * @param feeInCents Fee amount in cents
-     * @return Fee amount in token decimals
+     * @notice Calculates expected fee amount for a given token
+     * @dev Converts fee from cents to token decimals
+     * @param token The token address to calculate fee for
+     * @param feeInCents The fee amount in cents
+     * @return The calculated fee amount in token decimals
      */
     function _calculateExpectedFee(
         address token,

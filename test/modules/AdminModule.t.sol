@@ -73,7 +73,7 @@ contract AdminModule is BaseTest {
         vm.stopPrank();
         
         vm.prank(newFeeAdmin);
-        walletInstance.updateFee(75); // Should succeed
+        walletInstance.updateFee(75);
         
         // This should revert since caller isn't fee admin
         vm.prank(makeAddr("unauthorized"));
@@ -98,8 +98,8 @@ contract AdminModule is BaseTest {
         assertEq(walletInstance.s_customPoolFees(pairHash), customFee, "Custom pool fee not set");
 
         // Test invalid fee
-        vm.expectRevert(); // Should revert with invalid fee
-        walletInstance.setCustomPoolFee(USDC, USDT, 1_000_000); // 100%
+        vm.expectRevert();
+        walletInstance.setCustomPoolFee(USDC, USDT, 1_000_000);
 
         vm.stopPrank();
     }

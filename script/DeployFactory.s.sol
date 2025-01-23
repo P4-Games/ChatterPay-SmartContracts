@@ -6,8 +6,13 @@ import {HelperConfig} from "./utils/HelperConfig.s.sol";
 import {ChatterPayWalletFactory} from "../src/ChatterPayWalletFactory.sol";
 import {ChatterPay} from "../src/ChatterPay.sol";
 
+/**
+ * @title DeployFactory
+ * @notice Deployment script for ChatterPayWalletFactory and its dependencies
+ * @dev Uses Foundry's Script contract for deployments
+ */
 contract DeployFactory is Script {
-    ChatterPayWalletFactory public factory;  // Cambiado el nombre para evitar shadowing
+    ChatterPayWalletFactory public factory;
     HelperConfig helperConfig;
     ChatterPay implementation;
     address entryPoint;
@@ -15,21 +20,24 @@ contract DeployFactory is Script {
     address paymaster;
     address router;
 
+    /**
+     * @notice Main deployment function
+     * @dev Deploys ChatterPay implementation first, then the factory contract
+     * @return ChatterPayWalletFactory The deployed factory contract
+     */
     function run() public returns (ChatterPayWalletFactory) {
         helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
         entryPoint = config.entryPoint;
         backendEOA = config.account;
-        paymaster = vm.envAddress("PAYMASTER_ADDRESS");  // Obtener del env en lugar de config
+        paymaster = vm.envAddress("PAYMASTER_ADDRESS");
         router = vm.envAddress("ROUTER_ADDRESS");
 
         vm.startBroadcast(config.account);
 
-        // Deploy implementation first
         implementation = new ChatterPay();
         console.log("ChatterPay implementation deployed at:", address(implementation));
 
-        // Deploy factory with all required parameters
         factory = new ChatterPayWalletFactory(
             address(implementation),
             entryPoint,

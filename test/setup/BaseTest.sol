@@ -184,7 +184,7 @@ contract BaseTest is Test {
 
         // Setup initial token amounts
         uint256 usdcAmount = INITIAL_LIQUIDITY;
-        uint256 usdtAmount = INITIAL_LIQUIDITY * 1e12; // Adjust for decimals
+        uint256 usdtAmount = INITIAL_LIQUIDITY * 1e12;
 
         // Mint tokens to owner
         deal(USDC, owner, usdcAmount);

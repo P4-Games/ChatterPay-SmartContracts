@@ -13,12 +13,21 @@ import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 
 error SendPackedUserOp__NoProxyDeployed();
 
+/**
+ * @title SendPackedUserOp
+ * @notice A script for sending packed user operations to the EntryPoint contract
+ * @dev Uses Foundry's Script contract for deployment functionality
+ */
 contract SendPackedUserOp is Script {
     using MessageHashUtils for bytes32;
 
     // Make sure you trust this user - don't run this on Mainnet!
     address RANDOM_APPROVER = makeAddr("RANDOM_APPROVER");
 
+    /**
+     * @notice Main execution function that sends a user operation
+     * @dev Sets up configuration and sends a USDC approval operation through the EntryPoint
+     */
     function run() public {
         // Setup
         HelperConfig helperConfig = new HelperConfig();
@@ -93,6 +102,12 @@ contract SendPackedUserOp is Script {
         vm.stopBroadcast();
     }
 
+    /**
+     * @notice Generates paymaster data including signature and expiration
+     * @param _paymasterAddress Address of the paymaster contract
+     * @param _proxyAddress Address of the proxy contract
+     * @return bytes Encoded paymaster data including signature and expiration timestamp
+     */
     function generatePaymasterAndData(
         address _paymasterAddress,
         address _proxyAddress
@@ -130,6 +145,16 @@ contract SendPackedUserOp is Script {
         return paymasterAndData;
     }
 
+    /**
+     * @notice Generates a signed user operation
+     * @param initCode Initialization code for new account deployment
+     * @param callData The calldata to be executed
+     * @param config Network configuration
+     * @param chatterPayProxy Address of the ChatterPay proxy
+     * @param key Private key for signing
+     * @param paymasterAddress Address of the paymaster
+     * @return UserOperation The signed user operation
+     */
     function generateSignedUserOperation(
         bytes memory initCode,
         bytes memory callData,
@@ -138,9 +163,6 @@ contract SendPackedUserOp is Script {
         uint256 key,
         address paymasterAddress
     ) public view returns (UserOperation memory) {
-        // 1. Generate the unsigned data
-        // uint256 nonce = vm.getNonce(chatterPayProxy);
-
         bytes memory paymasterAndData = generatePaymasterAndData(
             paymasterAddress,
             chatterPayProxy
@@ -153,14 +175,12 @@ contract SendPackedUserOp is Script {
             paymasterAndData
         );
 
-        // 2. Get the userOp Hash
         bytes32 userOpHash = IEntryPoint(config.entryPoint).getUserOpHash(
             userOp
         );
 
         bytes32 digest = userOpHash.toEthSignedMessageHash();
 
-        // 3. Sign it
         uint8 v;
         bytes32 r;
         bytes32 s;
@@ -173,6 +193,14 @@ contract SendPackedUserOp is Script {
         return userOp;
     }
 
+    /**
+     * @notice Generates an unsigned user operation with default gas parameters
+     * @param initCode Initialization code for new account deployment
+     * @param callData The calldata to be executed
+     * @param sender Address of the sender
+     * @param _paymasterAndData Encoded paymaster data
+     * @return UserOperation The unsigned user operation
+     */
     function _generateUnsignedUserOperation(
         bytes memory initCode,
         bytes memory callData,

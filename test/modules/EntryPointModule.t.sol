@@ -10,22 +10,33 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IERC20Extended} from "../../src/ChatterPay.sol";
 import {AggregatorV3Interface} from "../../src/interfaces/AggregatorV3Interface.sol";
+
 /**
- * @title EntryPointModule
- * @notice Test module for ChatterPay EntryPoint integration and ERC-4337 functionality
- * @dev Tests UserOperation validation, signature verification, and paymaster interaction
+ * @title EntryPointModule Test Contract
+ * @notice Test contract for validating ChatterPay's ERC-4337 integration
+ * @dev Contains tests for UserOperation validation, signature verification, and paymaster interactions
  */
 contract EntryPointModule is BaseTest {
-    // Test wallet instance
+    /// @notice Instance of the ChatterPay wallet being tested
     ChatterPay public walletInstance;
+    
+    /// @notice Address of the deployed wallet instance
     address public walletAddress;
 
-    // Test constants
+    /// @notice Gas limit for user operations
     uint256 constant GAS_LIMIT = 1000000;
+    
+    /// @notice Maximum fee per gas for user operations
     uint256 constant MAX_FEE = 100 gwei;
+    
+    /// @notice Pre-verification gas amount for user operations
     uint256 constant PRE_VERIFICATION_GAS = 100000;
+    
+    /// @notice Gas limit for verification phase
     uint256 constant VERIFICATION_GAS_LIMIT = 150000;
 
+    /// @notice Sets up the test environment
+    /// @dev Deploys a new wallet instance and configures initial token settings
     function setUp() public override {
         super.setUp();
         
@@ -37,12 +48,15 @@ contract EntryPointModule is BaseTest {
         vm.stopPrank();
     }
 
+    /// @notice Getter function for the wallet instance
+    /// @return ChatterPay The current wallet instance
     function wallet() public view returns (ChatterPay) {
         return walletInstance;
     }
 
     /**
-     * @notice Tests basic UserOperation validation
+     * @notice Tests basic validation of a UserOperation
+     * @dev Verifies that a properly signed UserOperation passes validation
      */
     function testBasicUserOpValidation() public {
         UserOperation memory userOp = _createBasicUserOp();
@@ -58,15 +72,14 @@ contract EntryPointModule is BaseTest {
     }
 
     /**
-     * @notice Tests UserOperation execution with token transfer
+     * @notice Tests execution of a UserOperation containing a token transfer
+     * @dev Validates a UserOperation that transfers USDC tokens
      */
     function testUserOpWithTokenTransfer() public {
         uint256 TRANSFER_AMOUNT = 100e6; // 100 USDC
-        // Fondear
         _fundWallet(walletAddress, TRANSFER_AMOUNT);
         vm.deal(address(walletInstance), 1 ether);
 
-        // Preparar UserOp
         bytes memory callData = abi.encodeWithSelector(
             ChatterPay.executeTokenTransfer.selector,
             USDC, user, TRANSFER_AMOUNT
@@ -96,16 +109,13 @@ contract EntryPointModule is BaseTest {
     }
 
     /**
-     * @notice Tests UserOperation with paymaster
+     * @notice Tests UserOperation with paymaster integration
+     * @dev Verifies that a UserOperation with paymaster data is properly validated
      */
     function testUserOpWithPaymaster() public {
-        // Fund paymaster
         vm.deal(address(paymaster), 10 ether);
-        
-        // Fund wallet with ETH for potential prefund
         vm.deal(address(walletInstance), 1 ether);
 
-        // Create UserOperation with paymaster
         bytes memory callData = abi.encodeWithSelector(
             ChatterPay.executeTokenTransfer.selector,
             USDC,
@@ -119,7 +129,6 @@ contract EntryPointModule is BaseTest {
         bytes32 userOpHash = _getUserOpHash(userOp);
         userOp.signature = _signUserOp(userOpHash, ownerKey);
 
-        // Validate with paymaster
         vm.prank(ENTRY_POINT);
         uint256 validationData = walletInstance.validateUserOp(
             userOp,
@@ -131,13 +140,12 @@ contract EntryPointModule is BaseTest {
     }
 
     /**
-     * @notice Tests batch UserOperations
+     * @notice Tests batch processing of multiple UserOperations
+     * @dev Creates and validates multiple token transfer operations
      */
     function testBatchUserOps() public {
-        // Fund wallet
         _fundWallet(walletAddress, 1000e6);
 
-        // Create multiple UserOperations
         UserOperation[] memory userOps = new UserOperation[](3);
         
         for (uint256 i = 0; i < 3; i++) {
@@ -153,7 +161,6 @@ contract EntryPointModule is BaseTest {
             userOps[i].signature = _signUserOp(userOpHash, ownerKey);
         }
 
-        // Validate all operations
         for (uint256 i = 0; i < userOps.length; i++) {
             vm.prank(ENTRY_POINT);
             uint256 validationData = walletInstance.validateUserOp(
@@ -166,13 +173,13 @@ contract EntryPointModule is BaseTest {
     }
 
     /**
-     * @notice Tests invalid signature rejection
+     * @notice Tests rejection of UserOperations with invalid signatures
+     * @dev Attempts to validate a UserOperation signed with incorrect key
      */
     function testInvalidSignature() public {
         UserOperation memory userOp = _createBasicUserOp();
         bytes32 userOpHash = _getUserOpHash(userOp);
         
-        // Sign with wrong key
         uint256 wrongKey = 0x1234;
         userOp.signature = _signUserOp(userOpHash, wrongKey);
 
@@ -187,7 +194,8 @@ contract EntryPointModule is BaseTest {
     }
 
     /**
-     * @notice Tests prefund handling
+     * @notice Tests prefund handling in UserOperations
+     * @dev Verifies correct ETH balance changes during prefund phase
      */
     function testPrefundHandling() public {
         vm.deal(address(walletInstance), 2 ether);
@@ -207,16 +215,15 @@ contract EntryPointModule is BaseTest {
                            HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /**
-     * @dev Creates a basic UserOperation
-     */
+    /// @notice Creates a basic UserOperation with empty calldata
+    /// @return UserOperation A basic UserOperation instance
     function _createBasicUserOp() internal view returns (UserOperation memory) {
         return _createUserOp("");
     }
 
-    /**
-     * @dev Creates a UserOperation with specific calldata
-     */
+    /// @notice Creates a UserOperation with specified calldata
+    /// @param callData The calldata to include in the UserOperation
+    /// @return UserOperation The created UserOperation instance
     function _createUserOp(
         bytes memory callData
     ) internal view returns (UserOperation memory) {
@@ -235,9 +242,9 @@ contract EntryPointModule is BaseTest {
         });
     }
 
-    /**
-     * @dev Calculates UserOperation hash
-     */
+    /// @notice Calculates the hash of a UserOperation
+    /// @param userOp The UserOperation to hash
+    /// @return bytes32 The calculated hash
     function _getUserOpHash(UserOperation memory userOp) internal view returns (bytes32) {
         bytes32 userOpHash = keccak256(abi.encode(
             userOp.sender,
@@ -259,9 +266,10 @@ contract EntryPointModule is BaseTest {
         ));
     }
 
-    /**
-     * @dev Signs a UserOperation hash
-     */
+    /// @notice Signs a UserOperation hash with a private key
+    /// @param userOpHash The hash to sign
+    /// @param privateKey The private key to sign with
+    /// @return bytes The signature
     function _signUserOp(
         bytes32 userOpHash,
         uint256 privateKey
@@ -271,12 +279,10 @@ contract EntryPointModule is BaseTest {
         return abi.encodePacked(r, s, v);
     }
 
-    /**
-     * @dev Helper function to calculate expected fee
-     * @param token Token address
-     * @param feeInCents Fee amount in cents
-     * @return Fee amount in token decimals
-     */
+    /// @notice Calculates the expected fee in token decimals
+    /// @param token The token address
+    /// @param feeInCents The fee amount in cents
+    /// @return uint256 The calculated fee amount in token decimals
     function _calculateExpectedFee(
         address token,
         uint256 feeInCents

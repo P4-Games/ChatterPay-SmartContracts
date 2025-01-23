@@ -5,6 +5,11 @@ import {Script, console} from "forge-std/Script.sol";
 import {EntryPoint} from "lib/entry-point-v6/core/EntryPoint.sol";
 import {ERC20Mock} from "./ERC20Mock.sol";
 
+/**
+ * @title HelperConfig
+ * @notice Helper contract for managing network configurations across different chains
+ * @dev Provides configuration data for different networks including entry points and token addresses
+ */
 contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -14,6 +19,15 @@ contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
                                  TYPES
     //////////////////////////////////////////////////////////////*/
+    /**
+     * @notice Configuration struct containing network-specific addresses
+     * @param entryPoint The EntryPoint contract address
+     * @param usdc USDC token address
+     * @param usdt USDT token address
+     * @param weth WETH token address
+     * @param matic MATIC token address
+     * @param account Backend signer account address
+     */
     struct NetworkConfig {
         address entryPoint;
         address usdc;
@@ -43,6 +57,10 @@ contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
                                FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+    /**
+     * @notice Initializes the contract and sets up network configurations
+     * @dev Reads backend signer from environment and initializes configs for all supported networks
+     */
     constructor() {
         BACKEND_SIGNER = vm.envAddress("BACKEND_EOA");
         console.log('backend_signer account', BACKEND_SIGNER);
@@ -53,10 +71,19 @@ contract HelperConfig is Script {
         networkConfigs[OPTIMISM_SEPOLIA_CHAIN_ID] = getOptimismSepoliaConfig();
     }
 
+    /**
+     * @notice Gets the network configuration for the current chain
+     * @return NetworkConfig Configuration for the current blockchain network
+     */
     function getConfig() public returns (NetworkConfig memory) {
         return getConfigByChainId(block.chainid);
     }
 
+    /**
+     * @notice Gets network configuration for a specific chain ID
+     * @param chainId The blockchain network ID
+     * @return NetworkConfig Configuration for the specified chain ID
+     */
     function getConfigByChainId(
         uint256 chainId
     ) public returns (NetworkConfig memory) {
@@ -74,6 +101,10 @@ contract HelperConfig is Script {
                                 CONFIGS
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Gets configuration for Ethereum Sepolia testnet
+     * @return NetworkConfig Configuration with Ethereum Sepolia addresses
+     */
     function getEthereumSepoliaConfig()
         public
         view
@@ -90,6 +121,10 @@ contract HelperConfig is Script {
             });
     }
 
+    /**
+     * @notice Gets configuration for Arbitrum Sepolia testnet
+     * @return NetworkConfig Configuration with Arbitrum Sepolia addresses
+     */
     function getArbitrumSepoliaConfig()
         public
         view
@@ -106,6 +141,10 @@ contract HelperConfig is Script {
             });
     }
 
+    /**
+     * @notice Gets configuration for Scroll devnet
+     * @return NetworkConfig Configuration with Scroll devnet addresses
+     */
     function getScrollDevnetConfig()
         public
         view
@@ -122,6 +161,10 @@ contract HelperConfig is Script {
             });
     }
 
+    /**
+     * @notice Gets configuration for Scroll Sepolia testnet
+     * @return NetworkConfig Configuration with Scroll Sepolia addresses
+     */
     function getScrollSepoliaConfig()
         public
         view
@@ -138,6 +181,10 @@ contract HelperConfig is Script {
             });
     }
 
+    /**
+     * @notice Gets configuration for Optimism Sepolia testnet
+     * @return NetworkConfig Configuration with Optimism Sepolia addresses
+     */
     function getOptimismSepoliaConfig()
         public
         view
@@ -154,6 +201,11 @@ contract HelperConfig is Script {
             });
     }
 
+    /**
+     * @notice Gets or creates configuration for local Anvil network
+     * @dev Deploys mock contracts if they don't exist
+     * @return NetworkConfig Configuration with local network addresses
+     */
     function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
         if (localNetworkConfig.account != address(0)) {
             return localNetworkConfig;

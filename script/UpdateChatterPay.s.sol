@@ -6,15 +6,22 @@ import {ChatterPayWalletFactory} from "../src/ChatterPayWalletFactory.sol";
 import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 import {ChatterPay} from "../src/ChatterPay.sol";
 
+/**
+ * @title UpdateChatterPay
+ * @notice Script to update the ChatterPay implementation contract address in the factory
+ * @dev Uses Foundry's Script contract and DevOpsTools for deployment functionality
+ */
 contract UpdateChatterPay is Script {
+    /**
+     * @notice Updates the ChatterPay implementation address in the factory
+     * @dev Deploys a new ChatterPay implementation and updates the factory to point to it
+     * Uses DevOpsTools to find the most recent factory deployment
+     */
     function run() external {
         vm.startBroadcast();
 
-        // Change this contract for the new version ChatterPay implementation contract you want to deploy
         ChatterPay chatterPay = new ChatterPay();
 
-        // This will get the address of the most recent deployment of the ChatterPay Factory contract
-        // If you want to set the implementation to a different address, you can replace it here
         address factoryAddress = DevOpsTools.get_most_recent_deployment(
             "ChatterPayWalletFactory",
             block.chainid
