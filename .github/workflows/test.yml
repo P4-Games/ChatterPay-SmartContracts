@@ -16,6 +16,7 @@ env:
   BACKEND_EOA: ${{ secrets.BACKEND_EOA }}
   BACKEND_PK: ${{ secrets.BACKEND_PK }}
   NFT_BASE_URI: https://dev.back.chatterpay.net/nft/metadata/opensea/
+  FOUNDRY_DISABLE_NIGHTLY_WARNING: 1
 
 jobs:
   check:
@@ -28,6 +29,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+    - name: Set up cache for Foundry
+        uses: actions/cache@v3
+        with:
+          path: |
+            .forge-cache
+            lib
+          key: ${{ runner.os }}-forge-cache-${{ hashFiles('**/*.sol') }}
+          restore-keys: |
 
       - name: Initialize and update submodules
         run: |
@@ -46,5 +56,5 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          yarn test:local
         id: test

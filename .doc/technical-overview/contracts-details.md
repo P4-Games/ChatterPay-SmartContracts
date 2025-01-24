@@ -1,6 +1,6 @@
 # ChatterPay Contracts Details
 
-## 1. [**ChatterPay.sol**](../../src/L2/ChatterPay.sol)
+## 1. [**ChatterPay.sol**](../../src/ChatterPay.sol)
 
 ### **High-Level Overview**:
 The `ChatterPay` contract is the core implementation of an account abstraction-based wallet. It allows users to execute transactions, manage token transfers, and interact with a paymaster for fee management. It includes mechanisms for validating user operations, performing token transfers, and interacting with external price feeds.
@@ -24,7 +24,7 @@ The `ChatterPay` contract is the core implementation of an account abstraction-b
 
 ---
 
-## 2. [**ChatterPayPaymaster.sol**](../../src/L2/ChatterPayPaymaster.sol)
+## 2. [**ChatterPayPaymaster.sol**](../../src/ChatterPayPaymaster.sol)
 
 ### **High-Level Overview**:
 The `ChatterPayPaymaster` contract is responsible for handling the payment of transaction fees on behalf of users. It validates and processes user operations by checking the signature and expiration of paymaster data, ensuring only authorized parties can execute the payment logic.
@@ -44,7 +44,7 @@ The `ChatterPayPaymaster` contract is responsible for handling the payment of tr
 
 ---
 
-## 3. [**ChatterPayNFT.sol**](../../src/L2/ChatterPayNFT.sol)
+## 3. [**ChatterPayNFT.sol**](../../src/ChatterPayNFT.sol)
 
 ### **High-Level Overview**:
 The `ChatterPayNFT` contract allows for the creation and management of NFTs associated with the ChatterPay platform. Users can mint original NFTs and create copies of these NFTs, with the ability to set limits on how many copies can be minted.
@@ -65,7 +65,7 @@ The `ChatterPayNFT` contract allows for the creation and management of NFTs asso
 
 ---
 
-## 4. [**ChatterPayVault.sol**](../../src/L2/ChatterPayNFT.sol)
+## 4. [**ChatterPayVault.sol**](../../src/ChatterPayNFT.sol)
 
 ### High-Level Summary:
 The `ChatterPayNFT` contract is an ERC721-based non-fungible token (NFT) contract that supports minting both original tokens and copies of those tokens. The contract uses upgradeable OpenZeppelin contracts and includes functionality to set a base URI for metadata, mint original tokens, mint copies, and set limits on the number of copies that can be minted. It also restricts certain actions, such as changing copy limits, to the original minter of a token.
@@ -101,7 +101,7 @@ The `ChatterPayNFT` contract is an ERC721-based non-fungible token (NFT) contrac
 
 ---
 
-## 5. [**ChatterPayWalletFactory.sol**](../../src/L2/ChatterPayWalletFactory.sol)
+## 5. [**ChatterPayWalletFactory.sol**](../../src/ChatterPayWalletFactory.sol)
 
 ### High-Level Summary:
 The `ChatterPayWalletFactory` contract is responsible for creating and managing `ChatterPayWalletProxy` instances. It enables the deployment of proxy contracts that are initialized with specific wallet implementations. The contract allows for flexible wallet creation with different owners and manages the proxy contracts. It also supports the updating of wallet implementations and tracks the deployed proxies.
@@ -136,7 +136,7 @@ The `ChatterPayWalletFactory` contract is responsible for creating and managing 
 
 ---
 
-## 6. [**ChatterPayWalletProxy.sol**](../../src/L2/ChatterPayWalletProxy.sol)
+## 6. [**ChatterPayWalletProxy.sol**](../../src/ChatterPayWalletProxy.sol)
 
 ### High-Level Summary:
 The `ChatterPayWalletProxy` contract is an upgradeable proxy that delegates calls to a logic contract. It uses the [ERC-1967 proxy pattern](https://docs.openzeppelin.com/contracts/4.x/api/proxy#ERC1967Proxy), which is a widely used standard for creating upgradeable contracts. The proxy allows the logic of the contract to be upgraded without changing the address that users interact with. This contract includes the necessary functionality to receive Ether and to view the current implementation address.
@@ -162,7 +162,7 @@ The `ChatterPayWalletProxy` contract is an upgradeable proxy that delegates call
 
 ---
 
-## 7. [**SimpleSwap.sol**](../../src/L2/SimpleSwap.sol)
+## 7. [**SimpleSwap.sol**](../../src/SimpleSwap.sol)
 
 ### High-Level Summary:
 The `SimpleSwap` contract allows users to swap between WETH (Wrapped Ether) and USDT (Tether USD). It supports liquidity provision where users can add WETH and USDT to the contract's liquidity pool and facilitate swaps between the two tokens. This contract uses the `SafeERC20` library for safe token transfers and includes a reentrancy guard to prevent reentrancy attacks.
@@ -197,7 +197,7 @@ The `SimpleSwap` contract allows users to swap between WETH (Wrapped Ether) and 
 
 ---
 
-## 8. [**USDT.sol**](../../src/L2/USDT.sol)
+## 8. [**USDT.sol**](../../src/USDT.sol)
 
 ### High-Level Summary:
 The `USDT` contract is an ERC20 token representing Tether USD (USDT). It allows for the creation of USDT tokens and provides a minting function for the contract owner to generate more tokens. The contract is based on the ERC20 standard, which is widely used for tokenizing assets in decentralized finance (DeFi) applications. The initial supply is set at 10 million USDT tokens.
@@ -223,7 +223,7 @@ The `USDT` contract is an ERC20 token representing Tether USD (USDT). It allows 
 
 ---
 
-## 9. [**WETH.sol**](../../src/L2/WETH.sol)
+## 9. [**WETH.sol**](../../src/WETH.sol)
 
 ### High-Level Summary:
 The `WETH` contract is an ERC20 token that represents Wrapped Ether (WETH). Its purpose is to allow users to mint and transfer WETH tokens, which are commonly used in DeFi applications to wrap Ether (ETH) into a token compatible with the ERC20 standard. The contract is based on the ERC20 standard and allows the owner to mint new tokens. The initial supply is fixed at 10 million tokens.
@@ -249,7 +249,7 @@ The `WETH` contract is an ERC20 token that represents Wrapped Ether (WETH). Its 
 
 ---
 
-## 10. [**PackedUserOperation.sol**](../../src/L2/utils/PackedUserOperation.sol)
+## 10. [**PackedUserOperation.sol**](../../src/utils/PackedUserOperation.sol)
 
 ### High-Level Summary:
 The `PackedUserOperation` struct is designed to bundle and pack various data points related to a user operation in a blockchain environment. This data is used in transactions or operations that involve smart contracts, particularly in systems such as account abstraction or meta-transactions. The struct captures necessary information such as the sender's address, the operation's nonce, gas limits, call data, and the user's fee preferences.

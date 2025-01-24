@@ -19,3 +19,9 @@ node_modules
 
 #lock
 package-lock.json
+
+#abis
+abi
+
+# cache
+.forge-cache

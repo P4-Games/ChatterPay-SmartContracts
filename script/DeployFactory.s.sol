@@ -1,47 +1,54 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 import {HelperConfig} from "./utils/HelperConfig.s.sol";
-import {ChatterPayWalletFactory} from "../src/L2/ChatterPayWalletFactory.sol";
+import {ChatterPayWalletFactory} from "../src/ChatterPayWalletFactory.sol";
+import {ChatterPay} from "../src/ChatterPay.sol";
 
-// address _walletImplementation,
-//         address _entryPoint,
-//         address _owner,
-//         address _paymaster
-contract DeployChatterPayWalletFactory is Script {
+/**
+ * @title DeployFactory
+ * @notice Deployment script for ChatterPayWalletFactory and its dependencies
+ * @dev Uses Foundry's Script contract for deployments
+ */
+contract DeployFactory is Script {
+    ChatterPayWalletFactory public factory;
     HelperConfig helperConfig;
+    ChatterPay implementation;
+    address entryPoint;
+    address backendEOA;
+    address paymaster;
+    address router;
 
-    function run() external {
+    /**
+     * @notice Main deployment function
+     * @dev Deploys ChatterPay implementation first, then the factory contract
+     * @return ChatterPayWalletFactory The deployed factory contract
+     */
+    function run() public returns (ChatterPayWalletFactory) {
         helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+        entryPoint = config.entryPoint;
+        backendEOA = config.account;
+        paymaster = vm.envAddress("PAYMASTER_ADDRESS");
+        router = vm.envAddress("ROUTER_ADDRESS");
 
-        // This will get the address of the most recent deployment of the ChatterPay Implementation contract
-        // If you want to set the implementation to a different address, you can do so here
-        address implementation = DevOpsTools.get_most_recent_deployment(
-            "ChatterPay",
-            block.chainid
+        vm.startBroadcast(config.account);
+
+        implementation = new ChatterPay();
+        console.log("ChatterPay implementation deployed at:", address(implementation));
+
+        factory = new ChatterPayWalletFactory(
+            address(implementation),
+            entryPoint,
+            backendEOA,
+            paymaster,
+            router
         );
 
-        // This will get the address of the most recent deployment of the ChatterPayPaymaster contract
-        // If you want to set the paymaster to a different address, you can do so here
-        address paymaster = DevOpsTools.get_most_recent_deployment(
-            "ChatterPayPaymaster",
-            block.chainid
-        );
-
-        vm.startBroadcast();
-
-        ChatterPayWalletFactory chatterPayWalletFactory = new ChatterPayWalletFactory(
-                implementation,
-                config.entryPoint,
-                config.account,
-                paymaster
-            );
-
-        console.log("Factory deployed to:", address(chatterPayWalletFactory));
+        console.log("Factory deployed at:", address(factory));
 
         vm.stopBroadcast();
+        return factory;
     }
 }
