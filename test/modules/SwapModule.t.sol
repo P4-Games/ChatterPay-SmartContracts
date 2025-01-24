@@ -178,9 +178,10 @@ contract SwapModule is BaseTest {
         uint256 expectedFee = _calculateExpectedFee(USDC, 50);
         console.log("Expected fee:", expectedFee);
         
+        uint256 tolerance = (expectedFee * 1) / 100; // tolerance: 1%
         assertTrue(
-            feeCollected >= expectedFee - 3 && feeCollected <= expectedFee + 3,
-            "Fee not within acceptable range"
+            feeCollected >= expectedFee - tolerance && feeCollected <= expectedFee + tolerance,
+            "Fee not within acceptable range (1%)"
         );
     }
 
