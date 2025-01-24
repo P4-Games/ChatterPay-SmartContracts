@@ -9,39 +9,39 @@ These smart contracts collectively create a robust ecosystem for wallet manageme
 1. [**ChatterPay.sol**](../../src/ChatterPay.sol)  
 Core wallet contract for ChatterPay, handling user operations, token transfers, and transaction fee management.
 
-2. [**ChatterPayPaymaster.sol**](../../src/ChatterPayPaymaster.sol)  
-Fee manager contract that ensures transaction fees are paid on behalf of users, supporting the account abstraction model of ChatterPay.
+# ChatterPay Contracts Overview
 
-3. [**ChatterPayNFT.sol**](../../src/ChatterPayNFT.sol)  
-Manages the minting of original NFTs and their associated copies, with controls for copy limits and owner management.
+## Summary
 
-4. [**ChatterPayVault.sol**](../../src/ChatterPayNFT.sol)  
-Handles secure storage and management of assets within the ChatterPay ecosystem, providing vault services for users.
+These smart contracts collectively form a powerful ecosystem for wallet management, token price feeds, NFT handling, and transaction facilitation. They offer flexibility, upgradeability, and security by implementing advanced features like account abstraction, Uniswap V3 integration, secure wallet deployment, NFT minting, password-protected vaults, and real-time price feed management. The system enables efficient wallet creation, user operations management, token swaps, and NFT minting with robust mechanisms to handle fees, slippage, and external data feeds.
+
+## Contracts List:
+
+1. [**ChatterPay.sol**](../../src/ChatterPay.sol)  
+   Core wallet contract for ChatterPay, supporting ERC-4337 account abstraction, Uniswap integration, transaction fee management, and token whitelisting.
+
+2. [**ChatterPayNFT.sol**](../../src/ChatterPayNFT.sol)  
+   Manages the minting of original NFTs and their limited copies. Includes functionality for copy limits, metadata updates, and ownership management, using an upgradeable proxy structure.
+
+3. [**ChatterPayPaymaster.sol**](../../src/ChatterPayPaymaster.sol)  
+   Paymaster contract that validates and manages user operations with signature-based authentication and fee handling, integrated with the EntryPoint contract.
+
+4. [**ChatterPayVault.sol**](../../src/ChatterPayVault.sol)  
+   A vault contract that handles password-protected payments, commitments, and secure asset storage with mechanisms for reservation, redemption, and cancellation.
 
 5. [**ChatterPayWalletFactory.sol**](../../src/ChatterPayWalletFactory.sol)  
-A wallet factory contract that creates proxy wallets for users, tracks proxies, and allows for updates to wallet implementations.
+   Factory contract for deploying and managing ChatterPay wallet proxies. Provides deterministic address computation, proxy tracking, and upgradeability.
 
 6. [**ChatterPayWalletProxy.sol**](../../src/ChatterPayWalletProxy.sol)  
-A proxy contract for ChatterPay wallets, allowing for upgradeable wallet functionality using [ERC-1967 Proxy](https://docs.openzeppelin.com/contracts/4.x/api/proxy#ERC1967Proxy), and providing a method to retrieve the current wallet implementation.
+   An upgradeable proxy contract for ChatterPay wallets, leveraging the ERC-1967 Proxy standard to enable wallet upgrades and version control.
 
-7. [**SimpleSwap.sol**](../../src/SimpleSwap.sol)  
-Implements a simple token swapping mechanism, allowing users to swap between supported tokens within the ChatterPay ecosystem.
+7. [**AggregatorV3Interface.sol**](../../src/interfaces/AggregatorV3Interface.sol)  
+   Interface for interacting with Chainlink price feed aggregators, providing methods to fetch price data and metadata for token feeds.
 
-8. [**USDT.sol**](../../src/USDT.sol)  
-A contract representing the USDT (Tether) token on Layer 2, enabling stablecoin transactions within the ChatterPay platform.
+8. [**ISwapRouter.sol**](../../src/interfaces/ISwapRouter.sol)  
+   Interface for the Uniswap V3 swap router, enabling precise control over token swaps, slippage, and multi-hop routing.
 
-9. [**WETH.sol**](../../src/WETH.sol)  
-A contract for wrapping and unwrapping ETH as WETH (Wrapped Ether), allowing users to interact with ETH as an ERC-20 token in the ChatterPay ecosystem.
-
-10. [**PackedUserOperation.sol**](../../src/utils/PackedUserOperation.sol)  
-Defines the structure for user operations, including details like gas limits, fees, and operation signatures, enabling flexible interaction with the wallet system.
-
-11. [**L1Keystore.sol**](../../src/Ethereum/L1Keystore.sol)  
-Stores wallet data on Layer 1, managing user accounts, wallet registrations, and key-value storage, with access control for key updates.
-
-12. [**TokensPriceFeeds.sol**](../../src/Ethereum/TokensPriceFeeds.sol)  
-Reads and manages token price feeds (ETH/USD, BTC/USD) from external proxy contracts, ensuring the data is up-to-date and valid.
-
+---
 
 Representation of Chatterpay's Smart Contracts Flow:
 
