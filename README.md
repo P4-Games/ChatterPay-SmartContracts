@@ -1,6 +1,3 @@
-I'll help you update the README.md with the optimized foundry configuration and scripts we discussed. Here's the updated version:
-
-```markdown
 ![](https://img.shields.io/badge/Solidity-informational?style=flat&logo=solidity&logoColor=white&color=6aa6f8)
 ![](https://img.shields.io/badge/Foundry-informational?style=flat&logo=foundry&logoColor=white&color=6aa6f8)
 ![](https://img.shields.io/badge/Blockchain-informational?style=flat&logo=blockchain&logoColor=white&color=6aa6f8)
@@ -23,6 +20,7 @@ __Components__:
 - Backend API ([source code](https://github.com/P4-Games/ChatterPay-Backend)) 
 - Smart Contracts ([source code](https://github.com/P4-Games/ChatterPay-SmartContracts)) (this Repo)
 - Data Indexing (Subgraph) ([source code](https://github.com/P4-Games/ChatterPay-Subgraph))
+-   Bot AI Admin Dashboard Website ([product](https://app.chatizalo.com/))
 - Bot AI (Chatizalo) ([product](https://chatizalo.com/))
 - Bot AI Admin Dashboard Website ([product](https://app.chatizalo.com/))
 
@@ -129,5 +127,5 @@ Please make sure your contributions adhere to our [coding guidelines](./.doc/dev
 
 _Contributors_: 
 
-* [tomasfrancizco](https://github.com/tomasfrancizco) - [dappsar](https://github.com/dappsar) - [tomasDmArg](https://github.com/TomasDmArg)
+* [tomasDmArg](https://github.com/TomasDmArg) - [tomasfrancizco](https://github.com/tomasfrancizco) - [dappsar](https://github.com/dappsar)
 * See more in: <https://github.com/P4-Games/chatterPay-SmartContracts/graphs/contributors>
