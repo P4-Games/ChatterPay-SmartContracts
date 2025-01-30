@@ -44,6 +44,8 @@ interface IUniswapV3Pool {
         uint8 feeProtocol,
         bool unlocked
     );
+
+    function liquidity() external view returns (uint128);
 }
 
 interface INonfungiblePositionManager {
