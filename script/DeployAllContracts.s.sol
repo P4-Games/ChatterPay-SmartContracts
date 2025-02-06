@@ -76,7 +76,7 @@ contract DeployAllContracts is Script {
         vm.startBroadcast(config.account);
 
         console2.log(
-            "Deploying ChatterPay contracts on chainId %s with account: %s",
+            "Deploying ChatterPay contracts on chainId %d with account: %d",
             block.chainid,
             config.account
         );
@@ -103,8 +103,8 @@ contract DeployAllContracts is Script {
      */
     function deployPaymaster() internal {
         paymaster = new ChatterPayPaymaster(config.entryPoint, config.account);
-        console2.log("Paymaster deployed at address %s", address(paymaster));
-        console2.log("EntryPoint used at address %s", config.entryPoint);
+        console2.log("Paymaster deployed at address %d", address(paymaster));
+        console2.log("EntryPoint used at address %d", config.entryPoint);
     }
 
     /**
@@ -118,7 +118,7 @@ contract DeployAllContracts is Script {
             address(paymaster),
             config.router
         );
-        console2.log("Wallet Factory deployed at address %s:", address(factory));
+        console2.log("Wallet Factory deployed at address %d:", address(factory));
     }
 
     /**
@@ -127,7 +127,7 @@ contract DeployAllContracts is Script {
     function deployChatterPay() internal {
         // Deploy the ChatterPay contract using UUPS Proxy via Upgrades library
         address proxy = Upgrades.deployUUPSProxy(
-            "ChatterPay", // Contract name as string
+            "ChatterPay.sol:ChatterPay", // Contract name as string
             abi.encodeWithSignature(
                 "initialize(address,address,address,address,address)",
                 config.entryPoint,  // _entryPoint
@@ -144,7 +144,7 @@ contract DeployAllContracts is Script {
         // Assign the proxy to the ChatterPay contract instance
         chatterPay = ChatterPay(payableProxy);
 
-        console2.log("ChatterPay Proxy deployed at %s", address(chatterPay));
+        console2.log("ChatterPay Proxy deployed at %d", address(chatterPay));
     }
 
     /**
@@ -154,7 +154,7 @@ contract DeployAllContracts is Script {
         // Deploy the ChatterPayNFT contract using Transparent Proxy via Upgrades library
         chatterPayNFT = ChatterPayNFT(
             Upgrades.deployTransparentProxy(
-                "ChatterPayNFT", // Contract name as string
+                "ChatterPayNFT.sol:ChatterPayNFT", // Contract name as string
                 config.account,  // Initial owner
                 abi.encodeWithSignature(
                     "initialize(address,string)",
@@ -164,7 +164,7 @@ contract DeployAllContracts is Script {
             )
         );
 
-        console2.log("ChatterPayNFT Proxy deployed at %s:", address(chatterPayNFT));
+        console2.log("ChatterPayNFT Proxy deployed at %d:", address(chatterPayNFT));
     }
 
     /**
@@ -177,8 +177,28 @@ contract DeployAllContracts is Script {
 
             // Whitelist the token and set its corresponding price feed
             chatterPay.setTokenWhitelistAndPriceFeed(token, true, priceFeed);
-            console2.log("Token %s whitelisted with Price Feed %s", address(token), address(priceFeed));
+            console2.log("Token %d whitelisted with Price Feed %d", address(token), address(priceFeed));
         }
+    }
+
+    /**
+     * This function allows the contract to mint test tokens for the Uniswap pool (Only in test networks)
+     */
+    function mintTestTokens() internal {
+        // Cantidad a mintear (100M)
+        uint256 mintAmountUSDT = 100_000_000 * 1e6;  // USDT usa 6 decimales
+        uint256 mintAmountWETH = 100_000_000 * 1e18; // WETH usa 18 decimales
+
+        // Interfaz para mintear tokens de prueba
+        bytes memory mintData = abi.encodeWithSignature("mint(address,uint256)", config.account, mintAmountUSDT);
+        (bool successA,) = tokens[0].call(mintData);
+        require(successA, "Failed to mint tokenA");
+        console2.log("Minted %d tokens A to %s", mintAmountUSDT, config.account);
+
+        mintData = abi.encodeWithSignature("mint(address,uint256)", config.account, mintAmountWETH);
+        (bool successB,) = tokens[1].call(mintData);
+        require(successB, "Failed to mint tokenB");
+        console2.log("Minted %d tokens B to %s", mintAmountWETH, config.account);
     }
 
     /**
@@ -191,71 +211,124 @@ contract DeployAllContracts is Script {
         address tokenA = tokens[0];
         address tokenB = tokens[1];
 
-        // Check if the pool already exists
-        address pool = IUniswapV3Factory(uniswapFactory).getPool(tokenA, tokenB, poolFee);
-        if (pool == address(0)) {
-            console2.log("Pool not found. Creating pool...");
-            pool = IUniswapV3Factory(uniswapFactory).createPool(tokenA, tokenB, poolFee);
-            console2.log("Pool created at address %s", pool);
+        // Log the addresses we're working with
+        console2.log("Configuring Uniswap pool with:");
+        console2.log("- TokenA:", tokenA);
+        console2.log("- TokenB:", tokenB);
+        console2.log("- Factory:", uniswapFactory);
+        console2.log("- Position Manager:", uniswapPositionManager);
+        console2.log("- Fee:", poolFee);
 
-            // Initialize the pool with an initial price (e.g., 1:1)
-            uint160 sqrtPriceX96 = 79228162514264337593543950336; // 1 * 2^96
-            IUniswapV3Pool(pool).initialize(sqrtPriceX96);
-            console2.log("Pool initialized with sqrtPriceX96: %s", sqrtPriceX96);
-        } else {
-            console2.log("Existing pool found at address %s", pool);
+        // Verify the factory contract exists
+        address factory = uniswapFactory;
+        uint256 factorySize;
+        assembly {
+            factorySize := extcodesize(factory)
         }
+        require(factorySize > 0, "Uniswap factory not deployed at specified address");
 
-        // Retrieve existing liquidity in the pool
-        uint128 existingLiquidity = IUniswapV3Pool(pool).liquidity();
-        console2.log("Existing liquidity in the pool: %s", existingLiquidity);
-
-        // Define a minimum liquidity threshold (e.g., 500,000 units)
-        uint128 minLiquidityThreshold = 500_000 * 1e6;
-
-        if (existingLiquidity < minLiquidityThreshold) {
-            console2.log("Liquidity below threshold. Adding liquidity...");
-
-            // Retrieve token balances of the deployer account
-            uint256 balanceA = IERC20Extended(tokenA).balanceOf(config.account);
-            uint256 balanceB = IERC20Extended(tokenB).balanceOf(config.account);
-
-            if (balanceA > 0 && balanceB > 0) {
-                console2.log("Adding liquidity to the pool...");
-
-                // Approve the Position Manager to spend tokens
-                IERC20(tokenA).approve(uniswapPositionManager, balanceA);
-                IERC20(tokenB).approve(uniswapPositionManager, balanceB);
-                console2.log("Tokens approved for Position Manager");
-
-                // Define ticks with a wide range
-                int24 tickSpacing = 60; // Depends on the pool's fee tier
-                int24 tickLower = (-887220 / tickSpacing) * tickSpacing;
-                int24 tickUpper = (887220 / tickSpacing) * tickSpacing;
-
-                // Create parameters for minting liquidity position
-                INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams({
-                    token0: tokenA,
-                    token1: tokenB,
-                    fee: poolFee,
-                    tickLower: tickLower,
-                    tickUpper: tickUpper,
-                    amount0Desired: balanceA,
-                    amount1Desired: balanceB,
-                    amount0Min: 0,
-                    amount1Min: 0,
-                    recipient: config.account,
-                    deadline: block.timestamp + 1000
-                });
-
-                // Mint the liquidity position
-                (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = INonfungiblePositionManager(uniswapPositionManager).mint(params);
-                console2.log("Liquidity added: tokenId=%s, liquidity=%s, amount0=%s, amount1=%s", tokenId, liquidity, amount0, amount1);
+        mintTestTokens();
+        
+        try IUniswapV3Factory(uniswapFactory).getPool(tokenA, tokenB, poolFee) returns (address pool) {
+            if (pool == address(0)) {
+                console2.log("Pool does not exist. Creating new pool...");
+                try IUniswapV3Factory(uniswapFactory).createPool(tokenA, tokenB, poolFee) returns (address newPool) {
+                    console2.log("Pool created at address:", newPool);
+                    
+                    // Initialize the pool with a sqrt price of 1
+                    uint160 sqrtPriceX96 = 79228162514264337593543950336; // 1 * 2^96
+                    try IUniswapV3Pool(newPool).initialize(sqrtPriceX96) {
+                        console2.log("Pool initialized successfully");
+                        pool = newPool;
+                    } catch Error(string memory reason) {
+                        console2.log("Failed to initialize pool:", reason);
+                        return;
+                    }
+                } catch Error(string memory reason) {
+                    console2.log("Failed to create pool:", reason);
+                    return;
+                }
             } else {
-                console2.log("Insufficient balance to add liquidity.");
+                console2.log("Existing pool found at:", pool);
             }
-        } else {
-            console2.log("Sufficient liquidity already exists. No need to add more.");
+
+            // Try to read the liquidity
+            try IUniswapV3Pool(pool).liquidity() returns (uint128 existingLiquidity) {
+                console2.log("Current pool liquidity:", existingLiquidity);
+                
+                uint128 minLiquidityThreshold = 500_000 * 1e6;
+                if (existingLiquidity < minLiquidityThreshold) {
+                    console2.log("Liquidity below threshold. Will attempt to add liquidity...");
+                    addLiquidityToPool(tokenA, tokenB, pool);
+                }
+            } catch Error(string memory reason) {
+                console2.log("Failed to read liquidity:", reason);
+            }
+        } catch Error(string memory reason) {
+            console2.log("Failed to get pool:", reason);
+            return;
+        }
+    }
+
+    function addLiquidityToPool(address tokenA, address tokenB, address pool) internal {
+        try IERC20Extended(tokenA).balanceOf(config.account) returns (uint256 balanceA) {
+            try IERC20Extended(tokenB).balanceOf(config.account) returns (uint256 balanceB) {
+                console2.log("Token balances:");
+                console2.log("- TokenA:", balanceA);
+                console2.log("- TokenB:", balanceB);
+
+                if (balanceA > 0 && balanceB > 0) {
+                    // Approve tokens
+                    try IERC20(tokenA).approve(uniswapPositionManager, balanceA) returns (bool success) {
+                        require(success, "Failed to approve tokenA");
+                        try IERC20(tokenB).approve(uniswapPositionManager, balanceB) returns (bool success2) {
+                            require(success2, "Failed to approve tokenB");
+                            
+                            console2.log("Tokens approved for Position Manager");
+
+                            // Create position
+                            int24 tickSpacing = 60;
+                            int24 tickLower = (-887220 / tickSpacing) * tickSpacing;
+                            int24 tickUpper = (887220 / tickSpacing) * tickSpacing;
+
+                            INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams({
+                                token0: tokenA,
+                                token1: tokenB,
+                                fee: poolFee,
+                                tickLower: tickLower,
+                                tickUpper: tickUpper,
+                                amount0Desired: balanceA,
+                                amount1Desired: balanceB,
+                                amount0Min: 0,
+                                amount1Min: 0,
+                                recipient: config.account,
+                                deadline: block.timestamp + 1000
+                            });
+
+                            try INonfungiblePositionManager(uniswapPositionManager).mint(params) returns
+                                (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) {
+                                console2.log("Successfully added liquidity:");
+                                console2.log("- Token ID:", tokenId);
+                                console2.log("- Liquidity:", liquidity);
+                                console2.log("- Amount0:", amount0);
+                                console2.log("- Amount1:", amount1);
+                            } catch Error(string memory reason) {
+                                console2.log("Failed to mint position:", reason);
+                            }
+                        } catch Error(string memory reason) {
+                            console2.log("Failed to approve tokenB:", reason);
+                        }
+                    } catch Error(string memory reason) {
+                        console2.log("Failed to approve tokenA:", reason);
+                    }
+                } else {
+                    console2.log("Insufficient balance to add liquidity");
+                }
+            } catch Error(string memory reason) {
+                console2.log("Failed to get tokenB balance:", reason);
+            }
+        } catch Error(string memory reason) {
+            console2.log("Failed to get tokenA balance:", reason);
         }
     }
 
@@ -264,7 +337,7 @@ contract DeployAllContracts is Script {
      */
     function deployVault() internal {
         vault = new ChatterPayVault();
-        console2.log("Vault deployed at address %s:", address(vault));
+        console2.log("Vault deployed at address %d:", address(vault));
     }
 
     /**
