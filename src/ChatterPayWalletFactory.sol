@@ -157,10 +157,12 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
      */
     function getProxyBytecode(address _owner) internal view returns (bytes memory) {
         bytes memory initializationCode = abi.encodeWithSignature(
-            "initialize(address,address,address)",
+            "initialize(address,address,address,address,address)",
             entryPoint,
             _owner,
-            paymaster
+            paymaster,
+            router,
+            address(this)
         );
         return abi.encodePacked(
             type(ERC1967Proxy).creationCode,
