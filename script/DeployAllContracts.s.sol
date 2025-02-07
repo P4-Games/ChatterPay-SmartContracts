@@ -138,12 +138,17 @@ contract DeployAllContracts is Script {
             )
         );
 
+        // Get the implementation address
+        address implementation = Upgrades.getImplementationAddress(proxy);
+        console2.log("ChatterPay Implementation deployed at %d", implementation);
+
+        // Update the factory with the correct implementation
+        factory.setImplementationAddress(implementation);
+        console2.log("Factory implementation updated to %d", implementation);
+
         // Cast the proxy address to payable
         address payable payableProxy = payable(proxy);
-
-        // Assign the proxy to the ChatterPay contract instance
         chatterPay = ChatterPay(payableProxy);
-
         console2.log("ChatterPay Proxy deployed at %d", address(chatterPay));
     }
 
