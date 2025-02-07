@@ -10,9 +10,10 @@
         "test:gas": "REPORT_GAS=true FOUNDRY_PROFILE=production bash test/run_all_tests.sh",
         "clean": "forge clean",
         "clean:full": "forge clean && rm -rf cache .forge-cache",
-        "deploy:simulate": "bash script/deploy.sh simulate",
-        "deploy:prod": "bash script/deploy.sh prod",
-        "deploy:chatterpay": "bash script/deploy.sh chatterpay",
+        "deploy:arbitrum-sepolia": "make deploy_arbitrum_sepolia_all",
+        "deploy:arbitrum-sepolia:verify": "make deploy_verify_arbitrum_sepolia_all",
+        "deploy:chatterpay": "make deploy_arbitrum_sepolia_only_chatterpay",
+        "deploy:chatterpay:verify": "make deploy_verify_arbitrum_sepolia_only_chatterpay",
         "generate-types": "typechain --target=ethers-v5 './src/artifacts/**/*.json'",
         "generate:abis": "bash script/generate_abis.sh"
     },
