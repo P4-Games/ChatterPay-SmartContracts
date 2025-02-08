@@ -1,6 +1,7 @@
 # Compiler files
 cache/
 out/
+*.log
 
 # Ignores development broadcast logs
 /broadcast
@@ -25,3 +26,6 @@ abi
 
 # cache
 .forge-cache
+
+# Coverage temp files
+lcov.info

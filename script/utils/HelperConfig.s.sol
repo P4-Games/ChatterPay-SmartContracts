@@ -34,6 +34,7 @@ contract HelperConfig is Script {
         address usdt;
         address weth;
         address matic;
+        address router;
         address account;
     }
 
@@ -114,9 +115,10 @@ contract HelperConfig is Script {
             NetworkConfig({
                 entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.7
                 usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
-                usdt: 0x7169D38820dfd117C3FA1f22a697dBA58d90BA06,
-                weth: 0x0000000000000000000000000000000000000000, // address TBD
+                usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
+                weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
                 matic: 0x0000000000000000000000000000000000000000, // address TBD
+                router: 0x101F443B4d1b059569D643917553c771E1b9663E,
                 account: BACKEND_SIGNER
             });
     }
@@ -133,10 +135,11 @@ contract HelperConfig is Script {
         return
             NetworkConfig({
                 entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.7
-                usdc: 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d,
-                usdt: 0x961bf3bf61d3446907E0Db83C9c5D958c17A94f6, // address TBD
-                weth: 0x0000000000000000000000000000000000000000, // address TBD
+                usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
+                usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
+                weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
                 matic: 0x0000000000000000000000000000000000000000, // address TBD
+                router: 0x101F443B4d1b059569D643917553c771E1b9663E,
                 account: BACKEND_SIGNER
             });
     }
@@ -153,10 +156,11 @@ contract HelperConfig is Script {
         return
             NetworkConfig({
                 entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.7
-                usdc: 0x0000000000000000000000000000000000000000, // address to be deployed
-                usdt: 0x0000000000000000000000000000000000000000, // address TBD
-                weth: 0x0000000000000000000000000000000000000000, // address TBD
+                usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
+                usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
+                weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
                 matic: 0x0000000000000000000000000000000000000000, // address TBD
+                router: 0x101F443B4d1b059569D643917553c771E1b9663E,
                 account: BACKEND_SIGNER
             });
     }
@@ -173,10 +177,11 @@ contract HelperConfig is Script {
         return
             NetworkConfig({
                 entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.7
-                usdc: 0x0000000000000000000000000000000000000000, // address to be deployed
-                usdt: 0x0000000000000000000000000000000000000000, // address TBD
-                weth: 0x0000000000000000000000000000000000000000, // address TBD
+                usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
+                usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
+                weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
                 matic: 0x0000000000000000000000000000000000000000, // address TBD
+                router: 0x101F443B4d1b059569D643917553c771E1b9663E,
                 account: BACKEND_SIGNER
             });
     }
@@ -193,10 +198,11 @@ contract HelperConfig is Script {
         return
             NetworkConfig({
                 entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.7
-                usdc: 0x5fd84259d66Cd46123540766Be93DFE6D43130D7,
-                usdt: 0x0000000000000000000000000000000000000000, // address TBD
-                weth: 0x0000000000000000000000000000000000000000, // address TBD
+                usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
+                usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
+                weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
                 matic: 0x0000000000000000000000000000000000000000, // address TBD
+                router: 0x101F443B4d1b059569D643917553c771E1b9663E,
                 account: BACKEND_SIGNER
             });
     }
@@ -233,6 +239,7 @@ contract HelperConfig is Script {
             usdt: address(usdtMock),
             weth: address(wethMock),
             matic: address(maticMock),
+            router: 0x101F443B4d1b059569D643917553c771E1b9663E,
             account: BACKEND_SIGNER
         });
         return localNetworkConfig;
