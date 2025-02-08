@@ -33,7 +33,7 @@ while [ $attempt -le $MAX_RETRIES ]; do
         -vvv \
         --match-path "test/modules/*" \
         --ffi \
-        -j 8 \
+        -j 1 \
         --gas-report \
         --cache-path .forge-cache
 
