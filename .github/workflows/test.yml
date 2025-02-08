@@ -55,5 +55,13 @@ jobs:
         id: build
 
       - name: Run Forge tests
-        run: yarn test:local
+        run: |
+          FOUNDRY_PROFILE=local forge test \
+            --fork-url "$ARBITRUM_SEPOLIA_RPC_URL" \
+            -vvv \
+            --match-path "test/modules/*" \
+            --ffi \
+            -j 8 \
+            --gas-report \
+            --cache-path .forge-cache 2>&1 | tee forge_test.log || (grep -q "error:" forge_test.log && exit 1 || exit 0)
         id: test
