@@ -29,6 +29,7 @@ FOUNDRY_PROFILE=$PROFILE forge test \
     --gas-report \
     --cache-path .forge-cache
 
+
 # Store test result
 test_result=$?
 
