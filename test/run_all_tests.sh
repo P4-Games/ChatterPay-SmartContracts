@@ -31,7 +31,7 @@ FOUNDRY_PROFILE=$PROFILE FOUNDRY_FUZZ_RUNS=0 forge test \
     --ffi \
     -j 1 \
     --gas-report \
-    --cache-path .forge-cache 2>&1 | tee test_results.log
+    --cache-path .forge-cache 2>&1 | tee test_results.log | grep -v 'testFail* has been removed'
 
 # Extract failing tests
 grep '\[FAIL:' test_results.log | awk '{print $2}' | sed 's/:.*//' | sort -u > failed_tests.log
@@ -59,7 +59,7 @@ while [[ $attempt -le $MAX_RETRIES && $num_fails -gt 0 ]]; do
             --ffi \
             -j 1 \
             --gas-report \
-            --cache-path .forge-cache
+            --cache-path .forge-cache 2>&1 | tee test_results.log | grep -v 'testFail* has been removed'
     done < failed_tests.log
 
     # Check if any tests still fail

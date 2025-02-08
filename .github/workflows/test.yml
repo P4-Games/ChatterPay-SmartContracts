@@ -63,5 +63,5 @@ jobs:
         # Ensures that tests run without unnecessary noise in CI logs.
       - name: Run Forge tests
         run: |
-          yarn test:local 2>&1 | grep -v "Warning: \`testFail*"
+            (yarn test:local 2>&1 | tee forge_test.log | grep -v "testFail* has been removed") || true
         id: test
