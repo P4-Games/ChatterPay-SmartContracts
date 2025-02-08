@@ -1,5 +1,6 @@
 {
     "name": "chatterpay-contracts",
+    "license": "MIT",
     "type": "module",
     "scripts": {
         "build:local": "FOUNDRY_PROFILE=local forge build",
