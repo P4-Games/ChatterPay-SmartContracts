@@ -3,11 +3,12 @@ name: test
 on:
   push:
     branches:
-    - '*'
+      - '*'
   pull_request:
     branches:
       - develop
       - main
+
 env:
   FOUNDRY_PROFILE: ci
   ETH_SEPOLIA_RPC_URL: ${{ secrets.ETH_SEPOLIA_RPC_URL }}
@@ -26,22 +27,21 @@ jobs:
     name: Foundry project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
-    - name: Set up cache for Foundry
+      - name: Set up cache for Foundry
         uses: actions/cache@v3
         with:
           path: |
             .forge-cache
             lib
           key: ${{ runner.os }}-forge-cache-${{ hashFiles('**/*.sol') }}
-          restore-keys: |
 
       - name: Initialize and update submodules
-        run: |
-          git submodule update --init --recursive
+        run: git submodule update --init --recursive
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
@@ -55,6 +55,5 @@ jobs:
         id: build
 
       - name: Run Forge tests
-        run: |
-          yarn test:local
+        run: yarn test:local
         id: test
