@@ -189,7 +189,7 @@ contract SwapModule is BaseTest {
      * @notice Tests swap failure scenarios
      * @dev Attempts swap with non-whitelisted token to verify proper error handling
      */
-    function testRevertWhenTokenNotWhitelisted() public {
+    function testFailInvalidSwap() public {
         uint256 amountIn = 1000e6;
         _fundWallet(moduleWalletAddress, amountIn);
         
