@@ -9,7 +9,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Determine profile based on environment variable (default to "local")
-PROFILE=${FORGE_PROFILE:-"local"}
+PROFILE=${FOUNDRY_PROFILE:-"local"}
 
 # Maximum retries and delay for handling RPC rate limits (429)
 MAX_RETRIES=3  # Maximum number of retries
