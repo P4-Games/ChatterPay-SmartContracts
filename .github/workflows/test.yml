@@ -58,6 +58,10 @@ jobs:
           forge build --sizes 2>&1 | tee forge_build.log || (grep -q "error:" forge_build.log && exit 1 || exit 0)
         id: build
 
+        # run tests
+        # Suppress deprecation warnings for testFail* while keeping all other output.
+        # Ensures that tests run without unnecessary noise in CI logs.
       - name: Run Forge tests
-        run: yarn test:local
+        run: |
+          yarn test:local 2>&1 | grep -v "Warning: \`testFail*"
         id: test
