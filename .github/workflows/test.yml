@@ -49,6 +49,9 @@ jobs:
         with:
           version: nightly
 
+      - name: Export all required environment variables to .env
+        run: env | grep -E '^(FOUNDRY_PROFILE|ARBITRUM_SEPOLIA_RPC_URL|ETH_SEPOLIA_RPC_URL|SCROLL_SEPOLIA_RPC_URL|PRIVATE_KEY|BACKEND_EOA|BACKEND_PK|NFT_BASE_URI|FOUNDRY_DISABLE_NIGHTLY_WARNING)=' > .env
+
       - name: Run Forge build
         run: |
           forge --version
@@ -56,13 +59,5 @@ jobs:
         id: build
 
       - name: Run Forge tests
-        run: |
-          FOUNDRY_PROFILE=local forge test \
-            --fork-url "$ARBITRUM_SEPOLIA_RPC_URL" \
-            -vvv \
-            --match-path "test/modules/*" \
-            --ffi \
-            -j 1 \
-            --gas-report \
-            --cache-path .forge-cache 2>&1 | tee forge_test.log || (grep -q "error:" forge_test.log && exit 1 || exit 0)
+        run: yarn test:local
         id: test
