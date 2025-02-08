@@ -1,4 +1,4 @@
-name: ChatterPay Smart Contract CI
+name: Smart Contract Tests
 
 on:
   push:

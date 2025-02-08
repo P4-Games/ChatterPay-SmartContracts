@@ -1,4 +1,4 @@
-name: ChatterPay Security Analysis
+name: Smart Contract Security Analysis
 on:
   push:
     branches:
