@@ -82,7 +82,7 @@ yarn run test:local
 yarn run test:prod
 
 # Run coverage tests
-yarn run test:coverage
+yarn run test:coverage:local
 
 # Run gas report
 yarn run test:gas
@@ -95,14 +95,12 @@ forge fmt
 
 _Deploy_
 ```bash
-# Deploy Simulation
-yarn run deploy:simulate
 
 # Real Deploy
-yarn run deploy:prod
+yarn run deploy:arbitrum-sepolia
 
 # Real Deploy + Verify contracts
-yarn run deploy:verify
+yarn run deploy:arbitrum-sepolia:verify
 
 # Deploy only ChatterPay contract
 yarn run deploy:chatterpay
