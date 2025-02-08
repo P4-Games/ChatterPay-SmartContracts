@@ -62,7 +62,7 @@ jobs:
             -vvv \
             --match-path "test/modules/*" \
             --ffi \
-            -j 8 \
+            -j 1 \
             --gas-report \
             --cache-path .forge-cache 2>&1 | tee forge_test.log || (grep -q "error:" forge_test.log && exit 1 || exit 0)
         id: test
