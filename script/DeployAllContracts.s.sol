@@ -102,9 +102,12 @@ contract DeployAllContracts is Script {
      * @notice Deploys the ChatterPayPaymaster contract
      */
     function deployPaymaster() internal {
+        // Deploy paymaster with entryPoint and backend signer (which is the config.account in this case)
         paymaster = new ChatterPayPaymaster(config.entryPoint, config.account);
+        
         console2.log("Paymaster deployed at address %d", address(paymaster));
         console2.log("EntryPoint used at address %d", config.entryPoint);
+        console2.log("Backend signer set to %d", config.account);
     }
 
     /**
