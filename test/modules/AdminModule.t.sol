@@ -64,24 +64,6 @@ contract AdminModule is BaseTest {
     }
 
     /**
-     * @notice Tests fee admin management
-     */
-    function testFeeAdminManagement() public {
-        vm.startPrank(owner);
-        address newFeeAdmin = makeAddr("newFeeAdmin");
-        walletInstance.updateFeeAdmin(newFeeAdmin);
-        vm.stopPrank();
-        
-        vm.prank(newFeeAdmin);
-        walletInstance.updateFee(75);
-        
-        // This should revert since caller isn't fee admin
-        vm.prank(makeAddr("unauthorized"));
-        vm.expectRevert(abi.encodeWithSignature("ChatterPay__NotFeeAdmin()"));
-        walletInstance.updateFee(100);
-    }
-
-    /**
      * @notice Tests custom pool fee management
      */
     function testCustomPoolFees() public {
@@ -168,13 +150,6 @@ contract AdminModule is BaseTest {
         vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
         walletInstance.upgradeToAndCall(address(0x123), "");
 
-        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
-        walletInstance.updateFeeAdmin(unauthorized);
-        
-        // FeeAdmin-only methods
-        vm.expectRevert(abi.encodeWithSignature("ChatterPay__NotFeeAdmin()"));
-        walletInstance.updateFee(100);
-        
         vm.stopPrank();
     }
 

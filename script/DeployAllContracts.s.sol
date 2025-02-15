@@ -228,10 +228,10 @@ contract DeployAllContracts is Script {
         console2.log("- Fee:", poolFee);
 
         // Verify the factory contract exists
-        address factory = uniswapFactory;
+        address uniswapFactoryAddress = uniswapFactory;
         uint256 factorySize;
         assembly {
-            factorySize := extcodesize(factory)
+            factorySize := extcodesize(uniswapFactoryAddress)
         }
         require(factorySize > 0, "Uniswap factory not deployed at specified address");
 
