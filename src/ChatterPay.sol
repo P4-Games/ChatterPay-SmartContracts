@@ -172,13 +172,25 @@ contract ChatterPay is
         address _newOwner,
         address _paymaster,
         address _router,
-        address _factory
+        address _factory,
+        address _feeAdmin,
+        address[] calldata _whitelistedTokens,
+        address[] calldata _priceFeeds
     ) public initializer {
         if (_entryPoint == address(0)) revert ChatterPay__ZeroAddress();
         if (_newOwner == address(0)) revert ChatterPay__ZeroAddress();
         if (_paymaster == address(0)) revert ChatterPay__ZeroAddress();
         if (_router == address(0)) revert ChatterPay__ZeroAddress();
         if (_factory == address(0)) revert ChatterPay__ZeroAddress();
+        if (_feeAdmin == address(0)) revert ChatterPay__ZeroAddress();
+
+        // Ensure fee admin is the factory owner
+        if (_feeAdmin != IChatterPayWalletFactory(_factory).owner())
+            revert ChatterPay__NotFromFactoryOwner();
+
+        // Ensure arrays for token whitelisting match in length
+        if (_whitelistedTokens.length != _priceFeeds.length)
+            revert ChatterPay__InvalidArrayLengths();
 
         __Ownable_init(_newOwner);
         __UUPSUpgradeable_init();
@@ -188,8 +200,28 @@ contract ChatterPay is
         s_paymaster = _paymaster;
         swapRouter = ISwapRouter(_router);
         factory = IChatterPayWalletFactory(_factory);
-        s_feeInCents = 50; // Default 50 cents
-        s_feeAdmin = _newOwner;
+        s_feeInCents = 50; // Default fee in cents
+        s_feeAdmin = _feeAdmin;
+
+        // Set initial token whitelist and price feeds
+        for (uint256 i = 0; i < _whitelistedTokens.length; i++) {
+            address token = _whitelistedTokens[i];
+            address priceFeed = _priceFeeds[i];
+            if (token == address(0) || priceFeed == address(0))
+                revert ChatterPay__ZeroAddress();
+
+            AggregatorV3Interface feed = AggregatorV3Interface(priceFeed);
+            try feed.decimals() returns (uint8 decimals) {
+                if (decimals != PRICE_FEED_PRECISION)
+                    revert ChatterPay__InvalidPriceFeed();
+            } catch {
+                revert ChatterPay__InvalidPriceFeed();
+            }
+            s_whitelistedTokens[token] = true;
+            s_priceFeeds[token] = priceFeed;
+            emit PriceFeedUpdated(token, priceFeed);
+            emit TokenWhitelisted(token, true);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -369,12 +401,6 @@ contract ChatterPay is
     function transferOwnership(address newOwner) public override onlyOwner {
         address oldOwner = owner();
         super.transferOwnership(newOwner);
-        
-        // Revoke fee admin if old owner was fee admin
-        if (oldOwner == s_feeAdmin) {
-            s_feeAdmin = newOwner;
-            emit FeeAdminUpdated(oldOwner, newOwner);
-        }
     }
 
     /**
@@ -387,17 +413,6 @@ contract ChatterPay is
         uint256 oldFee = s_feeInCents;
         s_feeInCents = _newFeeInCents;
         emit FeeUpdated(oldFee, _newFeeInCents);
-    }
-
-    /**
-     * @notice Updates the fee admin address
-     * @param _newAdmin New fee admin address
-     */
-    function updateFeeAdmin(address _newAdmin) external onlyOwner {
-        if (_newAdmin == address(0)) revert ChatterPay__ZeroAddress();
-        address oldAdmin = s_feeAdmin;
-        s_feeAdmin = _newAdmin;
-        emit FeeAdminUpdated(oldAdmin, _newAdmin);
     }
 
     /**
