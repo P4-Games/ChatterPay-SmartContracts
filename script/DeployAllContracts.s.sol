@@ -85,9 +85,8 @@ contract DeployAllContracts is Script {
         deployFactory();                             // 2. Deploy Wallet Factory
         deployChatterPay();                          // 3. Deploy ChatterPay using UUPS Proxy
         deployNFT();                                 // 4. Deploy NFT with Transparent Proxy
-        configurePriceFeedsAndWhitelistTokens();     // 5. Configure Price Feeds and Whitelisted Tokens
-        configureUniswapPool();                      // 6. Configure Uniswap V3 Pool
-        deployVault();                               // 7. Deploy Vault
+        configureUniswapPool();                      // 5. Configure Uniswap V3 Pool
+        deployVault();                               // 6. Deploy Vault
 
         // Stop broadcasting transactions
         vm.stopBroadcast();
@@ -181,19 +180,6 @@ contract DeployAllContracts is Script {
             )
         );
         console2.log("ChatterPayNFT Proxy deployed at address %s", address(chatterPayNFT));
-    }
-
-    /**
-     * @notice Configures Price Feeds and Whitelisted Tokens in the ChatterPay contract.
-     */
-    function configurePriceFeedsAndWhitelistTokens() internal {
-        for (uint256 i = 0; i < tokens.length; i++) {
-            address token = tokens[i];
-            address priceFeed = priceFeeds[i];
-            // Only the owner (config.account) can call this function.
-            chatterPay.setTokenWhitelistAndPriceFeed(token, true, priceFeed);
-            console2.log("Token %s whitelisted with Price Feed %s", token, priceFeed);
-        }
     }
 
     /**
