@@ -399,7 +399,6 @@ contract ChatterPay is
     * @param newOwner Address of the new contract owner
     */
     function transferOwnership(address newOwner) public override onlyOwner {
-        address oldOwner = owner();
         super.transferOwnership(newOwner);
     }
 

@@ -103,18 +103,14 @@ contract ChatterPayPaymaster is IPaymaster {
     }
 
     /**
-     * @notice Implements the postOp function required by IPaymaster
-     * @dev Currently no post-operation processing is needed
-     * @param mode The mode of the post-operation
-     * @param context Additional context from validatePaymasterUserOp
-     * @param actualGasCost The actual gas cost of the operation
-     * @custom:error ChatterPayPaymaster__OnlyEntryPoint if caller is not EntryPoint
-     */
+    * @notice Implements the postOp function required by IPaymaster.
+    * @dev This function is marked as view since it only verifies that the caller is the EntryPoint.
+    */
     function postOp(
-        PostOpMode mode,
-        bytes calldata context,
-        uint256 actualGasCost
-    ) external override {
+        PostOpMode,         // Unused parameter
+        bytes calldata,     // Unused parameter
+        uint256             // Unused parameter
+    ) external view override {
         _requireFromEntryPoint();
     }
 
