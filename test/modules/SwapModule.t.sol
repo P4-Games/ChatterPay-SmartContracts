@@ -37,7 +37,7 @@ contract SwapModule is BaseTest {
         moduleWallet = ChatterPay(payable(moduleWalletAddress));
 
         // Verify router configuration
-        require(address(moduleWallet.swapRouter()) != address(0), "Router not set");
+        require(address(moduleWallet.getSwapRouter()) != address(0), "Router not set");
 
         // Setup tokens using parent contract constants
         moduleWallet.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
@@ -156,7 +156,7 @@ contract SwapModule is BaseTest {
         uint256 amountIn = 1000e6;
         
         _fundWallet(moduleWalletAddress, amountIn);
-        address feeAdmin = wallet().s_feeAdmin();
+        address feeAdmin = moduleWallet.getFeeAdmin();
         uint256 minAmountOut = 0; // Set minimum amount for testing purposes
         
         // Get initial balances

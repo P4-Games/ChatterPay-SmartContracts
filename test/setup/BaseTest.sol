@@ -149,11 +149,14 @@ abstract contract BaseTest is Test{
 
         // Deploy factory (passing the implementation address)
         factory = new ChatterPayWalletFactory(
-            address(implementation),
-            ENTRY_POINT,
-            owner,
-            address(paymaster),
-            UNISWAP_ROUTER
+            address(implementation),  // _walletImplementation
+            ENTRY_POINT,             // _entryPoint
+            owner,                   // _owner
+            address(paymaster),      // _paymaster
+            UNISWAP_ROUTER,         // _router
+            owner,                   // _feeAdmin
+            new address[](0),       // _whitelistedTokens
+            new address[](0)        // _priceFeeds
         );
         console.log("Factory deployed at:", address(factory));
 

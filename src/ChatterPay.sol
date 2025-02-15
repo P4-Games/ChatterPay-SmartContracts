@@ -78,7 +78,7 @@ contract ChatterPay is
     using SafeERC20 for IERC20;
 
     // Storage
-    bytes32 private constant IMPLEMENTATION_SLOT = 
+    bytes32 internal constant IMPLEMENTATION_SLOT = 
         bytes32(uint256(keccak256("chatterpay.proxy.implementation")) - 1);
     ChatterPayState private s_state;
 
@@ -224,13 +224,43 @@ contract ChatterPay is
         }
     }
 
-    /**
-     * @dev Returns the current implementation address
-     */
+    /*//////////////////////////////////////////////////////////////
+                         GETTER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
     function implementation() public view returns (address impl) {
+        bytes32 slot = IMPLEMENTATION_SLOT;
         assembly {
-            impl := sload(IMPLEMENTATION_SLOT)
+            impl := sload(slot)
         }
+    }
+
+    function getFeeInCents() public view returns (uint256) {
+        return s_state.feeInCents;
+    }
+
+    function getFeeAdmin() public view returns (address) {
+        return s_state.feeAdmin;
+    }
+
+    function isTokenWhitelisted(address token) public view returns (bool) {
+        return s_state.whitelistedTokens[token];
+    }
+
+    function getPriceFeed(address token) public view returns (address) {
+        return s_state.priceFeeds[token];
+    }
+
+    function getCustomPoolFee(bytes32 pairHash) public view returns (uint24) {
+        return s_state.customPoolFees[pairHash];
+    }
+
+    function getCustomSlippage(address token) public view returns (uint256) {
+        return s_state.customSlippage[token];
+    }
+
+    function getSwapRouter() public view returns (ISwapRouter) {
+        return s_state.swapRouter;
     }
 
     /*//////////////////////////////////////////////////////////////
