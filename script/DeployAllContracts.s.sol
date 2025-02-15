@@ -113,13 +113,20 @@ contract DeployAllContracts is Script {
      */
     function deployFactory() internal {
         factory = new ChatterPayWalletFactory(
-            config.account,     // Set factory owner as config.account
-            config.entryPoint,
-            config.account,
-            address(paymaster),
-            config.router
+            config.account,      // _walletImplementation (temporary, will be updated later)
+            config.entryPoint,   // _entryPoint
+            config.account,      // _owner
+            address(paymaster),  // _paymaster
+            config.router,       // _router
+            config.account,      // _feeAdmin (using account as fee admin)
+            tokens,             // _whitelistedTokens
+            priceFeeds         // _priceFeeds
         );
         console2.log("Wallet Factory deployed at address %s", address(factory));
+        
+        // Validate deployment
+        require(factory.owner() == config.account, "Factory owner not set correctly");
+        require(factory.paymaster() == address(paymaster), "Paymaster not set correctly");
     }
 
     /**
