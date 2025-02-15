@@ -184,10 +184,6 @@ contract ChatterPay is
         if (_factory == address(0)) revert ChatterPay__ZeroAddress();
         if (_feeAdmin == address(0)) revert ChatterPay__ZeroAddress();
 
-        // Ensure fee admin is the factory owner
-        if (_feeAdmin != IChatterPayWalletFactory(_factory).owner())
-            revert ChatterPay__NotFromFactoryOwner();
-
         // Ensure arrays for token whitelisting match in length
         if (_whitelistedTokens.length != _priceFeeds.length)
             revert ChatterPay__InvalidArrayLengths();

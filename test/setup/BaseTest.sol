@@ -13,9 +13,9 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @notice Base contract for ChatterPay tests providing common setup and utilities
  * @dev Contains shared interfaces, constants, and setup logic
  */
-
+ 
 /*//////////////////////////////////////////////////////////////
-                        INTERFACES
+//                        INTERFACES
 //////////////////////////////////////////////////////////////*/
 
 interface IUniswapV3Factory {
@@ -132,7 +132,7 @@ contract BaseTest is Test {
         vm.deal(owner, 100 ether);
         vm.deal(user, 100 ether);
 
-        // Deploy contracts
+        // Deploy contracts (including proper initialization)
         _deployContracts();
 
         // Setup Uniswap liquidity
@@ -149,12 +149,9 @@ contract BaseTest is Test {
     function _deployContracts() internal {
         vm.startPrank(owner);
 
-        // Deploy implementation
+        // Deploy ChatterPay implementation
         implementation = new ChatterPay();
-        console.log(
-            "ChatterPay implementation deployed at:",
-            address(implementation)
-        );
+        console.log("ChatterPay implementation deployed at:", address(implementation));
 
         // Deploy & fund paymaster
         paymaster = new ChatterPayPaymaster(
@@ -165,7 +162,7 @@ contract BaseTest is Test {
         (bool success, ) = address(paymaster).call{value: 1 ether}("");
         require(success, "Failed to fund paymaster");
 
-        // Deploy factory
+        // Deploy factory (passing the implementation address)
         factory = new ChatterPayWalletFactory(
             address(implementation),
             ENTRY_POINT,
@@ -174,6 +171,24 @@ contract BaseTest is Test {
             UNISWAP_ROUTER
         );
         console.log("Factory deployed at:", address(factory));
+
+        // Initialize the ChatterPay implementation with required parameters
+        address[] memory whitelistedTokens = new address[](2);
+        whitelistedTokens[0] = USDC;
+        whitelistedTokens[1] = USDT;
+        address[] memory priceFeeds = new address[](2);
+        priceFeeds[0] = USDC_USD_FEED;
+        priceFeeds[1] = USDT_USD_FEED;
+        ChatterPay(payable(address(implementation))).initialize(
+            ENTRY_POINT,
+            owner,
+            address(paymaster),
+            UNISWAP_ROUTER,
+            address(factory),
+            address(paymaster), // Fee admin
+            whitelistedTokens,
+            priceFeeds
+        );
 
         vm.stopPrank();
     }
@@ -195,7 +210,7 @@ contract BaseTest is Test {
         // Create and initialize pool if it doesn't exist
         address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(USDC, USDT, POOL_FEE);
         if (pool == address(0)) {
-            _createAndInitializePool();
+            pool = _createAndInitializePool();
             _addInitialLiquidity(usdcAmount, usdtAmount);
         }
 
