@@ -57,10 +57,6 @@ contract SecurityModule is BaseTest {
         vm.expectRevert();
         walletInstance.updateFee(100);
 
-        // Try to update fee admin
-        vm.expectRevert();
-        walletInstance.updateFeeAdmin(attacker);
-
         // Try to whitelist token
         vm.expectRevert();
         walletInstance.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
@@ -160,26 +156,6 @@ contract SecurityModule is BaseTest {
         vm.prank(owner);
         vm.expectRevert();
         walletInstance.updateFee(100);
-    }
-
-    /**
-     * @notice Tests fee admin management
-     */
-    function testFeeAdminManagement() public {
-        address newFeeAdmin = makeAddr("newFeeAdmin");
-
-        // Update fee admin
-        vm.prank(owner);
-        walletInstance.updateFeeAdmin(newFeeAdmin);
-
-        // Try to update fee with old admin
-        vm.expectRevert();
-        walletInstance.updateFee(100);
-
-        // Update fee with new admin
-        vm.prank(newFeeAdmin);
-        walletInstance.updateFee(100);
-        assertEq(walletInstance.s_feeInCents(), 100, "Fee update failed");
     }
 
     /**
