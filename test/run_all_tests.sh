@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 PROFILE=${FOUNDRY_PROFILE:-"local"}
 
 # Maximum retries and delay for handling RPC rate limits (429)
-MAX_RETRIES=3  # Maximum number of retries
+MAX_RETRIES=1  # Maximum number of retries
 RETRY_DELAY=10 # Seconds to wait before retrying
 
 # Start time measurement
