@@ -184,14 +184,14 @@ contract ChatterPay is
     /**
      * @notice Initializes the contract
      * @param _entryPoint The EntryPoint contract address
-     * @param _newOwner The owner address
+     * @param _owner The owner address
      * @param _paymaster The Paymaster contract address
      * @param _router The Uniswap V3 Router address
      * @param _factory The ChatterPay Factory address
      */
     function initialize(
         address _entryPoint,
-        address _newOwner,
+        address _owner,
         address _paymaster,
         address _router,
         address _factory,
@@ -203,7 +203,7 @@ contract ChatterPay is
             revert ChatterPay__ImplementationInitialization();
             
         if (_entryPoint == address(0)) revert ChatterPay__ZeroAddress();
-        if (_newOwner == address(0)) revert ChatterPay__ZeroAddress();
+        if (_owner == address(0)) revert ChatterPay__ZeroAddress();
         if (_paymaster == address(0)) revert ChatterPay__ZeroAddress();
         if (_router == address(0)) revert ChatterPay__ZeroAddress();
         if (_factory == address(0)) revert ChatterPay__ZeroAddress();
@@ -213,7 +213,7 @@ contract ChatterPay is
         if (_whitelistedTokens.length != _priceFeeds.length)
             revert ChatterPay__InvalidArrayLengths();
 
-        __Ownable_init(_newOwner);
+        __Ownable_init(_owner);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
 
