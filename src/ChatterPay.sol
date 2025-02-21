@@ -589,6 +589,7 @@ contract ChatterPay is
     function _isStableToken(address token) internal view returns (bool) {
         string memory symbol = IERC20Extended(token).symbol();
         bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+        // TO-IMPROVE: Change by a token list!
         return (symbolHash == keccak256(abi.encodePacked("USDT")) ||
             symbolHash == keccak256(abi.encodePacked("USDC")) ||
             symbolHash == keccak256(abi.encodePacked("DAI")));
@@ -602,6 +603,7 @@ contract ChatterPay is
     function _isBTCToken(address token) internal view returns (bool) {
         string memory symbol = IERC20Extended(token).symbol();
         bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+        // TO-IMPROVE: Change by a token list!
         return (symbolHash == keccak256(abi.encodePacked("WBTC")) ||
             symbolHash == keccak256(abi.encodePacked("renBTC")));
     }
