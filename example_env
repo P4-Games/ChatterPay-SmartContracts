@@ -8,6 +8,7 @@ ETHERSCAN_API_KEY=Your etherscan api key, if you want to verify contracts
 ROUTER_ADDRESS=Uniswap SwapRouter02 address
 ARBISCAN_API_KEY=Your Aribtrum api key, if you want to verify contracts
 NFT_BASE_URI=https://dev.back.chatterpay.net/nft/metadata/opensea/
+DEPLOYED_PAYMASTER_ADDRESS=Address of an existing Paymaster to avoid creating a new one in the deployment script
 
 # Uniswap V3 Addresses (arbitrum)
 # https://docs.uniswap.org/contracts/v3/reference/deployments/arbitrum-deployments
