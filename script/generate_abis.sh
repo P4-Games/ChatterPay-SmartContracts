@@ -25,3 +25,5 @@ find src -type f -name "*.sol" ! -path "*/interfaces/*" -print0 | while IFS= rea
 done
 
 echo -e "${GREEN}✅ ABI generation complete! Files saved in abi/ directory${NC}"
+echo -e "${YELLOW}⚠️ Remember to consider the ABIs from 'EntryPoint' (folder 'out'), only the ABIs from the 'src' folder are generated here.${NC}"
+
