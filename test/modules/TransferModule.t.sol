@@ -66,7 +66,7 @@ contract TransferModule is BaseTest {
         uint256 totalAmount = 600e6 + (EXPECTED_FEE * 3);
         _fundWallet(walletAddress, totalAmount);
 
-        address feeAdmin = walletInstance.s_feeAdmin();
+        address feeAdmin = walletInstance.getFeeAdmin();
         uint256 initialFeeBalance = IERC20(USDC).balanceOf(feeAdmin);
 
         address[] memory recipients = new address[](3);
@@ -152,7 +152,7 @@ contract TransferModule is BaseTest {
             _fundWallet(walletAddress, testAmounts[i]);
 
             uint256 initialFeeAdminBalance = IERC20(USDC).balanceOf(
-                walletInstance.s_feeAdmin()
+                walletInstance.getFeeAdmin()
             );
 
             // Execute transfer
@@ -160,7 +160,7 @@ contract TransferModule is BaseTest {
             walletInstance.executeTokenTransfer(USDC, user, testAmounts[i]);
 
             uint256 feeCollected = IERC20(USDC).balanceOf(
-                walletInstance.s_feeAdmin()
+                walletInstance.getFeeAdmin()
             ) - initialFeeAdminBalance;
             assertApproxEqAbs(
                 feeCollected,
@@ -180,7 +180,7 @@ contract TransferModule is BaseTest {
 
         // Get initial balances
         uint256 initialFeeAdminBalance = IERC20(USDC).balanceOf(
-            walletInstance.s_feeAdmin()
+            walletInstance.getFeeAdmin()
         );
         uint256 initialRecipientBalance = IERC20(USDC).balanceOf(user);
 
@@ -193,7 +193,7 @@ contract TransferModule is BaseTest {
 
         // Verify fee was taken
         assertApproxEqAbs(
-            IERC20(USDC).balanceOf(walletInstance.s_feeAdmin()) -
+            IERC20(USDC).balanceOf(walletInstance.getFeeAdmin()) -
                 initialFeeAdminBalance,
             fee,
             FEE_TOLERANCE,

@@ -46,9 +46,9 @@ contract AdminModule is BaseTest {
      */
     function testFeeManagement() public {
         vm.startPrank(owner);
-        assertEq(walletInstance.s_feeInCents(), 50);    
+        assertEq(walletInstance.getFeeInCents(), 50);    
         walletInstance.updateFee(100);
-        assertEq(walletInstance.s_feeInCents(), 100);
+        assertEq(walletInstance.getFeeInCents(), 100);
         vm.stopPrank();
     }
 
@@ -58,27 +58,9 @@ contract AdminModule is BaseTest {
     function testTokenWhitelisting() public {
         vm.startPrank(owner);
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
-        assertTrue(walletInstance.s_whitelistedTokens(USDC));
-        assertEq(walletInstance.s_priceFeeds(USDC), USDC_USD_FEED);
+        assertTrue(walletInstance.isTokenWhitelisted(USDC));
+        assertEq(walletInstance.getPriceFeed(USDC), USDC_USD_FEED);
         vm.stopPrank();
-    }
-
-    /**
-     * @notice Tests fee admin management
-     */
-    function testFeeAdminManagement() public {
-        vm.startPrank(owner);
-        address newFeeAdmin = makeAddr("newFeeAdmin");
-        walletInstance.updateFeeAdmin(newFeeAdmin);
-        vm.stopPrank();
-        
-        vm.prank(newFeeAdmin);
-        walletInstance.updateFee(75);
-        
-        // This should revert since caller isn't fee admin
-        vm.prank(makeAddr("unauthorized"));
-        vm.expectRevert(abi.encodeWithSignature("ChatterPay__NotFeeAdmin()"));
-        walletInstance.updateFee(100);
     }
 
     /**
@@ -95,7 +77,7 @@ contract AdminModule is BaseTest {
 
         // Verify custom fee
         bytes32 pairHash = _getPairHash(USDC, USDT);
-        assertEq(walletInstance.s_customPoolFees(pairHash), customFee, "Custom pool fee not set");
+        assertEq(walletInstance.getCustomPoolFee(pairHash), customFee, "Custom pool fee not set");
 
         // Test invalid fee
         vm.expectRevert();
@@ -117,7 +99,7 @@ contract AdminModule is BaseTest {
         walletInstance.setCustomSlippage(USDC, slippageBps);
 
         // Verify custom slippage
-        assertEq(walletInstance.s_customSlippage(USDC), slippageBps, "Custom slippage not set");
+        assertEq(walletInstance.getCustomSlippage(USDC), slippageBps, "Custom slippage not set");
 
         // Test invalid slippage
         vm.expectRevert(); // Should revert with invalid slippage
@@ -139,7 +121,7 @@ contract AdminModule is BaseTest {
         walletInstance.upgradeToAndCall(address(newImplementation), "");
 
         // Verify upgrade
-        assertTrue(walletInstance.s_whitelistedTokens(USDC), "State lost after upgrade");
+        assertTrue(walletInstance.isTokenWhitelisted(USDC), "State lost after upgrade");
 
         // Test unauthorized upgrade
         vm.stopPrank();
@@ -168,13 +150,6 @@ contract AdminModule is BaseTest {
         vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
         walletInstance.upgradeToAndCall(address(0x123), "");
 
-        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
-        walletInstance.updateFeeAdmin(unauthorized);
-        
-        // FeeAdmin-only methods
-        vm.expectRevert(abi.encodeWithSignature("ChatterPay__NotFeeAdmin()"));
-        walletInstance.updateFee(100);
-        
         vm.stopPrank();
     }
 

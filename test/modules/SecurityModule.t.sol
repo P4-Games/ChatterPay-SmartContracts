@@ -57,10 +57,6 @@ contract SecurityModule is BaseTest {
         vm.expectRevert();
         walletInstance.updateFee(100);
 
-        // Try to update fee admin
-        vm.expectRevert();
-        walletInstance.updateFeeAdmin(attacker);
-
         // Try to whitelist token
         vm.expectRevert();
         walletInstance.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
@@ -94,7 +90,7 @@ contract SecurityModule is BaseTest {
         assertEq(validationData, 0, "Valid signature should return 0");
 
         // Test with invalid signature
-        (v, r, s) = vm.sign(uint256(1), ethSignedMessageHash); // Different key
+        (v, r, s) = vm.sign(uint256(2), ethSignedMessageHash); // Different key
         bytes memory invalidSignature = abi.encodePacked(r, s, v);
         
         vm.prank(ENTRY_POINT);
@@ -148,38 +144,20 @@ contract SecurityModule is BaseTest {
      */
     function testOwnershipManagement() public {
         address newOwner = makeAddr("newOwner");
+        address currentOwner = walletInstance.owner();
 
         // Transfer ownership
         vm.prank(owner);
         walletInstance.transferOwnership(newOwner);
 
         // Verify new owner
+        console.log('owner/newOwner', currentOwner, walletInstance.owner());
         assertEq(walletInstance.owner(), newOwner, "Ownership transfer failed");
 
         // Verify old owner lost privileges
         vm.prank(owner);
         vm.expectRevert();
-        walletInstance.updateFee(100);
-    }
-
-    /**
-     * @notice Tests fee admin management
-     */
-    function testFeeAdminManagement() public {
-        address newFeeAdmin = makeAddr("newFeeAdmin");
-
-        // Update fee admin
-        vm.prank(owner);
-        walletInstance.updateFeeAdmin(newFeeAdmin);
-
-        // Try to update fee with old admin
-        vm.expectRevert();
-        walletInstance.updateFee(100);
-
-        // Update fee with new admin
-        vm.prank(newFeeAdmin);
-        walletInstance.updateFee(100);
-        assertEq(walletInstance.s_feeInCents(), 100, "Fee update failed");
+        walletInstance.removeTokenFromWhitelist(0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d);
     }
 
     /**

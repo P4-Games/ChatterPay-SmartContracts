@@ -7,6 +7,9 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 
 error ChatterPayWalletFactory__InvalidOwner();
 error ChatterPayWalletFactory__InvalidProxyCall();
+error ChatterPayWalletFactory__InvalidFeeAdmin();
+error ChatterPayWalletFactory__InvalidArrayLengths();
+error ChatterPayWalletFactory__ZeroAddress();
 
 /**
  * @title IChatterPayWalletFactory
@@ -35,9 +38,16 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
     address public walletImplementation;
     address public paymaster;
     address public immutable router;
+    address public feeAdmin;
+
+    // Default token configuration
+    address[] public defaultWhitelistedTokens;
+    address[] public defaultPriceFeeds;
 
     event ProxyCreated(address indexed owner, address indexed proxyAddress);
     event NewImplementation(address indexed _walletImplementation);
+    event FeeAdminUpdated(address indexed oldAdmin, address indexed newAdmin);
+    event DefaultTokensUpdated(address[] tokens, address[] priceFeeds);
 
     /**
      * @notice Initializes the factory with required addresses
@@ -46,18 +56,36 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
      * @param _owner Address of the factory owner
      * @param _paymaster Address of the paymaster contract
      * @param _router Address of the router contract
+     * @param _feeAdmin Address of the fee administrator
+     * @param _whitelistedTokens Array of initially whitelisted token addresses
+     * @param _priceFeeds Array of corresponding price feed addresses
      */
     constructor(
         address _walletImplementation,
         address _entryPoint,
         address _owner,
         address _paymaster,
-        address _router
+        address _router,
+        address _feeAdmin,
+        address[] memory _whitelistedTokens,
+        address[] memory _priceFeeds
     ) Ownable(_owner) {
+        if (_walletImplementation == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
+        if (_entryPoint == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
+        if (_owner == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
+        if (_paymaster == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
+        if (_router == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
+        if (_feeAdmin == address(0)) revert ChatterPayWalletFactory__InvalidFeeAdmin();
+        if (_whitelistedTokens.length != _priceFeeds.length) 
+            revert ChatterPayWalletFactory__InvalidArrayLengths();
+
         walletImplementation = _walletImplementation;
         entryPoint = _entryPoint;
         paymaster = _paymaster;
         router = _router;
+        feeAdmin = _feeAdmin;
+        defaultWhitelistedTokens = _whitelistedTokens;
+        defaultPriceFeeds = _priceFeeds;
     }
 
     /**
@@ -82,12 +110,15 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         }(
             walletImplementation,
             abi.encodeWithSignature(
-                "initialize(address,address,address,address,address)",
+                "initialize(address,address,address,address,address,address,address[],address[])",
                 entryPoint,
                 _owner,
                 paymaster,
                 router,
-                address(this)
+                address(this),
+                feeAdmin,
+                defaultWhitelistedTokens,
+                defaultPriceFeeds
             )
         );
         
@@ -128,8 +159,37 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
      * @dev Can only be called by the owner
      */
     function setImplementationAddress(address _walletImplementation) public onlyOwner {
+        if (_walletImplementation == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
         walletImplementation = _walletImplementation;
         emit NewImplementation(_walletImplementation);
+    }
+
+    /**
+     * @notice Sets the fee admin address
+     * @param _newFeeAdmin New fee admin address
+     */
+    function setFeeAdmin(address _newFeeAdmin) external onlyOwner {
+        if (_newFeeAdmin == address(0)) revert ChatterPayWalletFactory__InvalidFeeAdmin();
+        address oldAdmin = feeAdmin;
+        feeAdmin = _newFeeAdmin;
+        emit FeeAdminUpdated(oldAdmin, _newFeeAdmin);
+    }
+
+    /**
+     * @notice Updates the default token and price feed lists
+     * @param _tokens New list of whitelisted tokens
+     * @param _priceFeeds New list of price feeds
+     */
+    function setDefaultTokensAndFeeds(
+        address[] calldata _tokens,
+        address[] calldata _priceFeeds
+    ) external onlyOwner {
+        if (_tokens.length != _priceFeeds.length) 
+            revert ChatterPayWalletFactory__InvalidArrayLengths();
+            
+        defaultWhitelistedTokens = _tokens;
+        defaultPriceFeeds = _priceFeeds;
+        emit DefaultTokensUpdated(_tokens, _priceFeeds);
     }
 
     /**
@@ -157,12 +217,15 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
      */
     function getProxyBytecode(address _owner) internal view returns (bytes memory) {
         bytes memory initializationCode = abi.encodeWithSignature(
-            "initialize(address,address,address,address,address)",
+            "initialize(address,address,address,address,address,address,address[],address[])",
             entryPoint,
             _owner,
             paymaster,
             router,
-            address(this)
+            address(this),
+            feeAdmin,
+            defaultWhitelistedTokens,
+            defaultPriceFeeds
         );
         return abi.encodePacked(
             type(ERC1967Proxy).creationCode,

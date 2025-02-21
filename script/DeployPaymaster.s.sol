@@ -23,6 +23,10 @@ contract DeployChatterPayPaymaster is Script {
 
         vm.startBroadcast();
 
+        console.log("Deploying ChatterPayPaymaster...");
+        console.log("EntryPoint:", config.entryPoint);
+        console.log("Backend Signer:", config.account);
+        
         ChatterPayPaymaster chatterPayPaymaster = new ChatterPayPaymaster(
             config.entryPoint,
             config.account
@@ -32,6 +36,13 @@ contract DeployChatterPayPaymaster is Script {
             "Paymaster deployed to:",
             address(chatterPayPaymaster)
         );
+
+        console.log("------------------------------------------------------------------------------");
+        console.log("------------------------------ IMPORTANT! ------------------------------------");
+        console.log("------------------------------------------------------------------------------");
+        console.log("Stake ETH in EntryPoint for Paymaster to function properly!");
+        console.log("See .doc/deployment/deployment-guidelines.md for details.");
+        console.log("------------------------------------------------------------------------------");
 
         vm.stopBroadcast();
     }
