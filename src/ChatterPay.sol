@@ -171,9 +171,11 @@ contract ChatterPay is
     /**
      * @dev Constructor that disables initialization for the implementation contract
      */
+    /*
     constructor() {
         _disableInitializers();
     }
+    */
 
     /*//////////////////////////////////////////////////////////////
                             INITIALIZATION
