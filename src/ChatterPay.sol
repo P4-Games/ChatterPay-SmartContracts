@@ -116,6 +116,8 @@ contract ChatterPay is
     event FeeAdminUpdated(address indexed oldAdmin, address indexed newAdmin);
     event CustomPoolFeeSet(address indexed tokenA, address indexed tokenB, uint24 fee);
     event CustomSlippageSet(address indexed token, uint256 slippageBps);
+    event TokenTransferCalled(address indexed from, address indexed to, address indexed token, uint256 amount);
+    event TokenTransferred(address indexed from, address indexed to, address indexed token, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                                MODIFIERS
@@ -296,6 +298,7 @@ contract ChatterPay is
         address recipient,
         uint256 amount
     ) external requireFromEntryPoint nonReentrant {
+        emit TokenTransferCalled(address(msg.sender), recipient, token, amount);
         if (amount == 0) revert ChatterPay__ZeroAmount();
         if (recipient == address(0)) revert ChatterPay__ZeroAddress();
         if (!s_state.whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
@@ -310,7 +313,7 @@ contract ChatterPay is
         uint256 transferAmount = amount - fee;
 
         bool success = IERC20(token).transfer(recipient, transferAmount);
-        if (!success) revert ChatterPay__TransferFailed();
+        emit TokenTransferred(address(this), recipient, token, transferAmount);
     }
 
     /**
