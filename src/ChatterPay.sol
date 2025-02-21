@@ -303,8 +303,8 @@ contract ChatterPay is
         if (recipient == address(0)) revert ChatterPay__ZeroAddress();
         if (!s_state.whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
         
-        if(IERC20(token).balanceOf(address(this)) < amount) 
-            revert ChatterPay__InsufficientBalance();
+        uint256 balance = IERC20(token).balanceOf(address((this)));
+        if (balance < amount) revert ChatterPay__InsufficientBalance();
 
         uint256 fee = _calculateFee(token, s_state.feeInCents);
         if (amount < fee * 2) revert ChatterPay__AmountTooLow();
