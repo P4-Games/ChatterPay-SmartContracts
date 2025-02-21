@@ -312,7 +312,9 @@ contract ChatterPay is
         _transferFee(token, fee);
         uint256 transferAmount = amount - fee;
 
-        bool success = IERC20(token).transfer(recipient, transferAmount);
+        IERC20(token).safeTransfer(recipient, transferAmount);
+
+
         emit TokenTransferred(address(this), recipient, token, transferAmount);
     }
 
