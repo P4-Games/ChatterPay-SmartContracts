@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "lib/entry-point-v6/interfaces/IPaymaster.sol";
+import {IEntryPoint} from "lib/entry-point-v6/interfaces/IEntryPoint.sol";
 
 error ChatterPayPaymaster__OnlyOwner();
 error ChatterPayPaymaster__OnlyEntryPoint();
@@ -21,7 +22,8 @@ error ChatterPayPaymaster__ExecutionFailed();
  */
 contract ChatterPayPaymaster is IPaymaster {
     address public owner;
-    address public entryPoint;
+    // address public entryPoint;
+    IEntryPoint public entryPoint;
     address private backendSigner;
     uint256 private immutable chainId;
 
@@ -43,7 +45,7 @@ contract ChatterPayPaymaster is IPaymaster {
      */
     constructor(address _entryPoint, address _backendSigner) {
         owner = msg.sender;
-        entryPoint = _entryPoint;
+        entryPoint = IEntryPoint(_entryPoint);
         backendSigner = _backendSigner;
         chainId = block.chainid;
     }
@@ -115,6 +117,7 @@ contract ChatterPayPaymaster is IPaymaster {
         _requireFromEntryPoint();
     }
 
+
     /**
      * Add stake for this paymaster.
      * This method can also carry eth value to add to the current stake.
@@ -147,6 +150,7 @@ contract ChatterPayPaymaster is IPaymaster {
     function withdrawStake(address payable withdrawAddress) external onlyOwner {
         entryPoint.withdrawStake(withdrawAddress);
     }
+
     /**
      * @notice Executes a low-level call to a specified address
      * @dev Only callable by the contract owner
@@ -180,7 +184,7 @@ contract ChatterPayPaymaster is IPaymaster {
      * @custom:error ChatterPayPaymaster__OnlyEntryPoint if caller is not EntryPoint
      */
     function _requireFromEntryPoint() internal view {
-        if (msg.sender != entryPoint) revert ChatterPayPaymaster__OnlyEntryPoint();
+        if (msg.sender != address(entryPoint)) revert ChatterPayPaymaster__OnlyEntryPoint();
     }
 
     /**
