@@ -90,7 +90,7 @@ contract SecurityModule is BaseTest {
         assertEq(validationData, 0, "Valid signature should return 0");
 
         // Test with invalid signature
-        (v, r, s) = vm.sign(uint256(1), ethSignedMessageHash); // Different key
+        (v, r, s) = vm.sign(uint256(2), ethSignedMessageHash); // Different key
         bytes memory invalidSignature = abi.encodePacked(r, s, v);
         
         vm.prank(ENTRY_POINT);
