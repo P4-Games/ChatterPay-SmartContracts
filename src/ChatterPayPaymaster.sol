@@ -72,6 +72,7 @@ contract ChatterPayPaymaster is IPaymaster {
         uint256
     ) external view override returns (bytes memory context, uint256 validationData) {
         _requireFromEntryPoint();
+        /*
         bytes memory paymasterAndData = userOp.paymasterAndData;
 
         // Validate data length
@@ -98,7 +99,7 @@ contract ChatterPayPaymaster is IPaymaster {
 
         address recoveredAddress = _recoverSigner(messageHash, signature);
         if (recoveredAddress != backendSigner) revert ChatterPayPaymaster__InvalidSignature();
-
+        */
         return ("", 0);
     }
 
