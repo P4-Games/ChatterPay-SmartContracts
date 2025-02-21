@@ -298,7 +298,9 @@ contract ChatterPay is
         address recipient,
         uint256 amount
     ) external requireFromEntryPoint nonReentrant {
+        
         emit TokenTransferCalled(address(msg.sender), recipient, token, amount);
+        
         if (amount == 0) revert ChatterPay__ZeroAmount();
         if (recipient == address(0)) revert ChatterPay__ZeroAddress();
         if (!s_state.whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
@@ -671,9 +673,9 @@ contract ChatterPay is
      * @param missingAccountFunds Amount of funds to prefund
      */
     function _payPrefund(uint256 missingAccountFunds) internal {
-        if (missingAccountFunds > 0) {
-            (bool success, ) = payable(msg.sender).call{value: missingAccountFunds}("");
-            require(success, "ETH transfer failed");
+        if (missingAccountFunds != 0) {
+            (bool success,) = payable(msg.sender).call{value: missingAccountFunds, gas: type(uint256).max}("");
+            (success);
         }
     }
 
