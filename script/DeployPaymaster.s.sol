@@ -37,6 +37,13 @@ contract DeployChatterPayPaymaster is Script {
             address(chatterPayPaymaster)
         );
 
+        console.log("------------------------------------------------------------------------------");
+        console.log("------------------------------ IMPORTANT! ------------------------------------");
+        console.log("------------------------------------------------------------------------------");
+        console.log("Stake ETH in EntryPoint for Paymaster to function properly!");
+        console.log("See .doc/deployment/deployment-guidelines.md for details.");
+        console.log("------------------------------------------------------------------------------");
+
         vm.stopBroadcast();
     }
 }

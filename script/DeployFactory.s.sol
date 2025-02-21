@@ -39,8 +39,8 @@ contract DeployFactory is Script {
             vm.envAddress("PAYMASTER_ADDRESS"),  // _paymaster
             config.router,       // _router
             config.account,      // _feeAdmin (using account as fee admin)
-            tokens,             // _whitelistedTokens
-            priceFeeds         // _priceFeeds
+            tokens,              // _whitelistedTokens
+            priceFeeds           // _priceFeeds
         );
 
         console2.log("Wallet Factory deployed at address %s", address(factory));

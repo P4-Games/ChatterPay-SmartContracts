@@ -103,6 +103,14 @@ contract DeployAllContracts is Script {
         console2.log('"chatterNFTAddress": "%s",', address(chatterPayNFT));
         console2.log('"paymasterAddress": "%s"', address(paymaster));
         console2.log("}");
+
+        console2.log("------------------------------------------------------------------------------");
+        console2.log("------------------------------ IMPORTANT! ------------------------------------");
+        console2.log("------------------------------------------------------------------------------");
+        console2.log("Stake ETH in EntryPoint for Paymaster to function properly!");
+        console2.log("See .doc/deployment/deployment-guidelines.md for details.");
+        console2.log("------------------------------------------------------------------------------");
+
         // Return deployed contract instances and configuration
         return (helperConfig, chatterPay, factory, chatterPayNFT, paymaster);
     }
