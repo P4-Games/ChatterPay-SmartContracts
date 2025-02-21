@@ -144,12 +144,14 @@ contract SecurityModule is BaseTest {
      */
     function testOwnershipManagement() public {
         address newOwner = makeAddr("newOwner");
+        address currentOwner = walletInstance.owner();
 
         // Transfer ownership
         vm.prank(owner);
         walletInstance.transferOwnership(newOwner);
 
         // Verify new owner
+        console.log('owner/newOwner', currentOwner, walletInstance.owner());
         assertEq(walletInstance.owner(), newOwner, "Ownership transfer failed");
 
         // Verify old owner lost privileges
