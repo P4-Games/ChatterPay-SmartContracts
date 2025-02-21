@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-// Import necessary libraries and contracts
 import {Script} from "forge-std/Script.sol";
 import {HelperConfig} from "./utils/HelperConfig.s.sol";
 import {ChatterPay} from "../src/ChatterPay.sol";
@@ -39,8 +38,12 @@ contract DeployAllContracts is Script {
 
     // Environment Variables
     string NFTBaseUri = vm.envString("NFT_BASE_URI");
-    string tokensEnv = vm.envString("TOKENS"); // Comma-separated list of tokens
-    string priceFeedsEnv = vm.envString("PRICE_FEEDS"); // Comma-separated list of price feeds
+
+    // Comma-separated list of tokens
+    string tokensEnv = vm.envString("TOKENS"); 
+
+    // Comma-separated list of price feeds
+    string priceFeedsEnv = vm.envString("PRICE_FEEDS"); 
 
     constructor() {
         uniswapFactory = vm.envAddress("UNISWAP_FACTORY");
@@ -125,8 +128,8 @@ contract DeployAllContracts is Script {
             address(paymaster),  // _paymaster
             config.router,       // _router
             config.account,      // _feeAdmin (using account as fee admin)
-            tokens,             // _whitelistedTokens
-            priceFeeds         // _priceFeeds
+            tokens,              // _whitelistedTokens
+            priceFeeds           // _priceFeeds
         );
         console2.log("Wallet Factory deployed at address %s", address(factory));
         
@@ -148,7 +151,7 @@ contract DeployAllContracts is Script {
             abi.encodeWithSignature(
                 "initialize(address,address,address,address,address,address,address[],address[])",
                 config.entryPoint,   // _entryPoint.
-                config.account,      // _newOwner (owner must be the creator).
+                config.account,      // _owner (owner must be the creator).
                 address(paymaster),  // _paymaster.
                 config.router,       // _router.
                 address(factory),    // _factory.
