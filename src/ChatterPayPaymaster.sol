@@ -116,6 +116,38 @@ contract ChatterPayPaymaster is IPaymaster {
     }
 
     /**
+     * Add stake for this paymaster.
+     * This method can also carry eth value to add to the current stake.
+     * @param unstakeDelaySec - The unstake delay for this paymaster. Can only be increased.
+     */
+    function addStake(uint32 unstakeDelaySec) external payable onlyOwner {
+        entryPoint.addStake{value: msg.value}(unstakeDelaySec);
+    }
+
+    /**
+     * Return current paymaster's deposit on the entryPoint.
+     */
+    function getDeposit() public view returns (uint256) {
+        return entryPoint.balanceOf(address(this));
+    }
+
+    /**
+     * Unlock the stake, in order to withdraw it.
+     * The paymaster can't serve requests once unlocked, until it calls addStake again
+     */
+    function unlockStake() external onlyOwner {
+        entryPoint.unlockStake();
+    }
+
+    /**
+     * Withdraw the entire paymaster's stake.
+     * stake must be unlocked first (and then wait for the unstakeDelay to be over)
+     * @param withdrawAddress - The address to send withdrawn value.
+     */
+    function withdrawStake(address payable withdrawAddress) external onlyOwner {
+        entryPoint.withdrawStake(withdrawAddress);
+    }
+    /**
      * @notice Executes a low-level call to a specified address
      * @dev Only callable by the contract owner
      * @param dest The address to call
