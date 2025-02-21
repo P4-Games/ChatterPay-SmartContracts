@@ -86,6 +86,19 @@ contract ChatterPay is
                                CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
+    /*
+    * For simulation purposes, validateUserOp (and validatePaymasterUserOp)
+    * must return this value in case of signature failure, instead of revert.
+    */
+    uint256 constant SIG_VALIDATION_FAILED = 1;
+
+    /*
+    * For simulation purposes, validateUserOp (and validatePaymasterUserOp)
+    * return this value on success.
+    */
+    uint256 constant SIG_VALIDATION_SUCCESS = 0;
+
+
     // Uniswap pool fees
     uint24 public constant POOL_FEE_LOW = 3000; // 0.3%
     uint24 public constant POOL_FEE_MEDIUM = 3000; // 0.3%
@@ -101,8 +114,12 @@ contract ChatterPay is
     uint256 public constant PRICE_FRESHNESS_THRESHOLD = 1 hours;
     uint256 public constant PRICE_FEED_PRECISION = 8;
 
+    // Increased gap for future upgrades
+    uint256[100] private __gap;
+
     /// @notice Version for upgrades
     string public constant VERSION = "2.0.0";
+
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -263,6 +280,10 @@ contract ChatterPay is
 
     function getSwapRouter() public view returns (ISwapRouter) {
         return s_state.swapRouter;
+    }
+
+    function getEntryPoint() external view returns (address) {
+        return address(s_state.entryPoint);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -433,6 +454,23 @@ contract ChatterPay is
         if(dest == address(this)) revert ChatterPay__InvalidTarget();
         (bool success, bytes memory result) = dest.call{value: value}(func);
         if (!success) revert ChatterPay__ExecuteCallFailed(result);
+    }
+
+
+    /**
+     * @dev Validates a UserOperation signature
+     * @param userOp User operation to validate
+     * @param userOpHash Hash of the user operation
+     * @param missingAccountFunds Missing funds to be paid
+     * @return validationData Packed validation data
+     */
+    function validateUserOp(
+        UserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 missingAccountFunds
+    ) external requireFromEntryPoint returns (uint256 validationData) {
+        validationData = _validateSignature(userOp, userOpHash);
+       _payPrefund(missingAccountFunds);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -648,25 +686,28 @@ contract ChatterPay is
         return fee;
     }
 
-    /**
-     * @dev Validates a UserOperation signature
-     * @param userOp User operation to validate
-     * @param userOpHash Hash of the user operation
-     * @param missingAccountFunds Missing funds to be paid
-     * @return validationData Packed validation data
-     */
-    function validateUserOp(
-        UserOperation calldata userOp,
-        bytes32 userOpHash,
-        uint256 missingAccountFunds
-    ) external requireFromEntryPoint returns (uint256 validationData) {
-        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(
-            userOpHash
-        );
+    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
+        internal
+        view
+        returns (uint256 validationData)
+    {
+        // EIP-191 version of the signed hash
+        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(ethSignedMessageHash, userOp.signature);
-        validationData = signer != owner() ? 1 : 0;
-        _payPrefund(missingAccountFunds);
+
+        
+
+
+        // owner: Returns the user's wallet (executed via the EntryPoint!).  
+        // If requested from the command line, it will return the owner who deployed the contract (backend signer).  
+        // signer: The person who signed the userOperation, which must be the wallet owner.
+        if (signer != owner()) {
+            return SIG_VALIDATION_FAILED;
+        }
+        return SIG_VALIDATION_SUCCESS;
     }
+
+
 
     /**
      * @dev Handles account prefunding
@@ -678,7 +719,7 @@ contract ChatterPay is
             (success);
         }
     }
-
+    
     /**
      * @dev Function that authorizes an upgrade to a new implementation
      * @param newImplementation Address of the new implementation
@@ -689,6 +730,4 @@ contract ChatterPay is
 
     receive() external payable {}
 
-    // Increased gap for future upgrades
-    uint256[100] private __gap;
 }
