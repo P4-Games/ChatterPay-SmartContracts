@@ -157,7 +157,7 @@ contract SecurityModule is BaseTest {
         // Verify old owner lost privileges
         vm.prank(owner);
         vm.expectRevert();
-        walletInstance.updateFee(100);
+        walletInstance.removeTokenFromWhitelist(0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d);
     }
 
     /**
