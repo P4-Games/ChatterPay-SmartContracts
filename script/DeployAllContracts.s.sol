@@ -99,7 +99,6 @@ contract DeployAllContracts is Script {
         console2.log('"entryPoint": "%s",', "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789");
         console2.log('"factoryAddress": "%s",', address(factory));
         console2.log('"chatterPayAddress": "%s",', address(chatterPay));
-        console2.log('"simpleSwapAddress": "%s",', "0x");
         console2.log('"chatterNFTAddress": "%s",', address(chatterPayNFT));
         console2.log('"paymasterAddress": "%s"', address(paymaster));
         console2.log("}");
