@@ -100,7 +100,7 @@ contract DeployAllContracts is Script {
         console2.log('"factoryAddress": "%s",', address(factory));
         console2.log('"chatterPayAddress": "%s",', address(chatterPay));
         console2.log('"chatterNFTAddress": "%s",', address(chatterPayNFT));
-        console2.log('"paymasterAddress": "%s"', address(paymaster));
+        console2.log('"paymasterAddress": "%s",', address(paymaster));
         console2.log('"routerAddress": "%s"', config.router);
         console2.log("}");
 
