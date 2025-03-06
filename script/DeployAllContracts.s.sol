@@ -119,8 +119,13 @@ contract DeployAllContracts is Script {
      * @notice Deploy paymaster with entryPoint and backend signer (config.account)
      */
     function deployPaymaster() internal {
-         address paymasterAddress = vm.envAddress("DEPLOYED_PAYMASTER_ADDRESS");
-
+        address paymasterAddress;
+        try vm.envAddress("DEPLOYED_PAYMASTER_ADDRESS") returns (address addr) {
+            paymasterAddress = addr;
+        } catch {
+            paymasterAddress = address(0); 
+        }
+    
         if (paymasterAddress == address(0)) {
             console2.log("Creating NEW Paymaster!");
             paymaster = new ChatterPayPaymaster(config.entryPoint, config.account);
