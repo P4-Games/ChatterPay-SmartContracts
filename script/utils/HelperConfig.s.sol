@@ -103,6 +103,28 @@ contract HelperConfig is Script {
     //////////////////////////////////////////////////////////////*/
 
     /**
+     * @notice Obtiene la configuración para la red principal de Arbitrum
+     * @return NetworkConfig Configuración con las direcciones en Arbitrum One
+     */
+    function getArbitrumOneConfig()
+        public
+        view
+        returns (NetworkConfig memory)
+    {
+        return
+            NetworkConfig({
+                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
+                usdc: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831, // native (circle) USDC
+                usdt: 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9, // USDT
+                weth: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1, // WETH
+                matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
+                router: 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45, // SwapRouter02
+                account: BACKEND_SIGNER
+            });
+    }
+
+
+    /**
      * @notice Gets configuration for Ethereum Sepolia testnet
      * @return NetworkConfig Configuration with Ethereum Sepolia addresses
      */
