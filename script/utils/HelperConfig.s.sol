@@ -103,6 +103,28 @@ contract HelperConfig is Script {
     //////////////////////////////////////////////////////////////*/
 
     /**
+     * @notice Obtiene la configuración para la red principal de Arbitrum
+     * @return NetworkConfig Configuración con las direcciones en Arbitrum One
+     */
+    function getArbitrumOneConfig()
+        public
+        view
+        returns (NetworkConfig memory)
+    {
+        return
+            NetworkConfig({
+                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
+                usdc: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831, // native (circle) USDC
+                usdt: 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9, // USDT
+                weth: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1, // WETH
+                matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
+                router: 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45, // SwapRouter02
+                account: BACKEND_SIGNER
+            });
+    }
+
+
+    /**
      * @notice Gets configuration for Ethereum Sepolia testnet
      * @return NetworkConfig Configuration with Ethereum Sepolia addresses
      */
@@ -113,12 +135,12 @@ contract HelperConfig is Script {
     {
         return
             NetworkConfig({
-                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.7
+                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
                 usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
                 usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
                 weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
-                matic: 0x0000000000000000000000000000000000000000, // address TBD
-                router: 0x101F443B4d1b059569D643917553c771E1b9663E,
+                matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
+                router: 0x101F443B4d1b059569D643917553c771E1b9663E, // SwapRouter02
                 account: BACKEND_SIGNER
             });
     }
@@ -134,12 +156,12 @@ contract HelperConfig is Script {
     {
         return
             NetworkConfig({
-                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.7
+                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
                 usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
                 usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
                 weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
-                matic: 0x0000000000000000000000000000000000000000, // address TBD
-                router: 0x101F443B4d1b059569D643917553c771E1b9663E,
+                matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
+                router: 0x101F443B4d1b059569D643917553c771E1b9663E, // SwapRouter02
                 account: BACKEND_SIGNER
             });
     }
@@ -155,7 +177,7 @@ contract HelperConfig is Script {
     {
         return
             NetworkConfig({
-                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.7
+                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
                 usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
                 usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
                 weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
@@ -176,7 +198,7 @@ contract HelperConfig is Script {
     {
         return
             NetworkConfig({
-                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.7
+                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
                 usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
                 usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
                 weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
@@ -197,7 +219,7 @@ contract HelperConfig is Script {
     {
         return
             NetworkConfig({
-                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.7
+                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
                 usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
                 usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
                 weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
