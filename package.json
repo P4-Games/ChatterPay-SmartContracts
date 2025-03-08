@@ -1,11 +1,23 @@
 {
-    "name": "eth-arg",
-    "module": "src/index.ts",
+    "name": "chatterpay-contracts",
+    "license": "MIT",
     "type": "module",
     "scripts": {
-        "start": "bun run src/index.ts",
+        "build:local": "FOUNDRY_PROFILE=local forge build",
+        "build:prod": "FOUNDRY_PROFILE=production forge build",
+        "test:local": "FOUNDRY_PROFILE=local bash test/run_all_tests.sh",
+        "test:prod": "FOUNDRY_PROFILE=production bash test/run_all_tests.sh",
+        "test:gas": "REPORT_GAS=true FOUNDRY_PROFILE=production bash test/run_all_tests.sh",
+        "test:coverage:local": "FOUNDRY_PROFILE=local bash test/run_tests_coverage.sh",
+        "test:one:local": "FOUNDRY_PROFILE=local bash test/run_one_contract_tests.sh",
+        "clean": "forge clean",
+        "clean:full": "forge clean && rm -rf cache .forge-cache",
+        "deploy:arbitrum-sepolia": "make deploy_arbitrum_sepolia_all",
+        "deploy:arbitrum-sepolia:verify": "make deploy_verify_arbitrum_sepolia_all",
+        "deploy:chatterpay": "make deploy_arbitrum_sepolia_only_chatterpay",
+        "deploy:chatterpay:verify": "make deploy_verify_arbitrum_sepolia_only_chatterpay",
         "generate-types": "typechain --target=ethers-v5 './src/artifacts/**/*.json'",
-        "dev": "bun --watch src/index.ts"
+        "generate:abis": "bash script/generate_abis.sh"
     },
     "devDependencies": {
         "@types/bun": "latest",
@@ -15,29 +27,9 @@
         "typescript": "^5.0.0"
     },
     "dependencies": {
-        "@fastify/autoload": "^5.10.0",
-        "@fastify/static": "^7.0.4",
-        "@fastify/swagger": "^8.15.0",
-        "@fastify/swagger-ui": "^4.0.1",
-        "@lifi/sdk": "^2.5.1",
         "@openzeppelin/contracts": "^5.0.2",
-        "@typechain/ethers-v5": "^11.1.2",
-        "@typechain/hardhat": "^9.1.0",
-        "@types/chai": "^4.3.17",
-        "@types/mocha": "^10.0.7",
-        "alchemy-sdk": "^3.3.1",
-        "axios": "^1.7.3",
         "bcrypt": "^5.1.1",
-        "dotenv": "^16.4.5",
-        "ethers": "^5.7.2",
-        "ethers-5": "npm:ethers@^5.7.2",
-        "fastify": "^4.28.1",
-        "fastify-swagger": "^5.2.0",
-        "logger": "^0.0.1",
-        "mongoose": "^8.5.2",
-        "typechain": "^8.3.2",
-        "userop": "0.3.8",
-        "web3": "^4.11.1"
+        "dotenv": "^16.4.5"
     },
     "trustedDependencies": [
         "es5-ext"

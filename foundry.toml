@@ -2,6 +2,37 @@
 src = "src"
 out = "out"
 libs = ["lib"]
-remappings = ['@openzeppelin/contracts=lib/openzeppelin-contracts/contracts']
+remappings = [
+    '@openzeppelin/contracts=lib/openzeppelin-contracts/contracts',
+    '@openzeppelin/contracts-upgradeable=lib/openzeppelin-contracts-upgradeable/contracts',
+    'forge-std/=lib/forge-std/src/'
+]
 
-# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+# Local development profile - optimized for faster builds
+[profile.local]
+ffi = true
+ast = true
+via_ir = false # Disabled for faster compilation
+optimizer = true
+optimizer_runs = 50
+build_info = true
+extra_output = ["storageLayout"]
+verbosity = 3
+gas_reports = ["*"]
+cache = true
+cache_path = 'cache'
+
+# Production profile - optimized for deployment
+[profile.production]
+ffi = false
+ast = true
+via_ir = true
+optimizer = true
+optimizer_runs = 1000
+build_info = false
+extra_output = ["storageLayout"]
+verbosity = 0
+gas_reports = ["*"]
+deny_warnings = true
+force = true
+cache = false
