@@ -20,6 +20,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISwapRouter} from "./interfaces/ISwapRouter.sol";
 import {IChatterPayWalletFactory} from "./ChatterPayWalletFactory.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
 error ChatterPay__NotFromEntryPoint();
 error ChatterPay__NotFromEntryPointOrOwner();
@@ -70,9 +72,11 @@ contract ChatterPayStorage {
 
 contract ChatterPay is
     IAccount,
-    UUPSUpgradeable,
+    Initializable,
+    ContextUpgradeable,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
+    UUPSUpgradeable,
     ChatterPayStorage
 {
     using SafeERC20 for IERC20;
@@ -168,9 +172,7 @@ contract ChatterPay is
         _;
     }
 
-    /**
-     * @dev Constructor that disables initialization for the implementation contract
-     */
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
@@ -211,9 +213,11 @@ contract ChatterPay is
         if (_whitelistedTokens.length != _priceFeeds.length)
             revert ChatterPay__InvalidArrayLengths();
 
+        // Initialize all parent contracts in inheritance order
+        __Context_init();
         __Ownable_init(_owner);
-        __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
+        __UUPSUpgradeable_init_unchained();
 
         s_state.entryPoint = IEntryPoint(_entryPoint);
         s_state.paymaster = _paymaster;
@@ -242,7 +246,7 @@ contract ChatterPay is
             emit TokenWhitelisted(token, true);
         }
     }
-
+    
     /*//////////////////////////////////////////////////////////////
                          GETTER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -695,9 +699,6 @@ contract ChatterPay is
         bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(ethSignedMessageHash, userOp.signature);
 
-        
-
-
         // owner: Returns the user's wallet (executed via the EntryPoint!).  
         // If requested from the command line, it will return the owner who deployed the contract (backend signer).  
         // signer: The person who signed the userOperation, which must be the wallet owner.
@@ -706,8 +707,6 @@ contract ChatterPay is
         }
         return SIG_VALIDATION_SUCCESS;
     }
-
-
 
     /**
      * @dev Handles account prefunding
@@ -729,5 +728,4 @@ contract ChatterPay is
     ) internal override onlyOwner {}
 
     receive() external payable {}
-
 }
