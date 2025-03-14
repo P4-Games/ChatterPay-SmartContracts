@@ -172,6 +172,10 @@ contract ChatterPay is
         _;
     }
 
+    /**
+     * @dev Disables initialization for the implementation contract
+     */
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
