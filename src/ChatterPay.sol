@@ -171,11 +171,9 @@ contract ChatterPay is
     /**
      * @dev Constructor that disables initialization for the implementation contract
      */
-    /*
     constructor() {
         _disableInitializers();
     }
-    */
 
     /*//////////////////////////////////////////////////////////////
                             INITIALIZATION
@@ -420,8 +418,6 @@ contract ChatterPay is
         uint256 swapAmount = amountIn - fee;
 
         // Swap setup
-        IERC20(tokenIn).approve(address(s_state.swapRouter), swapAmount);
-
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: tokenIn,
             tokenOut: tokenOut,
