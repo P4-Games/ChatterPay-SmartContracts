@@ -72,51 +72,59 @@ contract ChatterPayPaymaster is IPaymaster {
         UserOperation calldata userOp,
         bytes32,
         uint256
-    ) external view override returns (bytes memory context, uint256 validationData) {
+    )
+        external
+        view
+        override
+        returns (bytes memory context, uint256 validationData)
+    {
         _requireFromEntryPoint();
-        /*
+
         bytes memory paymasterAndData = userOp.paymasterAndData;
 
-        // Validate data length
-        if (paymasterAndData.length != 93) revert ChatterPayPaymaster__InvalidDataLength();
+        // Validate data length - expecting 93 bytes (20 + 65 + 8)
+        if (paymasterAndData.length != 93)
+            revert ChatterPayPaymaster__InvalidDataLength();
 
         // Extract components
         bytes memory signature = _slice(paymasterAndData, 20, 65);
         uint64 expiration = uint64(bytes8(_slice(paymasterAndData, 85, 8)));
 
         // Validate expiration and chain
-        if (block.timestamp > expiration) revert ChatterPayPaymaster__SignatureExpired();
-        if (block.chainid != chainId) revert ChatterPayPaymaster__InvalidChainId();
+        if (block.timestamp > expiration)
+            revert ChatterPayPaymaster__SignatureExpired();
+        if (block.chainid != chainId)
+            revert ChatterPayPaymaster__InvalidChainId();
 
-        // Validate signature
+        // Validate signature - MUST match backend's hash calculation exactly
         bytes32 messageHash = keccak256(
             abi.encode(
                 userOp.sender,
                 expiration,
-                chainId,
-                entryPoint,
+                uint256(chainId),
+                address(entryPoint),
                 userOp.callData
             )
         );
 
         address recoveredAddress = _recoverSigner(messageHash, signature);
-        if (recoveredAddress != backendSigner) revert ChatterPayPaymaster__InvalidSignature();
-        */
+        if (recoveredAddress != backendSigner)
+            revert ChatterPayPaymaster__InvalidSignature();
+
         return ("", 0);
     }
 
     /**
-    * @notice Implements the postOp function required by IPaymaster.
-    * @dev This function is marked as view since it only verifies that the caller is the EntryPoint.
-    */
+     * @notice Implements the postOp function required by IPaymaster.
+     * @dev This function is marked as view since it only verifies that the caller is the EntryPoint.
+     */
     function postOp(
-        PostOpMode,         // Unused parameter
-        bytes calldata,     // Unused parameter
-        uint256             // Unused parameter
+        PostOpMode, // Unused parameter
+        bytes calldata, // Unused parameter
+        uint256 // Unused parameter
     ) external view override {
         _requireFromEntryPoint();
     }
-
 
     /**
      * Add stake for this paymaster.
@@ -184,7 +192,8 @@ contract ChatterPayPaymaster is IPaymaster {
      * @custom:error ChatterPayPaymaster__OnlyEntryPoint if caller is not EntryPoint
      */
     function _requireFromEntryPoint() internal view {
-        if (msg.sender != address(entryPoint)) revert ChatterPayPaymaster__OnlyEntryPoint();
+        if (msg.sender != address(entryPoint))
+            revert ChatterPayPaymaster__OnlyEntryPoint();
     }
 
     /**
@@ -201,7 +210,8 @@ contract ChatterPayPaymaster is IPaymaster {
         uint256 start,
         uint256 length
     ) internal pure returns (bytes memory) {
-        if (data.length < start + length) revert ChatterPayPaymaster__SliceOutOfBounds();
+        if (data.length < start + length)
+            revert ChatterPayPaymaster__SliceOutOfBounds();
         bytes memory result = new bytes(length);
         for (uint256 i = 0; i < length; i++) {
             result[i] = data[start + i];
@@ -222,7 +232,8 @@ contract ChatterPayPaymaster is IPaymaster {
         bytes32 messageHash,
         bytes memory signature
     ) internal pure returns (address) {
-        if (signature.length != 65) revert ChatterPayPaymaster__InvalidSignatureLength();
+        if (signature.length != 65)
+            revert ChatterPayPaymaster__InvalidSignatureLength();
         bytes32 r;
         bytes32 s;
         uint8 v;
