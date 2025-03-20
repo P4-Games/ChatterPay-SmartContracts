@@ -99,9 +99,9 @@ contract DeployAllContracts is Script {
         console2.log('"entryPoint": "%s",', "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789");
         console2.log('"factoryAddress": "%s",', address(factory));
         console2.log('"chatterPayAddress": "%s",', address(chatterPay));
-        console2.log('"simpleSwapAddress": "%s",', "0x");
         console2.log('"chatterNFTAddress": "%s",', address(chatterPayNFT));
-        console2.log('"paymasterAddress": "%s"', address(paymaster));
+        console2.log('"paymasterAddress": "%s",', address(paymaster));
+        console2.log('"routerAddress": "%s"', config.router);
         console2.log("}");
 
         console2.log("------------------------------------------------------------------------------");
@@ -119,8 +119,13 @@ contract DeployAllContracts is Script {
      * @notice Deploy paymaster with entryPoint and backend signer (config.account)
      */
     function deployPaymaster() internal {
-         address paymasterAddress = vm.envAddress("DEPLOYED_PAYMASTER_ADDRESS");
-
+        address paymasterAddress;
+        try vm.envAddress("DEPLOYED_PAYMASTER_ADDRESS") returns (address addr) {
+            paymasterAddress = addr;
+        } catch {
+            paymasterAddress = address(0); 
+        }
+    
         if (paymasterAddress == address(0)) {
             console2.log("Creating NEW Paymaster!");
             paymaster = new ChatterPayPaymaster(config.entryPoint, config.account);

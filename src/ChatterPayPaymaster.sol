@@ -160,6 +160,15 @@ contract ChatterPayPaymaster is IPaymaster {
     }
 
     /**
+     * withdraw from the deposit.
+     * @param withdrawAddress the address to send withdrawn value.
+     * @param withdrawAmount the amount to withdraw.
+     */
+    function withdrawTo(address payable withdrawAddress, uint256 withdrawAmount) external {
+         entryPoint.withdrawTo(withdrawAddress, withdrawAmount);
+    }
+
+    /**
      * @notice Executes a low-level call to a specified address
      * @dev Only callable by the contract owner
      * @param dest The address to call

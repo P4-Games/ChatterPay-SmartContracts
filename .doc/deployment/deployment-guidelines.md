@@ -1,5 +1,16 @@
 # Deployment Guidelines
 
+## Contracts Deployment
+
+Find contract deployment addresses by network at these links:
+
+- USDT 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9 
+- USDC (Circle): [Circle Contracts Addresses](https://www.circle.com/blog/usdc-on-arbitrum-now-available)
+- WETH:  [Arbitrum Contract Addresses](https://docs.arbitrum.io/build-decentralized-apps/reference/contract-addresses)
+- Uniswap Swap Router: [Uniswap Contract Deployments](https://docs.uniswap.org/contracts/v3/reference/deployments/polygon-deployments) 
+- EntryPoint: [eth Infinitism - Account Abstraction](https://github.com/eth-infinitism/account-abstraction/releases/tag/v0.6.0)
+
+
 ## Paymaster Deployment
 
 ### Post-Deployment
