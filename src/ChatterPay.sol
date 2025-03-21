@@ -178,7 +178,7 @@ contract ChatterPay is
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
-        _disableInitializers();
+        // To-Fix: _disableInitializers();
     }
 
     /*//////////////////////////////////////////////////////////////

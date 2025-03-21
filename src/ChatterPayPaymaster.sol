@@ -7,7 +7,6 @@ import {IEntryPoint} from "lib/entry-point-v6/interfaces/IEntryPoint.sol";
 error ChatterPayPaymaster__OnlyOwner();
 error ChatterPayPaymaster__OnlyEntryPoint();
 error ChatterPayPaymaster__InvalidDataLength();
-error ChatterPayPaymaster__SignatureExpired();
 error ChatterPayPaymaster__InvalidSignature();
 error ChatterPayPaymaster__InvalidChainId();
 error ChatterPayPaymaster__InvalidVValue();
@@ -22,10 +21,13 @@ error ChatterPayPaymaster__ExecutionFailed();
  */
 contract ChatterPayPaymaster is IPaymaster {
     address public owner;
-    // address public entryPoint;
     IEntryPoint public entryPoint;
     address private backendSigner;
     uint256 private immutable chainId;
+
+    // Offset constants
+    uint256 private constant SIGNATURE_OFFSET = 20;
+    uint256 private constant EXPIRATION_OFFSET = 85;
 
     /**
      * @notice Ensures that only the contract owner can call the function
@@ -58,13 +60,12 @@ contract ChatterPayPaymaster is IPaymaster {
 
     /**
      * @notice Validates a UserOperation for the Paymaster
-     * @dev Ensures the operation is properly signed and not expired
+     * @dev Ensures the operation is properly signed and returns validationData with expiration time
      * @param userOp The UserOperation struct containing operation details
      * @return context Additional context for the operation (empty in this case)
-     * @return validationData A value indicating the validation status (0 = valid)
+     * @return validationData A packed value containing validation status and expiration time
      * @custom:error ChatterPayPaymaster__OnlyEntryPoint if caller is not EntryPoint
      * @custom:error ChatterPayPaymaster__InvalidDataLength if paymasterAndData is malformed
-     * @custom:error ChatterPayPaymaster__SignatureExpired if signature expiration is reached
      * @custom:error ChatterPayPaymaster__InvalidSignature if signature is invalid
      * @custom:error ChatterPayPaymaster__InvalidChainId if chain ID doesn't match
      */
@@ -72,51 +73,79 @@ contract ChatterPayPaymaster is IPaymaster {
         UserOperation calldata userOp,
         bytes32,
         uint256
-    ) external view override returns (bytes memory context, uint256 validationData) {
+    )
+        external
+        view
+        override
+        returns (bytes memory context, uint256 validationData)
+    {
         _requireFromEntryPoint();
-        /*
+
         bytes memory paymasterAndData = userOp.paymasterAndData;
 
-        // Validate data length
-        if (paymasterAndData.length != 93) revert ChatterPayPaymaster__InvalidDataLength();
+        // Validate data length - expecting 93 bytes (20 + 65 + 8)
+        if (paymasterAndData.length != 93)
+            revert ChatterPayPaymaster__InvalidDataLength();
 
         // Extract components
-        bytes memory signature = _slice(paymasterAndData, 20, 65);
-        uint64 expiration = uint64(bytes8(_slice(paymasterAndData, 85, 8)));
+        bytes memory signature = _slice(paymasterAndData, SIGNATURE_OFFSET, 65);
+        uint64 expiration = uint64(
+            bytes8(_slice(paymasterAndData, EXPIRATION_OFFSET, 8))
+        );
 
-        // Validate expiration and chain
-        if (block.timestamp > expiration) revert ChatterPayPaymaster__SignatureExpired();
-        if (block.chainid != chainId) revert ChatterPayPaymaster__InvalidChainId();
+        // Validate chain ID - this is allowed in validation
+        if (block.chainid != chainId)
+            revert ChatterPayPaymaster__InvalidChainId();
 
-        // Validate signature
+        // Validate signature - MUST match backend's hash calculation exactly
         bytes32 messageHash = keccak256(
             abi.encode(
                 userOp.sender,
                 expiration,
-                chainId,
-                entryPoint,
+                uint256(chainId),
+                address(entryPoint),
                 userOp.callData
             )
         );
 
         address recoveredAddress = _recoverSigner(messageHash, signature);
-        if (recoveredAddress != backendSigner) revert ChatterPayPaymaster__InvalidSignature();
-        */
-        return ("", 0);
+        bool sigFailed = recoveredAddress != backendSigner;
+
+        if (sigFailed) revert ChatterPayPaymaster__InvalidSignature();
+
+        // Pack validation data with expiration time instead of checking block.timestamp
+        // validAfter = 0 (can be executed immediately)
+        // validUntil = expiration timestamp
+        return ("", _packValidationData(false, expiration, 0));
     }
 
     /**
-    * @notice Implements the postOp function required by IPaymaster.
-    * @dev This function is marked as view since it only verifies that the caller is the EntryPoint.
-    */
+     * @notice Packs validation data according to EIP-4337 format
+     * @dev Combines signature validation, validUntil and validAfter into a single uint256
+     * @param sigFailed Whether the signature validation failed
+     * @param validUntil The timestamp until which the operation is valid
+     * @param validAfter The timestamp after which the operation is valid
+     * @return A packed uint256 containing all validation data
+     */
+    function _packValidationData(
+        bool sigFailed,
+        uint256 validUntil,
+        uint256 validAfter
+    ) internal pure returns (uint256) {
+        return (sigFailed ? 1 : 0) | (validUntil << 160) | (validAfter << 192);
+    }
+
+    /**
+     * @notice Implements the postOp function required by IPaymaster.
+     * @dev This function is marked as view since it only verifies that the caller is the EntryPoint.
+     */
     function postOp(
-        PostOpMode,         // Unused parameter
-        bytes calldata,     // Unused parameter
-        uint256             // Unused parameter
+        PostOpMode, // Unused parameter
+        bytes calldata, // Unused parameter
+        uint256 // Unused parameter
     ) external view override {
         _requireFromEntryPoint();
     }
-
 
     /**
      * Add stake for this paymaster.
@@ -156,8 +185,11 @@ contract ChatterPayPaymaster is IPaymaster {
      * @param withdrawAddress the address to send withdrawn value.
      * @param withdrawAmount the amount to withdraw.
      */
-    function withdrawTo(address payable withdrawAddress, uint256 withdrawAmount) external {
-         entryPoint.withdrawTo(withdrawAddress, withdrawAmount);
+    function withdrawTo(
+        address payable withdrawAddress,
+        uint256 withdrawAmount
+    ) external onlyOwner {
+        entryPoint.withdrawTo(withdrawAddress, withdrawAmount);
     }
 
     /**
@@ -193,7 +225,8 @@ contract ChatterPayPaymaster is IPaymaster {
      * @custom:error ChatterPayPaymaster__OnlyEntryPoint if caller is not EntryPoint
      */
     function _requireFromEntryPoint() internal view {
-        if (msg.sender != address(entryPoint)) revert ChatterPayPaymaster__OnlyEntryPoint();
+        if (msg.sender != address(entryPoint))
+            revert ChatterPayPaymaster__OnlyEntryPoint();
     }
 
     /**
@@ -210,7 +243,8 @@ contract ChatterPayPaymaster is IPaymaster {
         uint256 start,
         uint256 length
     ) internal pure returns (bytes memory) {
-        if (data.length < start + length) revert ChatterPayPaymaster__SliceOutOfBounds();
+        if (data.length < start + length)
+            revert ChatterPayPaymaster__SliceOutOfBounds();
         bytes memory result = new bytes(length);
         for (uint256 i = 0; i < length; i++) {
             result[i] = data[start + i];
@@ -231,7 +265,8 @@ contract ChatterPayPaymaster is IPaymaster {
         bytes32 messageHash,
         bytes memory signature
     ) internal pure returns (address) {
-        if (signature.length != 65) revert ChatterPayPaymaster__InvalidSignatureLength();
+        if (signature.length != 65)
+            revert ChatterPayPaymaster__InvalidSignatureLength();
         bytes32 r;
         bytes32 s;
         uint8 v;
