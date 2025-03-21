@@ -288,21 +288,37 @@ contract PaymasterTest is BaseTest {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerKey, messageHash);
 
         // Solidity and JavaScript handle signature formats differently
-        // vm.sign produces a signature where the v value must be adjusted to be compatible
-        // with how our contract processes signatures
-        v = v + 27; // Adjust v value to match the 27/28 values expected by the contract
+        // vm.sign may return v as 0 or 1, we need it to be 27 or 28
+        if (v < 27) {
+            v += 27;
+        }
 
-        bytes memory signature = abi.encodePacked(r, s, v);
+        // Crear paymasterAndData con disposición de bytes exacta y controlada
+        bytes memory paymasterAndData = new bytes(93);
 
-        // Ensure signature is exactly 65 bytes
-        require(signature.length == 65, "Signature must be 65 bytes");
+        // Copiar dirección del paymaster (primeros 20 bytes)
+        for (uint i = 0; i < 20; i++) {
+            paymasterAndData[i] = bytes20(paymaster)[i];
+        }
 
-        // Construct paymaster data (20 + 65 + 8 = 93 bytes total)
-        return
-            abi.encodePacked(
-                paymaster, // 20 bytes
-                signature, // 65 bytes
-                bytes8(expiration) // 8 bytes
-            );
+        // Copiar r (32 bytes)
+        for (uint i = 0; i < 32; i++) {
+            paymasterAndData[20 + i] = bytes32(r)[i];
+        }
+
+        // Copiar s (32 bytes)
+        for (uint i = 0; i < 32; i++) {
+            paymasterAndData[52 + i] = bytes32(s)[i];
+        }
+
+        // Establecer v (1 byte)
+        paymasterAndData[84] = bytes1(v);
+
+        // Copiar expiración (8 bytes)
+        for (uint i = 0; i < 8; i++) {
+            paymasterAndData[85 + i] = bytes8(expiration)[i];
+        }
+
+        return paymasterAndData;
     }
 }
