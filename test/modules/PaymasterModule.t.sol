@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
 import {BaseTest} from "../setup/BaseTest.sol";
-import {ChatterPayPaymaster, ChatterPayPaymaster__SignatureExpired, ChatterPayPaymaster__InvalidSignature, ChatterPayPaymaster__OnlyOwner, ChatterPayPaymaster__InvalidDataLength} from "../../src/ChatterPayPaymaster.sol";
+import {ChatterPayPaymaster, ChatterPayPaymaster__InvalidSignature, ChatterPayPaymaster__OnlyOwner, ChatterPayPaymaster__InvalidDataLength} from "../../src/ChatterPayPaymaster.sol";
 import {UserOperation} from "lib/entry-point-v6/interfaces/IAccount.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
@@ -46,9 +46,6 @@ contract PaymasterTest is BaseTest {
      * @dev Verifies that a valid signature and unexpired timestamp pass validation
      */
     function testValidPaymasterUserOp() public {
-        // Remove skip now that validatePaymasterUserOp is fixed
-        // vm.skip(true);
-
         // Create test UserOperation
         UserOperation memory userOp = _createBasicUserOp();
 
@@ -68,23 +65,32 @@ contract PaymasterTest is BaseTest {
         (bytes memory context, uint256 validationData) = paymasterInstance
             .validatePaymasterUserOp(userOp, bytes32(0), 0);
 
-        // Assert validation succeeded
-        assertEq(validationData, 0, "Validation should succeed");
+        // Extract validUntil from validationData (bits 160-191)
+        uint48 validUntil = uint48(validationData >> 160);
+
+        // Assert validation succeeded and expiration time is properly set
+        assertEq(
+            validationData & 1,
+            0,
+            "Signature verification should succeed"
+        );
+        assertEq(
+            validUntil,
+            expiration,
+            "validUntil should match expiration time"
+        );
         assertEq(context.length, 0, "Context should be empty");
     }
 
     /**
      * @notice Tests rejection of expired signatures
-     * @dev Verifies that an expired timestamp causes validation to fail
+     * @dev Verifies that an expired timestamp causes validation to return correct validationData
      */
     function testExpiredSignature() public {
-        // Remove skip now that validatePaymasterUserOp is fixed
-        // vm.skip(true);
-
         UserOperation memory userOp = _createBasicUserOp();
 
-        // Generate paymaster data with expired timestamp
-        uint64 expiration = uint64(block.timestamp - 1); // Expired
+        // Generate paymaster data with soon-to-expire timestamp
+        uint64 expiration = uint64(block.timestamp + 10); // Expire soon
         bytes memory paymasterData = _generatePaymasterData(
             address(paymasterInstance),
             userOp.sender,
@@ -94,10 +100,32 @@ contract PaymasterTest is BaseTest {
         );
         userOp.paymasterAndData = paymasterData;
 
-        // Expect revert on validation
+        // Validate through EntryPoint
         vm.prank(ENTRY_POINT);
-        vm.expectRevert(ChatterPayPaymaster__SignatureExpired.selector);
-        paymasterInstance.validatePaymasterUserOp(userOp, bytes32(0), 0);
+        (bytes memory context, uint256 validationData) = paymasterInstance
+            .validatePaymasterUserOp(userOp, bytes32(0), 0);
+
+        // Extract validUntil from validationData (bits 160-191)
+        uint48 validUntil = uint48(validationData >> 160);
+
+        // Assert validUntil is set correctly
+        assertEq(
+            validUntil,
+            expiration,
+            "validUntil should match expiration time"
+        );
+        assertEq(context.length, 0, "Context should be empty");
+
+        // Time travel past expiration
+        vm.warp(block.timestamp + 20);
+
+        // EntryPoint would reject this operation due to expiration
+        // This test simulates the EntryPoint's behavior
+        bool wouldBeRejected = block.timestamp > validUntil;
+        assertTrue(
+            wouldBeRejected,
+            "Operation should be rejected after expiration"
+        );
     }
 
     /**
@@ -105,9 +133,6 @@ contract PaymasterTest is BaseTest {
      * @dev Verifies that an incorrectly signed operation is rejected
      */
     function testInvalidSignature() public {
-        // Remove skip now that validatePaymasterUserOp is fixed
-        // vm.skip(true);
-
         UserOperation memory userOp = _createBasicUserOp();
 
         // Generate paymaster data with wrong signer
@@ -190,9 +215,6 @@ contract PaymasterTest is BaseTest {
      * @notice Tests invalid data length in paymaster data
      */
     function testInvalidDataLength() public {
-        // Remove skip now that validatePaymasterUserOp is fixed
-        // vm.skip(true);
-
         UserOperation memory userOp = _createBasicUserOp();
         userOp.paymasterAndData = abi.encodePacked(address(paymasterInstance)); // Invalid length
 
