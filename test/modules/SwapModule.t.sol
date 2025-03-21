@@ -181,6 +181,12 @@ contract SwapModule is BaseTest {
         console.log("Fee admin:", feeAdmin);
         console.log("Initial balance:", initialFeeAdminBalance);
 
+        // Approve router to spend USDC
+        address router = address(moduleWallet.getSwapRouter());
+        vm.startPrank(moduleWalletAddress); // La wallet misma debe hacer el approve
+        IERC20(USDC).approve(router, amountIn);
+        vm.stopPrank();
+
         // Execute swap
         vm.prank(ENTRY_POINT);
         moduleWallet.executeSwap(USDC, USDT, amountIn, minAmountOut, owner);
