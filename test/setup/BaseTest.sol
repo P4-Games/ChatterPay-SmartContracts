@@ -167,16 +167,6 @@ abstract contract BaseTest is Test{
         address[] memory priceFeeds = new address[](2);
         priceFeeds[0] = USDC_USD_FEED;
         priceFeeds[1] = USDT_USD_FEED;
-        ChatterPay(payable(address(implementation))).initialize(
-            ENTRY_POINT,
-            owner,
-            address(paymaster),
-            UNISWAP_ROUTER,
-            address(factory),
-            owner, // fee admin
-            whitelistedTokens,
-            priceFeeds
-        );
 
         vm.stopPrank();
     }
