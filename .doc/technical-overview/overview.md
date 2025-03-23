@@ -26,19 +26,16 @@ These smart contracts collectively form a powerful ecosystem for wallet manageme
 3. [**ChatterPayPaymaster.sol**](../../src/ChatterPayPaymaster.sol)  
    Paymaster contract that validates and manages user operations with signature-based authentication and fee handling, integrated with the EntryPoint contract.
 
-4. [**ChatterPayVault.sol**](../../src/ChatterPayVault.sol)  
-   A vault contract that handles password-protected payments, commitments, and secure asset storage with mechanisms for reservation, redemption, and cancellation.
-
-5. [**ChatterPayWalletFactory.sol**](../../src/ChatterPayWalletFactory.sol)  
+4. [**ChatterPayWalletFactory.sol**](../../src/ChatterPayWalletFactory.sol)  
    Factory contract for deploying and managing ChatterPay wallet proxies. Provides deterministic address computation, proxy tracking, and upgradeability.
 
-6. [**ChatterPayWalletProxy.sol**](../../src/ChatterPayWalletProxy.sol)  
+5. [**ChatterPayWalletProxy.sol**](../../src/ChatterPayWalletProxy.sol)  
    An upgradeable proxy contract for ChatterPay wallets, leveraging the ERC-1967 Proxy standard to enable wallet upgrades and version control.
 
-7. [**AggregatorV3Interface.sol**](../../src/interfaces/AggregatorV3Interface.sol)  
+6. [**AggregatorV3Interface.sol**](../../src/interfaces/AggregatorV3Interface.sol)  
    Interface for interacting with Chainlink price feed aggregators, providing methods to fetch price data and metadata for token feeds.
 
-8. [**ISwapRouter.sol**](../../src/interfaces/ISwapRouter.sol)  
+7. [**ISwapRouter.sol**](../../src/interfaces/ISwapRouter.sol)  
    Interface for the Uniswap V3 swap router, enabling precise control over token swaps, slippage, and multi-hop routing.
 
 ---

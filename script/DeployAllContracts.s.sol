@@ -7,7 +7,6 @@ import {ChatterPay} from "../src/ChatterPay.sol";
 import {ChatterPayWalletFactory} from "../src/ChatterPayWalletFactory.sol";
 import {ChatterPayPaymaster} from "../src/ChatterPayPaymaster.sol";
 import {ChatterPayNFT} from "../src/ChatterPayNFT.sol";
-import {ChatterPayVault} from "../src/ChatterPayVault.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Extended} from "../src/ChatterPay.sol";
@@ -25,7 +24,6 @@ contract DeployAllContracts is Script {
     ChatterPayWalletFactory factory;
     ChatterPayPaymaster paymaster;
     ChatterPayNFT chatterPayNFT;
-    ChatterPayVault vault;
 
     // Uniswap V3 Addresses (immutable)
     address immutable uniswapFactory;
@@ -355,14 +353,6 @@ contract DeployAllContracts is Script {
         } catch Error(string memory reason) {
             console2.log("Failed to get tokenA balance: %s", reason);
         }
-    }
-
-    /**
-     * @notice Deploys the ChatterPayVault contract.
-     */
-    function deployVault() internal {
-        vault = new ChatterPayVault();
-        console2.log("Vault deployed at address %s", address(vault));
     }
 
     /**
