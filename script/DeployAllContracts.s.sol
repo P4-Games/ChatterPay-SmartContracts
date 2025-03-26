@@ -87,7 +87,6 @@ contract DeployAllContracts is Script {
         deployChatterPay();                          // 3. Deploy ChatterPay using UUPS Proxy
         deployNFT();                                 // 4. Deploy NFT with Transparent Proxy
         configureUniswapPool();                      // 5. Configure Uniswap V3 Pool
-        deployVault();                               // 6. Deploy Vault
 
         // Stop broadcasting transactions
         vm.stopBroadcast();
