@@ -138,7 +138,7 @@ _Contributors_:
 
 * Core Developers: [tomasDmArg](https://github.com/TomasDmArg) - [tomasfrancizco](https://github.com/tomasfrancizco) - [dappsar](https://github.com/dappsar)
 
-* Auditors: [EperezOk](https://github.com/EperezO) - [0xJuancito](https://github.com/0xJuancito) - [Magehernan](https://github.com/Magehernan)
+* Auditors: [EperezOk](https://github.com/EperezOk) - [0xJuancito](https://github.com/0xJuancito) - [Magehernan](https://github.com/Magehernan)
 
 * See more in: <https://github.com/P4-Games/chatterPay-SmartContracts/graphs/contributors>
 
