@@ -141,7 +141,8 @@ abstract contract BaseTest is Test {
             UNISWAP_ROUTER, // _router
             owner, // _feeAdmin
             new address[](0), // _whitelistedTokens
-            new address[](0) // _priceFeeds
+            new address[](0), // _priceFeeds
+            new bool[](0) // _tokensStableFlags
         );
         console.log("Factory deployed at:", address(factory));
 

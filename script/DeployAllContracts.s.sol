@@ -30,9 +30,10 @@ contract DeployAllContracts is Script {
     address immutable uniswapPositionManager;
     uint24 poolFee = 3000; // Fee tier of 0.3%
 
-    // Tokens and Price Feeds arrays
+    // Tokens, Price Feeds and tokens-stable flags arrays
     address[] tokens;
     address[] priceFeeds;
+    bool[] tokensStableFlags;
 
     // Environment Variables
     string NFTBaseUri = vm.envString("NFT_BASE_URI");
@@ -42,6 +43,9 @@ contract DeployAllContracts is Script {
 
     // Comma-separated list of price feeds
     string priceFeedsEnv = vm.envString("PRICE_FEEDS");
+
+    // Comma-separated list of tokens stable flag
+    string tokensStableFlagsEnv = vm.envString("TOKENS_ARE_STABLE");
 
     constructor() {
         uniswapFactory = vm.envAddress("UNISWAP_FACTORY");
@@ -62,9 +66,13 @@ contract DeployAllContracts is Script {
         // Parse tokens and price feeds from environment variables
         tokens = _parseAddresses(tokensEnv);
         priceFeeds = _parseAddresses(priceFeedsEnv);
+        tokensStableFlags = _parseBools(tokensStableFlagsEnv);
 
         // Ensure the number of tokens matches the number of price feeds
         require(tokens.length == priceFeeds.length, "Tokens and Price Feeds must have the same length");
+
+        // Ensure the number of tokens matches the number of tokens stable flags
+        require(tokens.length == tokensStableFlags.length, "Tokens and Tokens-are-stable must have the same length");
 
         // Start broadcasting transactions with the configured account
         vm.startBroadcast(config.account);
@@ -138,7 +146,8 @@ contract DeployAllContracts is Script {
             config.router, // _router
             config.account, // _feeAdmin (using account as fee admin)
             tokens, // _whitelistedTokens
-            priceFeeds // _priceFeeds
+            priceFeeds, // _priceFeeds
+            tokensStableFlags
         );
         console2.log("Wallet Factory deployed at address %s", address(factory));
 
@@ -158,7 +167,7 @@ contract DeployAllContracts is Script {
         address proxy = Upgrades.deployUUPSProxy(
             "ChatterPay.sol:ChatterPay", // Contract name as string.
             abi.encodeWithSignature(
-                "initialize(address,address,address,address,address,address,address[],address[])",
+                "initialize(address,address,address,address,address,address,address[],address[],bool[])",
                 config.entryPoint, // _entryPoint.
                 config.account, // _owner (owner must be the creator).
                 address(paymaster), // _paymaster.
@@ -166,7 +175,8 @@ contract DeployAllContracts is Script {
                 address(factory), // _factory.
                 feeAdmin, // _feeAdmin.
                 tokens, // _whitelistedTokens (token addresses).
-                priceFeeds // _priceFeeds (corresponding price feed addresses).
+                priceFeeds, // _priceFeeds (corresponding price feed addresses).
+                tokensStableFlags // __tokensStableFlags.
             )
         );
 
@@ -353,5 +363,26 @@ contract DeployAllContracts is Script {
             addresses[i] = vm.parseAddress(parts[i]);
         }
         return addresses;
+    }
+
+    /**
+     * @notice Helper function to parse booleans from a comma-separated string.
+     * @param _boolsStr Comma-separated string of booleans (e.g., "true,false,true").
+     * @return bool[] Array of parsed booleans.
+     */
+    function _parseBools(string memory _boolsStr) internal pure returns (bool[] memory) {
+        string[] memory parts = vm.split(_boolsStr, ",");
+        bool[] memory bools = new bool[](parts.length);
+        for (uint256 i = 0; i < parts.length; i++) {
+            // Convert to lower case if needed, then compare
+            if (keccak256(bytes(parts[i])) == keccak256("true")) {
+                bools[i] = true;
+            } else if (keccak256(bytes(parts[i])) == keccak256("false")) {
+                bools[i] = false;
+            } else {
+                revert("Invalid boolean string value");
+            }
+        }
+        return bools;
     }
 }
