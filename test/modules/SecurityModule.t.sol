@@ -35,6 +35,7 @@ contract SecurityModule is BaseTest {
         walletAddress = factory.createProxy(owner);
         walletInstance = ChatterPay(payable(walletAddress));
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
+        walletInstance.addStableToken(USDC);
         vm.stopPrank();
 
         // Setup additional test accounts

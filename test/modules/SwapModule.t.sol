@@ -42,6 +42,8 @@ contract SwapModule is BaseTest {
         // Setup tokens using parent contract constants
         moduleWallet.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         moduleWallet.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
+        moduleWallet.addStableToken(USDC);
+        moduleWallet.addStableToken(USDT);
 
         vm.stopPrank();
     }
@@ -87,7 +89,7 @@ contract SwapModule is BaseTest {
         console.log("Expected fee:", expectedFee);
 
         // Calculate minimum amount out
-        uint256 minAmountOut = (((SWAP_AMOUNT - expectedFee) * 10 ** 12) * 30) / 100;
+        uint256 minAmountOut = ((SWAP_AMOUNT - expectedFee) * 97) / 100; // 3% slippage
         console.log("Minimum amount out:", minAmountOut);
 
         vm.startPrank(ENTRY_POINT);
@@ -116,7 +118,6 @@ contract SwapModule is BaseTest {
 
         uint256 amountIn = 1000e6;
         uint256 minOut = 990e6;
-
         _fundWallet(moduleWalletAddress, amountIn);
 
         vm.startPrank(ENTRY_POINT);

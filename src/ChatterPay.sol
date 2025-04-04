@@ -64,6 +64,16 @@ contract ChatterPayStorage {
         address paymaster;
         uint256 feeInCents;
         address feeAdmin;
+        uint24 uniswapPoolFeeLow;
+        uint24 uniswapPoolFeeMedium;
+        uint24 uniswapPoolFeeHigh;
+        uint256 slippageStables;
+        uint256 slippageEth;
+        uint256 slippageBtc;
+        uint256 maxDeadline;
+        uint256 maxFeeInCents;
+        uint256 priceFreshnessThreshold;
+        uint256 priceFeedPrecision;
         mapping(address => bool) whitelistedTokens;
         mapping(address => address) priceFeeds;
         mapping(bytes32 => uint24) customPoolFees;
@@ -87,10 +97,6 @@ contract ChatterPay is
     bytes32 internal constant IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("chatterpay.proxy.implementation")) - 1);
     ChatterPayState private s_state;
 
-    /*//////////////////////////////////////////////////////////////
-                               CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-
     /*
     * For simulation purposes, validateUserOp (and validatePaymasterUserOp)
     * must return this value in case of signature failure, instead of revert.
@@ -103,26 +109,11 @@ contract ChatterPay is
     */
     uint256 constant SIG_VALIDATION_SUCCESS = 0;
 
-    // Uniswap pool fees
-    uint24 public constant POOL_FEE_LOW = 3000; // 0.3%
-    uint24 public constant POOL_FEE_MEDIUM = 3000; // 0.3%
-    uint24 public constant POOL_FEE_HIGH = 10000; // 1%
-
-    // Default slippage values (in basis points, 1 bp = 0.01%)
-    uint256 public constant SLIPPAGE_STABLES = 300; // 3%
-    uint256 public constant SLIPPAGE_ETH = 500; // 5%
-    uint256 public constant SLIPPAGE_BTC = 1000; // 10%
-
-    uint256 public constant MAX_DEADLINE = 3 minutes;
-    uint256 public constant MAX_FEE_IN_CENTS = 1000; // $10.00
-    uint256 public constant PRICE_FRESHNESS_THRESHOLD = 1 hours;
-    uint256 public constant PRICE_FEED_PRECISION = 8;
+    /// @notice Version for upgrades
+    string public constant VERSION = "2.0.0";
 
     // Increased gap for future upgrades
     uint256[100] private __gap;
-
-    /// @notice Version for upgrades
-    string public constant VERSION = "2.0.0";
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -233,6 +224,19 @@ contract ChatterPay is
         s_state.feeInCents = 50; // Default fee in cents
         s_state.feeAdmin = _feeAdmin;
 
+        s_state.uniswapPoolFeeLow = 3000; // 0.3%
+        s_state.uniswapPoolFeeMedium = 5000; // 0.5%
+        s_state.uniswapPoolFeeHigh = 10000; // 1%
+
+        // Default slippage values (in basis points, 1 bp = 0.01%)
+        s_state.slippageStables = 300; // 3$
+        s_state.slippageEth = 500; // 5%
+        s_state.slippageBtc = 1000; // 10%
+        s_state.maxDeadline = 3 minutes;
+        s_state.maxFeeInCents = 1000; // $10.00
+        s_state.priceFreshnessThreshold = 1 hours;
+        s_state.priceFeedPrecision = 8;
+
         // Set initial token whitelist and price feeds
         for (uint256 i = 0; i < _whitelistedTokens.length; i++) {
             address token = _whitelistedTokens[i];
@@ -243,7 +247,7 @@ contract ChatterPay is
 
             AggregatorV3Interface feed = AggregatorV3Interface(priceFeed);
             try feed.decimals() returns (uint8 decimals) {
-                if (decimals != PRICE_FEED_PRECISION) {
+                if (decimals != s_state.priceFeedPrecision) {
                     revert ChatterPay__InvalidPriceFeed();
                 }
             } catch {
@@ -303,6 +307,29 @@ contract ChatterPay is
         return s_state.stableTokens[token];
     }
 
+    function getPoolFees() external view returns (uint24 low, uint24 medium, uint24 high) {
+        return (s_state.uniswapPoolFeeLow, s_state.uniswapPoolFeeMedium, s_state.uniswapPoolFeeHigh);
+    }
+
+    function getSlippageValues() external view returns (uint256 stables, uint256 eth, uint256 btc) {
+        return (s_state.slippageStables, s_state.slippageEth, s_state.slippageBtc);
+    }
+
+    function getMaxDeadline() external view returns (uint256) {
+        return s_state.maxDeadline;
+    }
+
+    function getMaxFeeInCents() external view returns (uint256) {
+        return s_state.maxFeeInCents;
+    }
+
+    function getPriceFreshnessThreshold() external view returns (uint256) {
+        return s_state.priceFreshnessThreshold;
+    }
+
+    function getPriceFeedPrecision() external view returns (uint256) {
+        return s_state.priceFeedPrecision;
+    }
     /*//////////////////////////////////////////////////////////////
                            MAIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -499,7 +526,7 @@ contract ChatterPay is
      * @param _newFeeInCents New fee in cents
      */
     function updateFee(uint256 _newFeeInCents) external onlyFeeAdmin {
-        if (_newFeeInCents > MAX_FEE_IN_CENTS) {
+        if (_newFeeInCents > s_state.maxFeeInCents) {
             revert ChatterPay__ExceedsMaxFee();
         }
         uint256 oldFee = s_state.feeInCents;
@@ -520,7 +547,7 @@ contract ChatterPay is
         // Validate price feed
         AggregatorV3Interface feed = AggregatorV3Interface(priceFeed);
         try feed.decimals() returns (uint8 decimals) {
-            if (decimals != PRICE_FEED_PRECISION) {
+            if (decimals != s_state.priceFeedPrecision) {
                 revert ChatterPay__InvalidPriceFeed();
             }
         } catch {
@@ -582,7 +609,7 @@ contract ChatterPay is
      * @param fee Custom fee to use
      */
     function setCustomPoolFee(address tokenA, address tokenB, uint24 fee) external onlyOwner {
-        if (fee > POOL_FEE_HIGH) revert ChatterPay__InvalidPoolFee();
+        if (fee > s_state.uniswapPoolFeeHigh) revert ChatterPay__InvalidPoolFee();
 
         bytes32 pairHash = _getPairHash(tokenA, tokenB);
         s_state.customPoolFees[pairHash] = fee;
@@ -598,6 +625,28 @@ contract ChatterPay is
         if (slippageBps > 5000) revert ChatterPay__InvalidSlippage(); // Max 50%
         s_state.customSlippage[token] = slippageBps;
         emit CustomSlippageSet(token, slippageBps);
+    }
+
+    function updateUniswapPoolFees(uint24 low, uint24 medium, uint24 high) external onlyOwner {
+        s_state.uniswapPoolFeeLow = low;
+        s_state.uniswapPoolFeeMedium = medium;
+        s_state.uniswapPoolFeeHigh = high;
+    }
+
+    function updateSlippage(uint256 stables, uint256 eth, uint256 btc) external onlyOwner {
+        s_state.slippageStables = stables;
+        s_state.slippageEth = eth;
+        s_state.slippageBtc = btc;
+    }
+
+    function updatePriceConfig(uint256 freshness, uint256 precision) external onlyOwner {
+        s_state.priceFreshnessThreshold = freshness;
+        s_state.priceFeedPrecision = precision;
+    }
+
+    function updateLimits(uint256 deadline, uint256 maxFeeCents) external onlyOwner {
+        s_state.maxDeadline = deadline;
+        s_state.maxFeeInCents = maxFeeCents;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -646,9 +695,9 @@ contract ChatterPay is
 
         // Default logic
         if (_isStableToken(tokenIn) && _isStableToken(tokenOut)) {
-            return POOL_FEE_LOW;
+            return s_state.uniswapPoolFeeLow;
         }
-        return POOL_FEE_MEDIUM;
+        return s_state.uniswapPoolFeeMedium;
     }
 
     /**
