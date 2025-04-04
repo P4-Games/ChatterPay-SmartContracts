@@ -153,6 +153,48 @@ contract AdminModule is BaseTest {
         vm.stopPrank();
     }
 
+    /**
+     * @notice Tests adding a token to the stable token list and checks duplicate prevention
+     */
+    function testAddStableToken() public {
+        vm.startPrank(owner);
+
+        address fakeStable = makeAddr("fakeStable");
+
+        // Should add token successfully
+        walletInstance.addStableToken(fakeStable);
+        assertTrue(walletInstance.isStableToken(fakeStable));
+
+        // Should revert if token is already stable
+        vm.expectRevert(abi.encodeWithSignature("ChatterPay__AlreadyStableToken()"));
+        walletInstance.addStableToken(fakeStable);
+
+        vm.stopPrank();
+    }
+
+    /**
+     * @notice Tests removing a token from the stable token list and checks removal edge case
+     */
+    function testRemoveStableToken() public {
+        vm.startPrank(owner);
+
+        address fakeStable = makeAddr("fakeStable");
+
+        // Add first
+        walletInstance.addStableToken(fakeStable);
+        assertTrue(walletInstance.isStableToken(fakeStable));
+
+        // Remove
+        walletInstance.removeStableToken(fakeStable);
+        assertFalse(walletInstance.isStableToken(fakeStable));
+
+        // Should revert if token is already removed
+        vm.expectRevert(abi.encodeWithSignature("ChatterPay__NotStableToken()"));
+        walletInstance.removeStableToken(fakeStable);
+
+        vm.stopPrank();
+    }
+
     /*//////////////////////////////////////////////////////////////
                            HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
