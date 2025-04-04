@@ -17,6 +17,7 @@ contract DeployFactory is Script {
     ChatterPay implementation;
     address[] public tokens;
     address[] public priceFeeds;
+    bool[] public tokensStableFlags;
 
     /**
      * @notice Main deployment function
@@ -40,7 +41,8 @@ contract DeployFactory is Script {
             config.router, // _router
             config.account, // _feeAdmin (using account as fee admin)
             tokens, // _whitelistedTokens
-            priceFeeds // _priceFeeds
+            priceFeeds, // _priceFeeds
+            tokensStableFlags
         );
 
         console2.log("Wallet Factory deployed at address %s", address(factory));
