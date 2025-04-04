@@ -193,7 +193,8 @@ contract ChatterPay is
         address _factory,
         address _feeAdmin,
         address[] calldata _whitelistedTokens,
-        address[] calldata _priceFeeds
+        address[] calldata _priceFeeds,
+        bool[] calldata _tokensStableFlags
     ) public initializer {
         if (address(this) == implementation()) {
             revert ChatterPay__ImplementationInitialization();
@@ -206,8 +207,13 @@ contract ChatterPay is
         if (_factory == address(0)) revert ChatterPay__ZeroAddress();
         if (_feeAdmin == address(0)) revert ChatterPay__ZeroAddress();
 
-        // Ensure arrays for token whitelisting match in length
+        // Ensure arrays for token whitelisting match in length (tokens with price fees)
         if (_whitelistedTokens.length != _priceFeeds.length) {
+            revert ChatterPay__InvalidArrayLengths();
+        }
+
+        // Ensure arrays for token whitelisting match in length (tokens with tokens-stables-flag)
+        if (_whitelistedTokens.length != _tokensStableFlags.length) {
             revert ChatterPay__InvalidArrayLengths();
         }
 
@@ -241,6 +247,8 @@ contract ChatterPay is
         for (uint256 i = 0; i < _whitelistedTokens.length; i++) {
             address token = _whitelistedTokens[i];
             address priceFeed = _priceFeeds[i];
+            bool tokenStableFlag = _tokensStableFlags[i];
+
             if (token == address(0) || priceFeed == address(0)) {
                 revert ChatterPay__ZeroAddress();
             }
@@ -255,6 +263,8 @@ contract ChatterPay is
             }
             s_state.whitelistedTokens[token] = true;
             s_state.priceFeeds[token] = priceFeed;
+            s_state.stableTokens[token] = tokenStableFlag;
+
             emit PriceFeedUpdated(token, priceFeed);
             emit TokenWhitelisted(token, true);
         }
