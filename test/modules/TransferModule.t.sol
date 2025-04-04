@@ -15,11 +15,7 @@ import {IERC20Extended} from "../../src/ChatterPay.sol";
  */
 contract TransferModule is BaseTest {
     // Events for test tracking
-    event TransferExecuted(
-        address indexed token,
-        address indexed recipient,
-        uint256 amount
-    );
+    event TransferExecuted(address indexed token, address indexed recipient, uint256 amount);
     event FeeCollected(address indexed token, uint256 feeAmount);
 
     // Test constants
@@ -32,10 +28,10 @@ contract TransferModule is BaseTest {
 
     function setUp() public override {
         super.setUp();
-        
+
         vm.startPrank(owner);
         walletAddress = factory.createProxy(owner);
-        walletInstance = ChatterPay(payable(walletAddress)); 
+        walletInstance = ChatterPay(payable(walletAddress));
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         walletInstance.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
         vm.stopPrank();
@@ -47,10 +43,10 @@ contract TransferModule is BaseTest {
 
     function testBasicTransfer() public {
         _fundWallet(walletAddress, TRANSFER_AMOUNT);
-        
+
         uint256 expectedFee = 500000; // 0.5 USDC
         uint256 initialRecipientBalance = IERC20(USDC).balanceOf(user);
-        
+
         vm.prank(ENTRY_POINT);
         walletInstance.executeTokenTransfer(USDC, user, TRANSFER_AMOUNT);
 
@@ -80,7 +76,9 @@ contract TransferModule is BaseTest {
         amounts[2] = 300e6;
 
         address[] memory tokens = new address[](3);
-        for(uint i = 0; i < 3; i++) tokens[i] = USDC;
+        for (uint256 i = 0; i < 3; i++) {
+            tokens[i] = USDC;
+        }
 
         vm.prank(ENTRY_POINT);
         walletInstance.executeBatchTokenTransfer(tokens, recipients, amounts);
@@ -151,23 +149,14 @@ contract TransferModule is BaseTest {
             // Fund wallet
             _fundWallet(walletAddress, testAmounts[i]);
 
-            uint256 initialFeeAdminBalance = IERC20(USDC).balanceOf(
-                walletInstance.getFeeAdmin()
-            );
+            uint256 initialFeeAdminBalance = IERC20(USDC).balanceOf(walletInstance.getFeeAdmin());
 
             // Execute transfer
             vm.prank(ENTRY_POINT);
             walletInstance.executeTokenTransfer(USDC, user, testAmounts[i]);
 
-            uint256 feeCollected = IERC20(USDC).balanceOf(
-                walletInstance.getFeeAdmin()
-            ) - initialFeeAdminBalance;
-            assertApproxEqAbs(
-                feeCollected,
-                EXPECTED_FEE,
-                FEE_TOLERANCE,
-                "Incorrect fee amount collected"
-            );
+            uint256 feeCollected = IERC20(USDC).balanceOf(walletInstance.getFeeAdmin()) - initialFeeAdminBalance;
+            assertApproxEqAbs(feeCollected, EXPECTED_FEE, FEE_TOLERANCE, "Incorrect fee amount collected");
         }
     }
 
@@ -179,9 +168,7 @@ contract TransferModule is BaseTest {
         _fundWallet(walletAddress, 1000e6); // 1000 USDC
 
         // Get initial balances
-        uint256 initialFeeAdminBalance = IERC20(USDC).balanceOf(
-            walletInstance.getFeeAdmin()
-        );
+        uint256 initialFeeAdminBalance = IERC20(USDC).balanceOf(walletInstance.getFeeAdmin());
         uint256 initialRecipientBalance = IERC20(USDC).balanceOf(user);
 
         // Execute transfer
@@ -193,8 +180,7 @@ contract TransferModule is BaseTest {
 
         // Verify fee was taken
         assertApproxEqAbs(
-            IERC20(USDC).balanceOf(walletInstance.getFeeAdmin()) -
-                initialFeeAdminBalance,
+            IERC20(USDC).balanceOf(walletInstance.getFeeAdmin()) - initialFeeAdminBalance,
             fee,
             FEE_TOLERANCE,
             "Fee not transferred correctly"
@@ -212,12 +198,9 @@ contract TransferModule is BaseTest {
     /**
      * @dev Helper function to calculate expected fee
      */
-    function _calculateExpectedFee(
-        address token,
-        uint256 feeInCents
-    ) internal view returns (uint256) {
+    function _calculateExpectedFee(address token, uint256 feeInCents) internal view returns (uint256) {
         uint256 tokenDecimals = IERC20Extended(token).decimals();
-        
+
         return (feeInCents * (10 ** tokenDecimals)) / 100;
     }
 }

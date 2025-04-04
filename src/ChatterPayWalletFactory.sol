@@ -76,8 +76,9 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         if (_paymaster == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
         if (_router == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
         if (_feeAdmin == address(0)) revert ChatterPayWalletFactory__InvalidFeeAdmin();
-        if (_whitelistedTokens.length != _priceFeeds.length) 
+        if (_whitelistedTokens.length != _priceFeeds.length) {
             revert ChatterPayWalletFactory__InvalidArrayLengths();
+        }
 
         walletImplementation = _walletImplementation;
         entryPoint = _entryPoint;
@@ -104,10 +105,8 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
      */
     function createProxy(address _owner) public returns (address) {
         if (_owner == address(0)) revert ChatterPayWalletFactory__InvalidOwner();
-        
-        ERC1967Proxy walletProxy = new ERC1967Proxy{
-            salt: keccak256(abi.encodePacked(_owner))
-        }(
+
+        ERC1967Proxy walletProxy = new ERC1967Proxy{salt: keccak256(abi.encodePacked(_owner))}(
             walletImplementation,
             abi.encodeWithSignature(
                 "initialize(address,address,address,address,address,address,address[],address[])",
@@ -121,7 +120,7 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
                 defaultPriceFeeds
             )
         );
-        
+
         proxies.push(address(walletProxy));
         emit ProxyCreated(_owner, address(walletProxy));
         return address(walletProxy);
@@ -180,13 +179,11 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
      * @param _tokens New list of whitelisted tokens
      * @param _priceFeeds New list of price feeds
      */
-    function setDefaultTokensAndFeeds(
-        address[] calldata _tokens,
-        address[] calldata _priceFeeds
-    ) external onlyOwner {
-        if (_tokens.length != _priceFeeds.length) 
+    function setDefaultTokensAndFeeds(address[] calldata _tokens, address[] calldata _priceFeeds) external onlyOwner {
+        if (_tokens.length != _priceFeeds.length) {
             revert ChatterPayWalletFactory__InvalidArrayLengths();
-            
+        }
+
         defaultWhitelistedTokens = _tokens;
         defaultPriceFeeds = _priceFeeds;
         emit DefaultTokensUpdated(_tokens, _priceFeeds);
@@ -200,12 +197,7 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
     function computeProxyAddress(address _owner) public view returns (address) {
         bytes memory bytecode = getProxyBytecode(_owner);
         bytes32 hash = keccak256(
-            abi.encodePacked(
-                bytes1(0xff),
-                address(this),
-                keccak256(abi.encodePacked(_owner)),
-                keccak256(bytecode)
-            )
+            abi.encodePacked(bytes1(0xff), address(this), keccak256(abi.encodePacked(_owner)), keccak256(bytecode))
         );
         return address(uint160(uint256(hash)));
     }
@@ -227,10 +219,7 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
             defaultWhitelistedTokens,
             defaultPriceFeeds
         );
-        return abi.encodePacked(
-            type(ERC1967Proxy).creationCode,
-            abi.encode(walletImplementation, initializationCode)
-        );
+        return abi.encodePacked(type(ERC1967Proxy).creationCode, abi.encode(walletImplementation, initializationCode));
     }
 
     /**

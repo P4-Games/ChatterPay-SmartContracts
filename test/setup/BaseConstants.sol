@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title BaseConstants
- * @notice Library containing constant addresses and configuration values for tokens, price feeds, 
+ * @notice Library containing constant addresses and configuration values for tokens, price feeds,
  * Uniswap and other essential contracts used in tests.
  * @dev All addresses are for testing purposes and may vary depending on the network.
  */

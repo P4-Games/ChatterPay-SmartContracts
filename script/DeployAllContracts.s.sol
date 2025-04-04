@@ -38,10 +38,10 @@ contract DeployAllContracts is Script {
     string NFTBaseUri = vm.envString("NFT_BASE_URI");
 
     // Comma-separated list of tokens
-    string tokensEnv = vm.envString("TOKENS"); 
+    string tokensEnv = vm.envString("TOKENS");
 
     // Comma-separated list of price feeds
-    string priceFeedsEnv = vm.envString("PRICE_FEEDS"); 
+    string priceFeedsEnv = vm.envString("PRICE_FEEDS");
 
     constructor() {
         uniswapFactory = vm.envAddress("UNISWAP_FACTORY");
@@ -53,13 +53,7 @@ contract DeployAllContracts is Script {
      */
     function run()
         public
-        returns (
-            HelperConfig,
-            ChatterPay,
-            ChatterPayWalletFactory,
-            ChatterPayNFT,
-            ChatterPayPaymaster
-        )
+        returns (HelperConfig, ChatterPay, ChatterPayWalletFactory, ChatterPayNFT, ChatterPayPaymaster)
     {
         // Initialize network configuration
         helperConfig = new HelperConfig();
@@ -75,23 +69,19 @@ contract DeployAllContracts is Script {
         // Start broadcasting transactions with the configured account
         vm.startBroadcast(config.account);
 
-        console2.log(
-            "Deploying ChatterPay contracts on chainId %d with account: %s",
-            block.chainid,
-            config.account
-        );
+        console2.log("Deploying ChatterPay contracts on chainId %d with account: %s", block.chainid, config.account);
 
         // Step-by-step deployment and configuration
-        deployPaymaster();                           // 1. Deploy Paymaster
-        deployFactory();                             // 2. Deploy Wallet Factory
-        deployChatterPay();                          // 3. Deploy ChatterPay using UUPS Proxy
-        deployNFT();                                 // 4. Deploy NFT with Transparent Proxy
-        configureUniswapPool();                      // 5. Configure Uniswap V3 Pool
+        deployPaymaster(); // 1. Deploy Paymaster
+        deployFactory(); // 2. Deploy Wallet Factory
+        deployChatterPay(); // 3. Deploy ChatterPay using UUPS Proxy
+        deployNFT(); // 4. Deploy NFT with Transparent Proxy
+        configureUniswapPool(); // 5. Configure Uniswap V3 Pool
 
         // Stop broadcasting transactions
         vm.stopBroadcast();
 
-        console2.log('To Put in bdd:');
+        console2.log("To Put in bdd:");
         console2.log("{");
         console2.log('"entryPoint": "%s",', "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789");
         console2.log('"factoryAddress": "%s",', address(factory));
@@ -120,9 +110,9 @@ contract DeployAllContracts is Script {
         try vm.envAddress("DEPLOYED_PAYMASTER_ADDRESS") returns (address addr) {
             paymasterAddress = addr;
         } catch {
-            paymasterAddress = address(0); 
+            paymasterAddress = address(0);
         }
-    
+
         if (paymasterAddress == address(0)) {
             console2.log("Creating NEW Paymaster!");
             paymaster = new ChatterPayPaymaster(config.entryPoint, config.account);
@@ -141,17 +131,17 @@ contract DeployAllContracts is Script {
      */
     function deployFactory() internal {
         factory = new ChatterPayWalletFactory(
-            config.account,      // _walletImplementation (temporary, will be updated later)
-            config.entryPoint,   // _entryPoint
-            config.account,      // _owner
-            address(paymaster),  // _paymaster
-            config.router,       // _router
-            config.account,      // _feeAdmin (using account as fee admin)
-            tokens,              // _whitelistedTokens
-            priceFeeds           // _priceFeeds
+            config.account, // _walletImplementation (temporary, will be updated later)
+            config.entryPoint, // _entryPoint
+            config.account, // _owner
+            address(paymaster), // _paymaster
+            config.router, // _router
+            config.account, // _feeAdmin (using account as fee admin)
+            tokens, // _whitelistedTokens
+            priceFeeds // _priceFeeds
         );
         console2.log("Wallet Factory deployed at address %s", address(factory));
-        
+
         // Validate deployment
         require(factory.owner() == config.account, "Factory owner not set correctly");
         require(factory.paymaster() == address(paymaster), "Paymaster not set correctly");
@@ -169,14 +159,14 @@ contract DeployAllContracts is Script {
             "ChatterPay.sol:ChatterPay", // Contract name as string.
             abi.encodeWithSignature(
                 "initialize(address,address,address,address,address,address,address[],address[])",
-                config.entryPoint,   // _entryPoint.
-                config.account,      // _owner (owner must be the creator).
-                address(paymaster),  // _paymaster.
-                config.router,       // _router.
-                address(factory),    // _factory.
-                feeAdmin,            // _feeAdmin.
-                tokens,              // _whitelistedTokens (token addresses).
-                priceFeeds           // _priceFeeds (corresponding price feed addresses).
+                config.entryPoint, // _entryPoint.
+                config.account, // _owner (owner must be the creator).
+                address(paymaster), // _paymaster.
+                config.router, // _router.
+                address(factory), // _factory.
+                feeAdmin, // _feeAdmin.
+                tokens, // _whitelistedTokens (token addresses).
+                priceFeeds // _priceFeeds (corresponding price feed addresses).
             )
         );
 
@@ -200,12 +190,8 @@ contract DeployAllContracts is Script {
         chatterPayNFT = ChatterPayNFT(
             Upgrades.deployTransparentProxy(
                 "ChatterPayNFT.sol:ChatterPayNFT", // Contract name as string.
-                config.account,  // Initial owner.
-                abi.encodeWithSignature(
-                    "initialize(address,string)",
-                    config.account,
-                    NFTBaseUri
-                )
+                config.account, // Initial owner.
+                abi.encodeWithSignature("initialize(address,string)", config.account, NFTBaseUri)
             )
         );
         console2.log("ChatterPayNFT Proxy deployed at address %s", address(chatterPayNFT));
@@ -216,7 +202,7 @@ contract DeployAllContracts is Script {
      */
     function mintTestTokens() internal {
         // Amount to mint (100M)
-        uint256 mintAmountUSDT = 100_000_000 * 1e6;  // USDT uses 6 decimals.
+        uint256 mintAmountUSDT = 100_000_000 * 1e6; // USDT uses 6 decimals.
         uint256 mintAmountWETH = 100_000_000 * 1e18; // WETH uses 18 decimals.
 
         // Mint test tokens by calling the mint function.
@@ -333,8 +319,9 @@ contract DeployAllContracts is Script {
                         deadline: block.timestamp + 1000
                     });
 
-                    try INonfungiblePositionManager(uniswapPositionManager).mint(params) returns
-                        (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) {
+                    try INonfungiblePositionManager(uniswapPositionManager).mint(params) returns (
+                        uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1
+                    ) {
                         console2.log("Successfully added liquidity:");
                         console2.log("- Token ID: %d", tokenId);
                         console2.log("- Liquidity: %d", liquidity);
@@ -362,7 +349,7 @@ contract DeployAllContracts is Script {
     function _parseAddresses(string memory _addressesStr) internal pure returns (address[] memory) {
         string[] memory parts = vm.split(_addressesStr, ",");
         address[] memory addresses = new address[](parts.length);
-        for (uint i = 0; i < parts.length; i++) {
+        for (uint256 i = 0; i < parts.length; i++) {
             addresses[i] = vm.parseAddress(parts[i]);
         }
         return addresses;

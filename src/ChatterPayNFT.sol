@@ -2,7 +2,8 @@
 pragma solidity ^0.8.20;
 
 import {ERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import {ERC721URIStorageUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import {ERC721URIStorageUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
@@ -16,12 +17,7 @@ error ChatterPayNFT__LimitExceedsCopies();
  * @notice This contract allows minting of original NFTs and their limited copies.
  * @dev Uses OpenZeppelin's UUPS upgradeable and ERC721 modules.
  */
-contract ChatterPayNFT is
-    UUPSUpgradeable,
-    ERC721Upgradeable,
-    ERC721URIStorageUpgradeable,
-    OwnableUpgradeable
-{
+contract ChatterPayNFT is UUPSUpgradeable, ERC721Upgradeable, ERC721URIStorageUpgradeable, OwnableUpgradeable {
     uint256 private s_tokenId;
     mapping(uint256 tokenId => address minter) public s_originalMinter;
     mapping(uint256 tokenId => uint256 copies) public s_copyCount;
@@ -34,10 +30,7 @@ contract ChatterPayNFT is
      * @param initialOwner The address of the contract owner.
      * @param baseURI The base URI for the NFT metadata.
      */
-    function initialize(
-        address initialOwner,
-        string memory baseURI
-    ) public initializer {
+    function initialize(address initialOwner, string memory baseURI) public initializer {
         __ERC721_init("ChatterPayNFT", "CHTP");
         __Ownable_init(initialOwner);
         s_baseURI = baseURI;
@@ -71,19 +64,15 @@ contract ChatterPayNFT is
      * @custom:reverts ChatterPayNFT__OriginalTokenNotMinted if the original token does not exist.
      * @custom:reverts ChatterPayNFT__LimitExceedsCopies if the copy limit for the original token is reached.
      */
-    function mintCopy(
-        address to,
-        uint256 originalTokenId,
-        string memory uri
-    ) public {
-        if (s_originalMinter[originalTokenId] == address(0))
+    function mintCopy(address to, uint256 originalTokenId, string memory uri) public {
+        if (s_originalMinter[originalTokenId] == address(0)) {
             revert ChatterPayNFT__OriginalTokenNotMinted(originalTokenId);
-        if (s_copyCount[originalTokenId] >= s_copyLimit[originalTokenId])
+        }
+        if (s_copyCount[originalTokenId] >= s_copyLimit[originalTokenId]) {
             revert ChatterPayNFT__LimitExceedsCopies();
+        }
         s_copyCount[originalTokenId]++;
-        uint256 copyTokenId = originalTokenId *
-            10 ** 8 +
-            s_copyCount[originalTokenId];
+        uint256 copyTokenId = originalTokenId * 10 ** 8 + s_copyCount[originalTokenId];
         _mint(to, copyTokenId);
         _setTokenURI(copyTokenId, uri);
     }
@@ -106,10 +95,12 @@ contract ChatterPayNFT is
      * @custom:reverts ChatterPayNFT__LimitExceedsCopies if the new limit is less than the current copy count.
      */
     function setCopyLimit(uint256 tokenId, uint256 newLimit) public {
-        if (msg.sender != s_originalMinter[tokenId])
+        if (msg.sender != s_originalMinter[tokenId]) {
             revert ChatterPayNFT__Unauthorized();
-        if (newLimit < s_copyCount[tokenId])
+        }
+        if (newLimit < s_copyCount[tokenId]) {
             revert ChatterPayNFT__LimitExceedsCopies();
+        }
         s_copyLimit[tokenId] = newLimit;
     }
 
@@ -126,14 +117,10 @@ contract ChatterPayNFT is
      * @dev Only callable by the contract owner.
      * @param newImplementation The address of the new implementation contract.
      */
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     // The following functions are overrides required by Solidity.
-    function tokenURI(
-        uint256 tokenId
-    )
+    function tokenURI(uint256 tokenId)
         public
         view
         override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
@@ -142,9 +129,7 @@ contract ChatterPayNFT is
         return super.tokenURI(tokenId);
     }
 
-    function supportsInterface(
-        bytes4 interfaceId
-    )
+    function supportsInterface(bytes4 interfaceId)
         public
         view
         override(ERC721Upgradeable, ERC721URIStorageUpgradeable)

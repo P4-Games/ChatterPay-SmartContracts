@@ -3,7 +3,12 @@ pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
 import {BaseTest} from "../setup/BaseTest.sol";
-import {ChatterPayPaymaster, ChatterPayPaymaster__InvalidSignature, ChatterPayPaymaster__OnlyOwner, ChatterPayPaymaster__InvalidDataLength} from "../../src/ChatterPayPaymaster.sol";
+import {
+    ChatterPayPaymaster,
+    ChatterPayPaymaster__InvalidSignature,
+    ChatterPayPaymaster__OnlyOwner,
+    ChatterPayPaymaster__InvalidDataLength
+} from "../../src/ChatterPayPaymaster.sol";
 import {UserOperation} from "lib/entry-point-v6/interfaces/IAccount.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
@@ -52,33 +57,21 @@ contract PaymasterTest is BaseTest {
         // Generate paymaster data with valid signature
         uint64 expiration = uint64(block.timestamp + 3600); // 1 hour from now
         bytes memory paymasterData = _generatePaymasterData(
-            address(paymasterInstance),
-            userOp.sender,
-            expiration,
-            userOp.callData,
-            backendSignerKey
+            address(paymasterInstance), userOp.sender, expiration, userOp.callData, backendSignerKey
         );
         userOp.paymasterAndData = paymasterData;
 
         // Validate through EntryPoint
         vm.prank(ENTRY_POINT);
-        (bytes memory context, uint256 validationData) = paymasterInstance
-            .validatePaymasterUserOp(userOp, bytes32(0), 0);
+        (bytes memory context, uint256 validationData) =
+            paymasterInstance.validatePaymasterUserOp(userOp, bytes32(0), 0);
 
         // Extract validUntil from validationData (bits 160-191)
         uint48 validUntil = uint48(validationData >> 160);
 
         // Assert validation succeeded and expiration time is properly set
-        assertEq(
-            validationData & 1,
-            0,
-            "Signature verification should succeed"
-        );
-        assertEq(
-            validUntil,
-            expiration,
-            "validUntil should match expiration time"
-        );
+        assertEq(validationData & 1, 0, "Signature verification should succeed");
+        assertEq(validUntil, expiration, "validUntil should match expiration time");
         assertEq(context.length, 0, "Context should be empty");
     }
 
@@ -92,28 +85,20 @@ contract PaymasterTest is BaseTest {
         // Generate paymaster data with soon-to-expire timestamp
         uint64 expiration = uint64(block.timestamp + 10); // Expire soon
         bytes memory paymasterData = _generatePaymasterData(
-            address(paymasterInstance),
-            userOp.sender,
-            expiration,
-            userOp.callData,
-            backendSignerKey
+            address(paymasterInstance), userOp.sender, expiration, userOp.callData, backendSignerKey
         );
         userOp.paymasterAndData = paymasterData;
 
         // Validate through EntryPoint
         vm.prank(ENTRY_POINT);
-        (bytes memory context, uint256 validationData) = paymasterInstance
-            .validatePaymasterUserOp(userOp, bytes32(0), 0);
+        (bytes memory context, uint256 validationData) =
+            paymasterInstance.validatePaymasterUserOp(userOp, bytes32(0), 0);
 
         // Extract validUntil from validationData (bits 160-191)
         uint48 validUntil = uint48(validationData >> 160);
 
         // Assert validUntil is set correctly
-        assertEq(
-            validUntil,
-            expiration,
-            "validUntil should match expiration time"
-        );
+        assertEq(validUntil, expiration, "validUntil should match expiration time");
         assertEq(context.length, 0, "Context should be empty");
 
         // Time travel past expiration
@@ -122,10 +107,7 @@ contract PaymasterTest is BaseTest {
         // EntryPoint would reject this operation due to expiration
         // This test simulates the EntryPoint's behavior
         bool wouldBeRejected = block.timestamp > validUntil;
-        assertTrue(
-            wouldBeRejected,
-            "Operation should be rejected after expiration"
-        );
+        assertTrue(wouldBeRejected, "Operation should be rejected after expiration");
     }
 
     /**
@@ -138,13 +120,8 @@ contract PaymasterTest is BaseTest {
         // Generate paymaster data with wrong signer
         uint64 expiration = uint64(block.timestamp + 3600);
         uint256 wrongKey = 0x9999; // Different private key
-        bytes memory paymasterData = _generatePaymasterData(
-            address(paymasterInstance),
-            userOp.sender,
-            expiration,
-            userOp.callData,
-            wrongKey
-        );
+        bytes memory paymasterData =
+            _generatePaymasterData(address(paymasterInstance), userOp.sender, expiration, userOp.callData, wrongKey);
         userOp.paymasterAndData = paymasterData;
 
         // Expect revert on validation
@@ -171,16 +148,8 @@ contract PaymasterTest is BaseTest {
         vm.prank(owner);
         paymasterInstance.withdraw();
 
-        assertEq(
-            address(paymasterInstance).balance,
-            0,
-            "Paymaster should have 0 balance"
-        );
-        assertEq(
-            owner.balance,
-            ownerInitialBalance + initialBalance,
-            "Owner should receive full balance"
-        );
+        assertEq(address(paymasterInstance).balance, 0, "Paymaster should have 0 balance");
+        assertEq(owner.balance, ownerInitialBalance + initialBalance, "Owner should receive full balance");
     }
 
     /**
@@ -204,11 +173,7 @@ contract PaymasterTest is BaseTest {
         vm.prank(owner);
         paymasterInstance.execute(destination, value, data);
 
-        assertEq(
-            destination.balance,
-            value,
-            "Destination should receive value"
-        );
+        assertEq(destination.balance, value, "Destination should receive value");
     }
 
     /**
@@ -231,7 +196,7 @@ contract PaymasterTest is BaseTest {
 
         // Create data with correct length (93 bytes) but invalid content
         bytes memory invalidData = new bytes(93);
-        for (uint i = 0; i < 93; i++) {
+        for (uint256 i = 0; i < 93; i++) {
             invalidData[i] = bytes1(uint8(i)); // Fill with sequential values
         }
 
@@ -249,20 +214,19 @@ contract PaymasterTest is BaseTest {
 
     /// @notice Creates a basic UserOperation for testing
     function _createBasicUserOp() internal view returns (UserOperation memory) {
-        return
-            UserOperation({
-                sender: testWallet,
-                nonce: 0,
-                initCode: bytes(""),
-                callData: abi.encodeWithSignature("test()"),
-                callGasLimit: 1000000,
-                verificationGasLimit: 1000000,
-                preVerificationGas: 21000,
-                maxFeePerGas: 100 gwei,
-                maxPriorityFeePerGas: 100 gwei,
-                paymasterAndData: bytes(""),
-                signature: bytes("")
-            });
+        return UserOperation({
+            sender: testWallet,
+            nonce: 0,
+            initCode: bytes(""),
+            callData: abi.encodeWithSignature("test()"),
+            callGasLimit: 1000000,
+            verificationGasLimit: 1000000,
+            preVerificationGas: 21000,
+            maxFeePerGas: 100 gwei,
+            maxPriorityFeePerGas: 100 gwei,
+            paymasterAndData: bytes(""),
+            signature: bytes("")
+        });
     }
 
     /// @notice Generates paymaster data including signature
@@ -274,15 +238,7 @@ contract PaymasterTest is BaseTest {
         uint256 signerKey
     ) internal view returns (bytes memory) {
         // Create message hash
-        bytes32 messageHash = keccak256(
-            abi.encode(
-                sender,
-                expiration,
-                uint256(block.chainid),
-                ENTRY_POINT,
-                callData
-            )
-        );
+        bytes32 messageHash = keccak256(abi.encode(sender, expiration, uint256(block.chainid), ENTRY_POINT, callData));
 
         // Sign message
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerKey, messageHash);
@@ -297,17 +253,17 @@ contract PaymasterTest is BaseTest {
         bytes memory paymasterAndData = new bytes(93);
 
         // Copiar dirección del paymaster (primeros 20 bytes)
-        for (uint i = 0; i < 20; i++) {
+        for (uint256 i = 0; i < 20; i++) {
             paymasterAndData[i] = bytes20(paymaster)[i];
         }
 
         // Copiar r (32 bytes)
-        for (uint i = 0; i < 32; i++) {
+        for (uint256 i = 0; i < 32; i++) {
             paymasterAndData[20 + i] = bytes32(r)[i];
         }
 
         // Copiar s (32 bytes)
-        for (uint i = 0; i < 32; i++) {
+        for (uint256 i = 0; i < 32; i++) {
             paymasterAndData[52 + i] = bytes32(s)[i];
         }
 
@@ -315,7 +271,7 @@ contract PaymasterTest is BaseTest {
         paymasterAndData[84] = bytes1(v);
 
         // Copiar expiración (8 bytes)
-        for (uint i = 0; i < 8; i++) {
+        for (uint256 i = 0; i < 8; i++) {
             paymasterAndData[85 + i] = bytes8(expiration)[i];
         }
 

@@ -16,10 +16,7 @@ contract ChatterPayWalletProxy is ERC1967Proxy {
      * @param _logic The address of the implementation contract.
      * @param _data The initialization data to be passed to the implementation.
      */
-    constructor(
-        address _logic,
-        bytes memory _data
-    ) ERC1967Proxy(_logic, _data) {}
+    constructor(address _logic, bytes memory _data) ERC1967Proxy(_logic, _data) {}
 
     /**
      * @notice Retrieves the address of the current implementation.

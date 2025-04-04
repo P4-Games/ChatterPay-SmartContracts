@@ -29,7 +29,7 @@ contract SecurityModule is BaseTest {
 
     function setUp() public override {
         super.setUp();
-        
+
         // Deploy wallet
         vm.startPrank(owner);
         walletAddress = factory.createProxy(owner);
@@ -52,7 +52,7 @@ contract SecurityModule is BaseTest {
     function testAccessControl() public {
         // Test owner-only functions
         vm.startPrank(attacker);
-        
+
         // Try to update fee
         vm.expectRevert();
         walletInstance.updateFee(100);
@@ -74,7 +74,7 @@ contract SecurityModule is BaseTest {
     function testSignatureValidation() public {
         // Create UserOperation hash
         bytes32 userOpHash = keccak256("test user operation");
-        
+
         // Sign with owner's key
         bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerKey, ethSignedMessageHash);
@@ -82,23 +82,15 @@ contract SecurityModule is BaseTest {
 
         // Validate with correct signature
         vm.prank(ENTRY_POINT);
-        uint256 validationData = walletInstance.validateUserOp(
-            _createUserOp(signature),
-            userOpHash,
-            0
-        );
+        uint256 validationData = walletInstance.validateUserOp(_createUserOp(signature), userOpHash, 0);
         assertEq(validationData, 0, "Valid signature should return 0");
 
         // Test with invalid signature
         (v, r, s) = vm.sign(uint256(2), ethSignedMessageHash); // Different key
         bytes memory invalidSignature = abi.encodePacked(r, s, v);
-        
+
         vm.prank(ENTRY_POINT);
-        validationData = walletInstance.validateUserOp(
-            _createUserOp(invalidSignature),
-            userOpHash,
-            0
-        );
+        validationData = walletInstance.validateUserOp(_createUserOp(invalidSignature), userOpHash, 0);
         assertEq(validationData, 1, "Invalid signature should return 1");
     }
 
@@ -109,7 +101,7 @@ contract SecurityModule is BaseTest {
         _fundWallet(walletAddress, 1000e6);
 
         ReentrancyAttacker attackerContract = new ReentrancyAttacker(address(walletInstance));
-        
+
         // Whitelist token
         vm.prank(owner);
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
@@ -126,16 +118,16 @@ contract SecurityModule is BaseTest {
     function testEntryPointAuthorization() public {
         // Try to execute functions restricted to EntryPoint
         vm.startPrank(attacker);
-        
+
         vm.expectRevert();
         walletInstance.executeTokenTransfer(USDC, user, 100e6);
-        
+
         vm.expectRevert();
         walletInstance.executeSwap(USDC, USDT, 100e6, 90e6, user);
-        
+
         vm.expectRevert();
         walletInstance.validateUserOp(_createUserOp(""), bytes32(0), 0);
-        
+
         vm.stopPrank();
     }
 
@@ -151,7 +143,7 @@ contract SecurityModule is BaseTest {
         walletInstance.transferOwnership(newOwner);
 
         // Verify new owner
-        console.log('owner/newOwner', currentOwner, walletInstance.owner());
+        console.log("owner/newOwner", currentOwner, walletInstance.owner());
         assertEq(walletInstance.owner(), newOwner, "Ownership transfer failed");
 
         // Verify old owner lost privileges
@@ -178,9 +170,7 @@ contract SecurityModule is BaseTest {
     /**
      * @notice Helper function to create a test UserOperation
      */
-    function _createUserOp(
-        bytes memory signature
-    ) internal pure returns (UserOperation memory) {
+    function _createUserOp(bytes memory signature) internal pure returns (UserOperation memory) {
         return UserOperation({
             sender: address(0),
             nonce: 0,
@@ -233,10 +223,6 @@ contract ReentrancyAttacker {
 
     function attack() external {
         // Call executeTokenTransfer first from ENTRY_POINT
-        wallet.executeTokenTransfer(
-            0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d,
-            address(this),
-            50e6
-        );
+        wallet.executeTokenTransfer(0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d, address(this), 50e6);
     }
 }
