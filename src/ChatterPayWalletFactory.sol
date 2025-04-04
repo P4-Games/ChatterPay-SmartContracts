@@ -43,6 +43,7 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
     // Default token configuration
     address[] public defaultWhitelistedTokens;
     address[] public defaultPriceFeeds;
+    bool[] public defaultTokensStableFlags;
 
     event ProxyCreated(address indexed owner, address indexed proxyAddress);
     event NewImplementation(address indexed _walletImplementation);
@@ -68,7 +69,8 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         address _router,
         address _feeAdmin,
         address[] memory _whitelistedTokens,
-        address[] memory _priceFeeds
+        address[] memory _priceFeeds,
+        bool[] memory _tokensStableFlags
     ) Ownable(_owner) {
         if (_walletImplementation == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
         if (_entryPoint == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
@@ -79,6 +81,9 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         if (_whitelistedTokens.length != _priceFeeds.length) {
             revert ChatterPayWalletFactory__InvalidArrayLengths();
         }
+        if (_whitelistedTokens.length != _tokensStableFlags.length) {
+            revert ChatterPayWalletFactory__InvalidArrayLengths();
+        }
 
         walletImplementation = _walletImplementation;
         entryPoint = _entryPoint;
@@ -87,6 +92,7 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         feeAdmin = _feeAdmin;
         defaultWhitelistedTokens = _whitelistedTokens;
         defaultPriceFeeds = _priceFeeds;
+        defaultTokensStableFlags = _tokensStableFlags;
     }
 
     /**
@@ -109,7 +115,7 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         ERC1967Proxy walletProxy = new ERC1967Proxy{salt: keccak256(abi.encodePacked(_owner))}(
             walletImplementation,
             abi.encodeWithSignature(
-                "initialize(address,address,address,address,address,address,address[],address[])",
+                "initialize(address,address,address,address,address,address,address[],address[],bool[])",
                 entryPoint,
                 _owner,
                 paymaster,
@@ -117,7 +123,8 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
                 address(this),
                 feeAdmin,
                 defaultWhitelistedTokens,
-                defaultPriceFeeds
+                defaultPriceFeeds,
+                defaultTokensStableFlags
             )
         );
 
@@ -209,7 +216,7 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
      */
     function getProxyBytecode(address _owner) internal view returns (bytes memory) {
         bytes memory initializationCode = abi.encodeWithSignature(
-            "initialize(address,address,address,address,address,address,address[],address[])",
+            "initialize(address,address,address,address,address,address,address[],address[],bool[])",
             entryPoint,
             _owner,
             paymaster,
@@ -217,7 +224,8 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
             address(this),
             feeAdmin,
             defaultWhitelistedTokens,
-            defaultPriceFeeds
+            defaultPriceFeeds,
+            defaultTokensStableFlags
         );
         return abi.encodePacked(type(ERC1967Proxy).creationCode, abi.encode(walletImplementation, initializationCode));
     }
