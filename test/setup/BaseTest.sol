@@ -15,31 +15,26 @@ import {BaseConstants} from "./BaseConstants.sol";
 //////////////////////////////////////////////////////////////*/
 
 interface IUniswapV3Factory {
-    function createPool(
-        address tokenA,
-        address tokenB,
-        uint24 fee
-    ) external returns (address pool);
+    function createPool(address tokenA, address tokenB, uint24 fee) external returns (address pool);
 
-    function getPool(
-        address tokenA,
-        address tokenB,
-        uint24 fee
-    ) external view returns (address pool);
+    function getPool(address tokenA, address tokenB, uint24 fee) external view returns (address pool);
 }
 
 interface IUniswapV3Pool {
     function initialize(uint160 sqrtPriceX96) external;
 
-    function slot0() external view returns (
-        uint160 sqrtPriceX96,
-        int24 tick,
-        uint16 observationIndex,
-        uint16 observationCardinality,
-        uint16 observationCardinalityNext,
-        uint8 feeProtocol,
-        bool unlocked
-    );
+    function slot0()
+        external
+        view
+        returns (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint16 observationIndex,
+            uint16 observationCardinality,
+            uint16 observationCardinalityNext,
+            uint8 feeProtocol,
+            bool unlocked
+        );
 
     function liquidity() external view returns (uint128);
 }
@@ -59,20 +54,13 @@ interface INonfungiblePositionManager {
         uint256 deadline;
     }
 
-    function mint(
-        MintParams calldata params
-    )
+    function mint(MintParams calldata params)
         external
         payable
-        returns (
-            uint256 tokenId,
-            uint128 liquidity,
-            uint256 amount0,
-            uint256 amount1
-        );
+        returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
 }
 
-abstract contract BaseTest is Test{
+abstract contract BaseTest is Test {
     /*//////////////////////////////////////////////////////////////
                         STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
@@ -139,24 +127,21 @@ abstract contract BaseTest is Test{
         console.log("ChatterPay implementation deployed at:", address(implementation));
 
         // Deploy & fund paymaster
-        paymaster = new ChatterPayPaymaster(
-            ENTRY_POINT,
-            owner
-        );
+        paymaster = new ChatterPayPaymaster(ENTRY_POINT, owner);
         console.log("Paymaster deployed at:", address(paymaster));
-        (bool success, ) = address(paymaster).call{value: 1 ether}("");
+        (bool success,) = address(paymaster).call{value: 1 ether}("");
         require(success, "Failed to fund paymaster");
 
         // Deploy factory (passing the implementation address)
         factory = new ChatterPayWalletFactory(
-            address(implementation),  // _walletImplementation
-            ENTRY_POINT,             // _entryPoint
-            owner,                   // _owner
-            address(paymaster),      // _paymaster
-            UNISWAP_ROUTER,         // _router
-            owner,                   // _feeAdmin
-            new address[](0),       // _whitelistedTokens
-            new address[](0)        // _priceFeeds
+            address(implementation), // _walletImplementation
+            ENTRY_POINT, // _entryPoint
+            owner, // _owner
+            address(paymaster), // _paymaster
+            UNISWAP_ROUTER, // _router
+            owner, // _feeAdmin
+            new address[](0), // _whitelistedTokens
+            new address[](0) // _priceFeeds
         );
         console.log("Factory deployed at:", address(factory));
 
@@ -200,15 +185,11 @@ abstract contract BaseTest is Test{
      */
     function _createAndInitializePool() internal returns (address pool) {
         // Create pool
-        pool = IUniswapV3Factory(UNISWAP_FACTORY).createPool(
-            USDC,
-            USDT,
-            POOL_FEE
-        );
+        pool = IUniswapV3Factory(UNISWAP_FACTORY).createPool(USDC, USDT, POOL_FEE);
         console.log("Pool created at:", pool);
 
         // Initialize pool with price
-        uint160 sqrtPriceX96 = 79228162514264337593543950336;  // 2^96
+        uint160 sqrtPriceX96 = 79228162514264337593543950336; // 2^96
         sqrtPriceX96 = uint160(uint256(sqrtPriceX96) * 1000000); // Multiply by sqrt(10^12)
         IUniswapV3Pool(pool).initialize(sqrtPriceX96);
 
@@ -281,7 +262,7 @@ abstract contract BaseTest is Test{
      */
     function _logPoolState() internal view {
         address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(USDC, USDT, POOL_FEE);
-        (uint160 sqrtPriceX96, int24 tick, , , , , ) = IUniswapV3Pool(pool).slot0();
+        (uint160 sqrtPriceX96, int24 tick,,,,,) = IUniswapV3Pool(pool).slot0();
         console.log("=== Pool State ===");
         console.log("Pool initialized price:", sqrtPriceX96);
         console.log("Pool current tick:", tick);

@@ -8,7 +8,6 @@ import {ChatterPay} from "../src/ChatterPay.sol";
 /// @notice Script to deploy the ChatterPay contract
 /// @dev Uses Foundry's Script contract for deployment functionality
 contract DeployChatterPay is Script {
-    
     /// @notice Deploys the ChatterPay contract
     /// @dev Broadcasts the deployment transaction and logs the deployed address
     function run() external {

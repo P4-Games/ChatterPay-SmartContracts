@@ -19,19 +19,19 @@ import {AggregatorV3Interface} from "../../src/interfaces/AggregatorV3Interface.
 contract EntryPointModule is BaseTest {
     /// @notice Instance of the ChatterPay wallet being tested
     ChatterPay public walletInstance;
-    
+
     /// @notice Address of the deployed wallet instance
     address public walletAddress;
 
     /// @notice Gas limit for user operations
     uint256 constant GAS_LIMIT = 1000000;
-    
+
     /// @notice Maximum fee per gas for user operations
     uint256 constant MAX_FEE = 100 gwei;
-    
+
     /// @notice Pre-verification gas amount for user operations
     uint256 constant PRE_VERIFICATION_GAS = 100000;
-    
+
     /// @notice Gas limit for verification phase
     uint256 constant VERIFICATION_GAS_LIMIT = 150000;
 
@@ -39,7 +39,7 @@ contract EntryPointModule is BaseTest {
     /// @dev Deploys a new wallet instance and configures initial token settings
     function setUp() public override {
         super.setUp();
-        
+
         // Deploy wallet
         vm.startPrank(owner);
         walletAddress = factory.createProxy(owner);
@@ -61,7 +61,7 @@ contract EntryPointModule is BaseTest {
     function testBasicUserOpValidation() public {
         UserOperation memory userOp = _createBasicUserOp();
         bytes32 userOpHash = _getUserOpHash(userOp);
-        
+
         bytes32 messageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerKey, messageHash);
         userOp.signature = abi.encodePacked(r, s, v);
@@ -80,11 +80,9 @@ contract EntryPointModule is BaseTest {
         _fundWallet(walletAddress, TRANSFER_AMOUNT);
         vm.deal(address(walletInstance), 1 ether);
 
-        bytes memory callData = abi.encodeWithSelector(
-            ChatterPay.executeTokenTransfer.selector,
-            USDC, user, TRANSFER_AMOUNT
-        );
-        
+        bytes memory callData =
+            abi.encodeWithSelector(ChatterPay.executeTokenTransfer.selector, USDC, user, TRANSFER_AMOUNT);
+
         UserOperation memory userOp = UserOperation({
             sender: address(walletInstance),
             nonce: 0,
@@ -100,7 +98,7 @@ contract EntryPointModule is BaseTest {
         });
 
         bytes32 userOpHash = keccak256(abi.encode(userOp));
-        bytes32 messageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash); 
+        bytes32 messageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerKey, messageHash);
         userOp.signature = abi.encodePacked(r, s, v);
 
@@ -116,25 +114,16 @@ contract EntryPointModule is BaseTest {
         vm.deal(address(paymaster), 10 ether);
         vm.deal(address(walletInstance), 1 ether);
 
-        bytes memory callData = abi.encodeWithSelector(
-            ChatterPay.executeTokenTransfer.selector,
-            USDC,
-            user,
-            100e6
-        );
+        bytes memory callData = abi.encodeWithSelector(ChatterPay.executeTokenTransfer.selector, USDC, user, 100e6);
 
         UserOperation memory userOp = _createUserOp(callData);
         userOp.paymasterAndData = abi.encodePacked(address(paymaster));
-        
+
         bytes32 userOpHash = _getUserOpHash(userOp);
         userOp.signature = _signUserOp(userOpHash, ownerKey);
 
         vm.prank(ENTRY_POINT);
-        uint256 validationData = walletInstance.validateUserOp(
-            userOp,
-            userOpHash,
-            1 ether
-        );
+        uint256 validationData = walletInstance.validateUserOp(userOp, userOpHash, 1 ether);
 
         assertEq(validationData, 0, "UserOp validation with paymaster failed");
     }
@@ -147,7 +136,7 @@ contract EntryPointModule is BaseTest {
         _fundWallet(walletAddress, 1000e6);
 
         UserOperation[] memory userOps = new UserOperation[](3);
-        
+
         for (uint256 i = 0; i < 3; i++) {
             bytes memory callData = abi.encodeWithSelector(
                 ChatterPay.executeTokenTransfer.selector,
@@ -155,7 +144,7 @@ contract EntryPointModule is BaseTest {
                 makeAddr(string.concat("recipient", vm.toString(i))),
                 100e6
             );
-            
+
             userOps[i] = _createUserOp(callData);
             bytes32 userOpHash = _getUserOpHash(userOps[i]);
             userOps[i].signature = _signUserOp(userOpHash, ownerKey);
@@ -163,11 +152,7 @@ contract EntryPointModule is BaseTest {
 
         for (uint256 i = 0; i < userOps.length; i++) {
             vm.prank(ENTRY_POINT);
-            uint256 validationData = walletInstance.validateUserOp(
-                userOps[i],
-                _getUserOpHash(userOps[i]),
-                0
-            );
+            uint256 validationData = walletInstance.validateUserOp(userOps[i], _getUserOpHash(userOps[i]), 0);
             assertEq(validationData, 0, string.concat("UserOp ", vm.toString(i), " validation failed"));
         }
     }
@@ -179,16 +164,12 @@ contract EntryPointModule is BaseTest {
     function testInvalidSignature() public {
         UserOperation memory userOp = _createBasicUserOp();
         bytes32 userOpHash = _getUserOpHash(userOp);
-        
+
         uint256 wrongKey = 0x1234;
         userOp.signature = _signUserOp(userOpHash, wrongKey);
 
         vm.prank(ENTRY_POINT);
-        uint256 validationData = walletInstance.validateUserOp(
-            userOp,
-            userOpHash,
-            0
-        );
+        uint256 validationData = walletInstance.validateUserOp(userOp, userOpHash, 0);
 
         assertEq(validationData, 1, "Invalid signature not rejected");
     }
@@ -207,7 +188,7 @@ contract EntryPointModule is BaseTest {
 
         vm.prank(ENTRY_POINT);
         walletInstance.validateUserOp(userOp, userOpHash, 1 ether);
-        
+
         assertEq(address(walletInstance).balance, initialBalance - 1 ether);
     }
 
@@ -224,9 +205,7 @@ contract EntryPointModule is BaseTest {
     /// @notice Creates a UserOperation with specified calldata
     /// @param callData The calldata to include in the UserOperation
     /// @return UserOperation The created UserOperation instance
-    function _createUserOp(
-        bytes memory callData
-    ) internal view returns (UserOperation memory) {
+    function _createUserOp(bytes memory callData) internal view returns (UserOperation memory) {
         return UserOperation({
             sender: address(walletInstance),
             nonce: 0,
@@ -246,34 +225,29 @@ contract EntryPointModule is BaseTest {
     /// @param userOp The UserOperation to hash
     /// @return bytes32 The calculated hash
     function _getUserOpHash(UserOperation memory userOp) internal view returns (bytes32) {
-        bytes32 userOpHash = keccak256(abi.encode(
-            userOp.sender,
-            userOp.nonce,
-            keccak256(userOp.initCode),
-            keccak256(userOp.callData),
-            userOp.callGasLimit,
-            userOp.verificationGasLimit, 
-            userOp.preVerificationGas,
-            userOp.maxFeePerGas,
-            userOp.maxPriorityFeePerGas,
-            keccak256(userOp.paymasterAndData)
-        ));
+        bytes32 userOpHash = keccak256(
+            abi.encode(
+                userOp.sender,
+                userOp.nonce,
+                keccak256(userOp.initCode),
+                keccak256(userOp.callData),
+                userOp.callGasLimit,
+                userOp.verificationGasLimit,
+                userOp.preVerificationGas,
+                userOp.maxFeePerGas,
+                userOp.maxPriorityFeePerGas,
+                keccak256(userOp.paymasterAndData)
+            )
+        );
 
-        return keccak256(abi.encode(
-            userOpHash,
-            address(ENTRY_POINT),
-            block.chainid
-        ));
+        return keccak256(abi.encode(userOpHash, address(ENTRY_POINT), block.chainid));
     }
 
     /// @notice Signs a UserOperation hash with a private key
     /// @param userOpHash The hash to sign
     /// @param privateKey The private key to sign with
     /// @return bytes The signature
-    function _signUserOp(
-        bytes32 userOpHash,
-        uint256 privateKey
-    ) internal pure returns (bytes memory) {
+    function _signUserOp(bytes32 userOpHash, uint256 privateKey) internal pure returns (bytes memory) {
         bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, ethSignedMessageHash);
         return abi.encodePacked(r, s, v);
@@ -283,12 +257,9 @@ contract EntryPointModule is BaseTest {
     /// @param token The token address
     /// @param feeInCents The fee amount in cents
     /// @return uint256 The calculated fee amount in token decimals
-    function _calculateExpectedFee(
-        address token,
-        uint256 feeInCents
-    ) internal view returns (uint256) {
+    function _calculateExpectedFee(address token, uint256 feeInCents) internal view returns (uint256) {
         uint256 tokenDecimals = IERC20Extended(token).decimals();
-        
+
         return (feeInCents * (10 ** tokenDecimals)) / 100;
     }
 }

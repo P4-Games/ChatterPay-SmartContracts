@@ -28,14 +28,14 @@ contract AdminModule is BaseTest {
     function wallet() public view returns (ChatterPay) {
         return walletInstance;
     }
-    
+
     function setUp() public override {
         super.setUp();
-        
+
         vm.startPrank(owner);
         walletAddress = factory.createProxy(owner);
         walletInstance = ChatterPay(payable(walletAddress));
-        
+
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         walletInstance.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
         vm.stopPrank();
@@ -46,7 +46,7 @@ contract AdminModule is BaseTest {
      */
     function testFeeManagement() public {
         vm.startPrank(owner);
-        assertEq(walletInstance.getFeeInCents(), 50);    
+        assertEq(walletInstance.getFeeInCents(), 50);
         walletInstance.updateFee(100);
         assertEq(walletInstance.getFeeInCents(), 100);
         vm.stopPrank();
@@ -153,6 +153,48 @@ contract AdminModule is BaseTest {
         vm.stopPrank();
     }
 
+    /**
+     * @notice Tests adding a token to the stable token list and checks duplicate prevention
+     */
+    function testAddStableToken() public {
+        vm.startPrank(owner);
+
+        address fakeStable = makeAddr("fakeStable");
+
+        // Should add token successfully
+        walletInstance.addStableToken(fakeStable);
+        assertTrue(walletInstance.isStableToken(fakeStable));
+
+        // Should revert if token is already stable
+        vm.expectRevert(abi.encodeWithSignature("ChatterPay__AlreadyStableToken()"));
+        walletInstance.addStableToken(fakeStable);
+
+        vm.stopPrank();
+    }
+
+    /**
+     * @notice Tests removing a token from the stable token list and checks removal edge case
+     */
+    function testRemoveStableToken() public {
+        vm.startPrank(owner);
+
+        address fakeStable = makeAddr("fakeStable");
+
+        // Add first
+        walletInstance.addStableToken(fakeStable);
+        assertTrue(walletInstance.isStableToken(fakeStable));
+
+        // Remove
+        walletInstance.removeStableToken(fakeStable);
+        assertFalse(walletInstance.isStableToken(fakeStable));
+
+        // Should revert if token is already removed
+        vm.expectRevert(abi.encodeWithSignature("ChatterPay__NotStableToken()"));
+        walletInstance.removeStableToken(fakeStable);
+
+        vm.stopPrank();
+    }
+
     /*//////////////////////////////////////////////////////////////
                            HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -160,13 +202,7 @@ contract AdminModule is BaseTest {
     /**
      * @dev Calculates hash for token pair
      */
-    function _getPairHash(
-        address tokenA,
-        address tokenB
-    ) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(
-            tokenA < tokenB ? tokenA : tokenB,
-            tokenA < tokenB ? tokenB : tokenA
-        ));
+    function _getPairHash(address tokenA, address tokenB) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(tokenA < tokenB ? tokenA : tokenB, tokenA < tokenB ? tokenB : tokenA));
     }
 }

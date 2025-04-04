@@ -12,11 +12,14 @@ import {ChatterPayNFT} from "../src/ChatterPayNFT.sol";
  * @dev Uses OpenZeppelin UUPS proxy pattern for upgradeability
  */
 contract DeployChatterPay is Script {
-    
-    /** @dev Helper contract for network-specific configurations */
+    /**
+     * @dev Helper contract for network-specific configurations
+     */
     HelperConfig helperConfig;
 
-    /** @dev Base URI for NFT metadata */
+    /**
+     * @dev Base URI for NFT metadata
+     */
     string baseURI = "https://back.chatterpay.net/nft/metadata/opensea/";
 
     /**
@@ -31,8 +34,7 @@ contract DeployChatterPay is Script {
         vm.startBroadcast();
 
         address proxy = Upgrades.deployUUPSProxy(
-            "ChatterPayNFT.sol",
-            abi.encodeCall(ChatterPayNFT.initialize, (config.account, baseURI))
+            "ChatterPayNFT.sol", abi.encodeCall(ChatterPayNFT.initialize, (config.account, baseURI))
         );
 
         console.log("NFT deployed to:", address(proxy));

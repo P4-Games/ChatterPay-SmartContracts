@@ -22,12 +22,7 @@ contract SwapModule is BaseTest {
     address public moduleWalletAddress;
 
     /// @notice Events emitted during swap operations
-    event SwapExecuted(
-        address indexed tokenIn,
-        address indexed tokenOut,
-        uint256 amountIn,
-        uint256 amountOut
-    );
+    event SwapExecuted(address indexed tokenIn, address indexed tokenOut, uint256 amountIn, uint256 amountOut);
     event LiquidityAdded(address pool, uint256 tokenId, uint128 liquidity);
 
     /// @notice Sets up the test environment
@@ -42,10 +37,7 @@ contract SwapModule is BaseTest {
         moduleWallet = ChatterPay(payable(moduleWalletAddress));
 
         // Verify router configuration
-        require(
-            address(moduleWallet.getSwapRouter()) != address(0),
-            "Router not set"
-        );
+        require(address(moduleWallet.getSwapRouter()) != address(0), "Router not set");
 
         // Setup tokens using parent contract constants
         moduleWallet.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
@@ -74,11 +66,7 @@ contract SwapModule is BaseTest {
         console.log("USDT address:", USDT);
 
         // Get pool
-        address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(
-            USDC,
-            USDT,
-            POOL_FEE
-        );
+        address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(USDC, USDT, POOL_FEE);
         require(pool != address(0), "Pool doesn't exist");
         console.log("Pool address:", pool);
 
@@ -99,8 +87,7 @@ contract SwapModule is BaseTest {
         console.log("Expected fee:", expectedFee);
 
         // Calculate minimum amount out
-        uint256 minAmountOut = (((SWAP_AMOUNT - expectedFee) * 10 ** 12) * 30) /
-            100;
+        uint256 minAmountOut = (((SWAP_AMOUNT - expectedFee) * 10 ** 12) * 30) / 100;
         console.log("Minimum amount out:", minAmountOut);
 
         vm.startPrank(ENTRY_POINT);
@@ -137,11 +124,7 @@ contract SwapModule is BaseTest {
         moduleWallet.executeSwap(USDC, USDT, amountIn, minOut, owner);
         vm.stopPrank();
 
-        assertGt(
-            IERC20(USDT).balanceOf(owner),
-            0,
-            "Swap with custom fee failed"
-        );
+        assertGt(IERC20(USDT).balanceOf(owner), 0, "Swap with custom fee failed");
     }
 
     /**
@@ -203,8 +186,7 @@ contract SwapModule is BaseTest {
 
         uint256 tolerance = (expectedFee * 1) / 100; // tolerance: 1%
         assertTrue(
-            feeCollected >= expectedFee - tolerance &&
-                feeCollected <= expectedFee + tolerance,
+            feeCollected >= expectedFee - tolerance && feeCollected <= expectedFee + tolerance,
             "Fee not within acceptable range (1%)"
         );
     }
@@ -248,10 +230,7 @@ contract SwapModule is BaseTest {
 
         // Verify funding
         _logSwapState("After Funding", moduleWalletAddress);
-        require(
-            IERC20(USDC).balanceOf(moduleWalletAddress) == amountIn,
-            "Funding failed"
-        );
+        require(IERC20(USDC).balanceOf(moduleWalletAddress) == amountIn, "Funding failed");
 
         // Log router info
         _logRouterInfo(moduleWalletAddress);
@@ -280,10 +259,7 @@ contract SwapModule is BaseTest {
      * @param feeInCents The fee amount in cents
      * @return The calculated fee amount in token decimals
      */
-    function _calculateExpectedFee(
-        address token,
-        uint256 feeInCents
-    ) internal view returns (uint256) {
+    function _calculateExpectedFee(address token, uint256 feeInCents) internal view returns (uint256) {
         uint256 tokenDecimals = IERC20Extended(token).decimals();
 
         console.log("=== Fee Calculation Debug ===");

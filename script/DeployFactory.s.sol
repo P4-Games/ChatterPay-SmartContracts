@@ -33,18 +33,18 @@ contract DeployFactory is Script {
         console2.log("ChatterPay implementation deployed at:", address(implementation));
 
         factory = new ChatterPayWalletFactory(
-            config.account,      // _walletImplementation (temporary, will be updated later)
-            config.entryPoint,   // _entryPoint
-            config.account,      // _owner
-            vm.envAddress("PAYMASTER_ADDRESS"),  // _paymaster
-            config.router,       // _router
-            config.account,      // _feeAdmin (using account as fee admin)
-            tokens,              // _whitelistedTokens
-            priceFeeds           // _priceFeeds
+            config.account, // _walletImplementation (temporary, will be updated later)
+            config.entryPoint, // _entryPoint
+            config.account, // _owner
+            vm.envAddress("PAYMASTER_ADDRESS"), // _paymaster
+            config.router, // _router
+            config.account, // _feeAdmin (using account as fee admin)
+            tokens, // _whitelistedTokens
+            priceFeeds // _priceFeeds
         );
 
         console2.log("Wallet Factory deployed at address %s", address(factory));
-        
+
         // Validate deployment
         require(factory.owner() == config.account, "Factory owner not set correctly");
         require(factory.paymaster() == vm.envAddress("PAYMASTER_ADDRESS"), "Paymaster not set correctly");
