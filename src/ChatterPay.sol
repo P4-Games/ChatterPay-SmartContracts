@@ -704,13 +704,18 @@ contract ChatterPay is
     }
 
     /**
-     * @dev Handles account prefunding
-     * @param missingAccountFunds Amount of funds to prefund
+     * @dev Handles account prefunding by sending ETH to the EntryPoint (msg.sender).
+     * The success of the transfer is intentionally not enforced, as the EntryPoint
+     * itself is responsible for validating whether it received sufficient funds.
+     * Reverting here could interfere with bundler simulation and ERC-4337 flow,
+     * so failures are ignored by design.
+     * @param missingAccountFunds The minimum amount of ETH to send to the EntryPoint.
      */
     function _payPrefund(uint256 missingAccountFunds) internal {
         if (missingAccountFunds != 0) {
             (bool success,) = payable(msg.sender).call{value: missingAccountFunds, gas: type(uint256).max}("");
-            (success);
+            // Intentionally ignoring success — EntryPoint validates received funds
+            success;
         }
     }
 
