@@ -46,6 +46,8 @@ error ChatterPay__InvalidPoolFee();
 error ChatterPay__ReentrantCall();
 error ChatterPay__TransferFailed();
 error ChatterPay__ImplementationInitialization();
+error ChatterPay__AlreadyStableToken();
+error ChatterPay__NotStableToken();
 
 interface IERC20Extended is IERC20 {
     function symbol() external view returns (string memory);
@@ -67,6 +69,7 @@ contract ChatterPayStorage {
         mapping(address => address) priceFeeds;
         mapping(bytes32 => uint24) customPoolFees;
         mapping(address => uint256) customSlippage;
+        mapping(address => bool) stableTokens;
     }
 }
 
@@ -550,6 +553,32 @@ contract ChatterPay is
     }
 
     /**
+     * @notice Adds a token to the list of recognized stablecoins
+     * @dev Only callable by the contract owner
+     * @param token The address of the token to mark as stable
+     * @custom:error ChatterPay__ZeroAddress if the token address is zero
+     * @custom:error ChatterPay__AlreadyStableToken if the token is already marked as stable
+     */
+    function addStableToken(address token) external onlyOwner {
+        if (token == address(0)) revert ChatterPay__ZeroAddress();
+        if (s_state.stableTokens[token]) revert ChatterPay__AlreadyStableToken();
+        s_state.stableTokens[token] = true;
+    }
+
+    /**
+     * @notice Removes a token from the list of recognized stablecoins
+     * @dev Only callable by the contract owner
+     * @param token The address of the token to remove from the stable list
+     * @custom:error ChatterPay__ZeroAddress if the token address is zero
+     * @custom:error ChatterPay__NotStableToken if the token is not marked as stable
+     */
+    function removeStableToken(address token) external onlyOwner {
+        if (token == address(0)) revert ChatterPay__ZeroAddress();
+        if (!s_state.stableTokens[token]) revert ChatterPay__NotStableToken();
+        delete s_state.stableTokens[token];
+    }
+
+    /**
      * @notice Sets a custom pool fee for a specific token pair
      * @param tokenA First token in pair
      * @param tokenB Second token in pair
@@ -591,12 +620,8 @@ contract ChatterPay is
      * @return bool True if token is a stablecoin
      */
     function _isStableToken(address token) internal view returns (bool) {
-        string memory symbol = IERC20Extended(token).symbol();
-        bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-        // TO-IMPROVE: Change by a token list!
-        return (symbolHash == keccak256(abi.encodePacked("USDT")) ||
-            symbolHash == keccak256(abi.encodePacked("USDC")) ||
-            symbolHash == keccak256(abi.encodePacked("DAI")));
+         if (token == address(0)) revert ChatterPay__ZeroAddress();
+         return s_state.stableTokens[token];
     }
 
     /**
