@@ -12,7 +12,7 @@ remappings = [
 [profile.local]
 ffi = true
 ast = true
-via_ir = false # Disabled for faster compilation
+via_ir = true
 optimizer = true
 optimizer_runs = 50
 build_info = true
