@@ -307,6 +307,29 @@ contract ChatterPay is
         return s_state.stableTokens[token];
     }
 
+    function getPoolFees() external view returns (uint24 low, uint24 medium, uint24 high) {
+        return (s_state.uniswapPoolFeeLow, s_state.uniswapPoolFeeMedium, s_state.uniswapPoolFeeHigh);
+    }
+
+    function getSlippageValues() external view returns (uint256 stables, uint256 eth, uint256 btc) {
+        return (s_state.slippageStables, s_state.slippageEth, s_state.slippageBtc);
+    }
+
+    function getMaxDeadline() external view returns (uint256) {
+        return s_state.maxDeadline;
+    }
+
+    function getMaxFeeInCents() external view returns (uint256) {
+        return s_state.maxFeeInCents;
+    }
+
+    function getPriceFreshnessThreshold() external view returns (uint256) {
+        return s_state.priceFreshnessThreshold;
+    }
+
+    function getPriceFeedPrecision() external view returns (uint256) {
+        return s_state.priceFeedPrecision;
+    }
     /*//////////////////////////////////////////////////////////////
                            MAIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -602,6 +625,28 @@ contract ChatterPay is
         if (slippageBps > 5000) revert ChatterPay__InvalidSlippage(); // Max 50%
         s_state.customSlippage[token] = slippageBps;
         emit CustomSlippageSet(token, slippageBps);
+    }
+
+    function updateUniswapPoolFees(uint24 low, uint24 medium, uint24 high) external onlyOwner {
+        s_state.uniswapPoolFeeLow = low;
+        s_state.uniswapPoolFeeMedium = medium;
+        s_state.uniswapPoolFeeHigh = high;
+    }
+
+    function updateSlippage(uint256 stables, uint256 eth, uint256 btc) external onlyOwner {
+        s_state.slippageStables = stables;
+        s_state.slippageEth = eth;
+        s_state.slippageBtc = btc;
+    }
+
+    function updatePriceConfig(uint256 freshness, uint256 precision) external onlyOwner {
+        s_state.priceFreshnessThreshold = freshness;
+        s_state.priceFeedPrecision = precision;
+    }
+
+    function updateLimits(uint256 deadline, uint256 maxFeeCents) external onlyOwner {
+        s_state.maxDeadline = deadline;
+        s_state.maxFeeInCents = maxFeeCents;
     }
 
     /*//////////////////////////////////////////////////////////////
