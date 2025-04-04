@@ -45,6 +45,7 @@ contract EntryPointModule is BaseTest {
         walletAddress = factory.createProxy(owner);
         walletInstance = ChatterPay(payable(walletAddress));
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
+        walletInstance.addStableToken(USDT);
         vm.stopPrank();
     }
 

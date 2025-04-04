@@ -38,6 +38,8 @@ contract AdminModule is BaseTest {
 
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         walletInstance.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
+        walletInstance.addStableToken(USDC);
+        walletInstance.addStableToken(USDT);
         vm.stopPrank();
     }
 
