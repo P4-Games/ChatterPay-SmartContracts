@@ -600,19 +600,6 @@ contract ChatterPay is
     }
 
     /**
-     * @dev Verify if a token is BTC or similar
-     * @param token Token address to check
-     * @return bool True if token is a BTC-like token
-     */
-    function _isBTCToken(address token) internal view returns (bool) {
-        string memory symbol = IERC20Extended(token).symbol();
-        bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-        // TO-IMPROVE: Change by a token list!
-        return (symbolHash == keccak256(abi.encodePacked("WBTC")) ||
-            symbolHash == keccak256(abi.encodePacked("renBTC")));
-    }
-
-    /**
      * @dev Gets token price from oracle
      * @param token Token address to get price for
      * @return uint256 Token price with 8 decimals precision
