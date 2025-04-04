@@ -299,6 +299,10 @@ contract ChatterPay is
         return address(s_state.entryPoint);
     }
 
+    function isStableToken(address token) public view returns (bool) {
+        return s_state.stableTokens[token];
+    }
+
     /*//////////////////////////////////////////////////////////////
                            MAIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
