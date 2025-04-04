@@ -89,7 +89,7 @@ contract SwapModule is BaseTest {
         console.log("Expected fee:", expectedFee);
 
         // Calculate minimum amount out
-        uint256 minAmountOut = (((SWAP_AMOUNT - expectedFee) * 10 ** 12) * 30) / 100;
+        uint256 minAmountOut = ((SWAP_AMOUNT - expectedFee) * 97) / 100; // 3% slippage
         console.log("Minimum amount out:", minAmountOut);
 
         vm.startPrank(ENTRY_POINT);
