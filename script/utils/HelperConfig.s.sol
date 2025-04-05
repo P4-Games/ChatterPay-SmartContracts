@@ -138,7 +138,7 @@ contract HelperConfig is Script {
     function getArbitrumSepoliaConfig() public view returns (NetworkConfig memory) {
         return NetworkConfig({
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
-            usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
+            usdc: 0x8431eBc62F7B08af1bBf80eE7c85364ffc24ae24, // USDC (Manteca)
             usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
             weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
