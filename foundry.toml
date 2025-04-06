@@ -21,6 +21,7 @@ verbosity = 3
 gas_reports = ["*"]
 cache = true
 cache_path = 'cache'
+solc_version = '0.8.24'
 
 # Production profile - optimized for deployment
 [profile.production]
@@ -36,3 +37,4 @@ gas_reports = ["*"]
 deny_warnings = true
 force = true
 cache = false
+solc_version = '0.8.24'
