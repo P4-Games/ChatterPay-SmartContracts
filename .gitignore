@@ -12,7 +12,7 @@ out/
 docs/
 
 # Dotenv file
-.env
+.env*
 
 # misc
 .DS_Store
