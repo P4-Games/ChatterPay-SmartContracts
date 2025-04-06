@@ -188,7 +188,7 @@ contract DeployAllContracts is Script {
 
         // Update the factory with the correct implementation.
         factory.setImplementationAddress(implementation);
-        console2.log("Factory implementation updated to %s", implementation);
+        console2.log("Wallet Factory implementation updated to %s", implementation);
 
         // Set chatterPay to the proxy address.
         chatterPay = ChatterPay(payable(proxy));
