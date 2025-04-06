@@ -100,8 +100,8 @@ contract HelperConfig is Script {
     //////////////////////////////////////////////////////////////*/
 
     /**
-    /// @notice Returns the configuration for the Arbitrum mainnet
-    /// @return NetworkConfig Configuration with addresses on Arbitrum One
+     * /// @notice Returns the configuration for the Arbitrum mainnet
+     * /// @return NetworkConfig Configuration with addresses on Arbitrum One
      */
     function getArbitrumOneConfig() public view returns (NetworkConfig memory) {
         return NetworkConfig({
