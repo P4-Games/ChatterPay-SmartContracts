@@ -26,6 +26,12 @@ DEPLOYED_PAYMASTER_ADDRESS=Address of an existing Paymaster to avoid creating a 
 UNISWAP_FACTORY=0x248AB79Bbb9bC29bB72f7Cd42F17e054Fc40188e
 POSITION_MANAGER=0x6b2937Bde17889EDCf8fbD8dE31C3C2a70Bc4d65
 
+# Uniswap V3 Addresses (scroll-sepolia)
+# https://sepolia.scrollscan.com/address/0x0287f57A1a17a725428689dfD9E65ECA01d82510#code
+UNISWAP_FACTORY=0x0287f57A1a17a725428689dfD9E65ECA01d82510
+# https://sepolia.scrollscan.com/address/0xa9c7c2bced22d1d47111610af21a53b6d1e69eed#code
+POSITION_MANAGER=0xA9c7C2BCEd22D1d47111610Af21a53B6D1e69eeD
+
 # Tokens and their respective Price Feeds (ensure the order matches between tokens[i], price_feeds[i] and TOKENS_ARE_STABLE[i])
 # USDT, WETH
 TOKENS=0xe6B817E31421929403040c3e42A6a5C5D2958b4A,0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,0x8431eBc62F7B08af1bBf80eE7c85364ffc24ae24
