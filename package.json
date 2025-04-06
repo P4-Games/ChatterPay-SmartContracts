@@ -14,6 +14,8 @@
         "clean:full": "forge clean && rm -rf cache .forge-cache",
         "deploy:arbitrum-sepolia": "make deploy_arbitrum_sepolia_all",
         "deploy:arbitrum-sepolia:verify": "make deploy_verify_arbitrum_sepolia_all",
+        "deploy:scroll-sepolia": "make deploy_scroll_sepolia_all",
+        "deploy:scroll-sepolia:verify": "make deploy_verify_scroll_sepolia_all",
         "deploy:chatterpay": "make deploy_arbitrum_sepolia_only_chatterpay",
         "deploy:chatterpay:verify": "make deploy_verify_arbitrum_sepolia_only_chatterpay",
         "generate-types": "typechain --target=ethers-v5 './src/artifacts/**/*.json'",
