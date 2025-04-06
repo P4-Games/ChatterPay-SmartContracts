@@ -1,3 +1,5 @@
+DEPLOY_NETWORK_ENV=LOCAL|TEST|PROD
+
 ETH_SEPOLIA_RPC_URL=Your node provider URL for Sepolia
 ETHERSCAN_API_KEY=Your etherscan api key, if you want to verify contracts
 
