@@ -7,6 +7,7 @@ Find contract deployment addresses by network at these links:
 - USDT: [Tethet Contracts Addresses](https://tether.to/es/supported-protocols) 
 - USDC (Circle): [Circle Contracts Addresses](https://www.circle.com/blog/usdc-on-arbitrum-now-available)
 - WETH:  [Arbitrum Contract Addresses](https://docs.arbitrum.io/build-decentralized-apps/reference/contract-addresses)
+- Circle: [USDC TOken Addresses](https://developers.circle.com/stablecoins/usdc-on-test-networks)
 - EntryPoint: [eth Infinitism - Account Abstraction](https://github.com/eth-infinitism/account-abstraction/releases/tag/v0.6.0)
 - Uniswap: [Uniswap Contract Deployments](https://docs.uniswap.org/contracts/v3/reference/deployments/) 
 - Chainlink: [Price FeedsContract Addresses](https://docs.chain.link/data-feeds/price-feeds/addresses)

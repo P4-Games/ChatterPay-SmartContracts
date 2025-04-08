@@ -47,3 +47,19 @@ deploy_arbitrum_sepolia_only_paymaster :; $(BUILD) && \
 	--rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
 	--broadcast
+
+
+# Deploy all contracts (Scroll)
+deploy_verify_scroll_sepolia_all :; $(BUILD) && \
+	FOUNDRY_PROFILE=local forge script script/DeployAllContracts.s.sol \
+	--rpc-url $(SCROLL_SEPOLIA_RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--verify \
+	--etherscan-api-key $(SCROLLSCAN_API_KEY) \
+	--broadcast
+
+deploy_scroll_sepolia_all :; $(BUILD) && \
+	FOUNDRY_PROFILE=local forge script script/DeployAllContracts.s.sol \
+	--rpc-url $(SCROLL_SEPOLIA_RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--broadcast

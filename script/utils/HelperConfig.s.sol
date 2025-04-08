@@ -100,8 +100,8 @@ contract HelperConfig is Script {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Obtiene la configuración para la red principal de Arbitrum
-     * @return NetworkConfig Configuración con las direcciones en Arbitrum One
+     * /// @notice Returns the configuration for the Arbitrum mainnet
+     * /// @return NetworkConfig Configuration with addresses on Arbitrum One
      */
     function getArbitrumOneConfig() public view returns (NetworkConfig memory) {
         return NetworkConfig({
@@ -138,7 +138,7 @@ contract HelperConfig is Script {
     function getArbitrumSepoliaConfig() public view returns (NetworkConfig memory) {
         return NetworkConfig({
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
-            usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
+            usdc: 0x8431eBc62F7B08af1bBf80eE7c85364ffc24ae24, // USDC (Manteca)
             usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
             weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
@@ -157,7 +157,7 @@ contract HelperConfig is Script {
             usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
             usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
             weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
-            matic: 0x0000000000000000000000000000000000000000, // address TBD
+            matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
             router: 0x101F443B4d1b059569D643917553c771E1b9663E,
             account: BACKEND_SIGNER
         });
@@ -170,11 +170,11 @@ contract HelperConfig is Script {
     function getScrollSepoliaConfig() public view returns (NetworkConfig memory) {
         return NetworkConfig({
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
-            usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
-            usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
-            weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
-            matic: 0x0000000000000000000000000000000000000000, // address TBD
-            router: 0x101F443B4d1b059569D643917553c771E1b9663E,
+            usdc: 0xFadA8b0737D4A3AE7118918B7E69E689034c0127,
+            usdt: 0xb84a700192A78103B2dA2530D99718A2a954cE86,
+            weth: 0x59F1ec1f10bD7eD9B938431086bC1D9e233ECf41,
+            matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
+            router: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
             account: BACKEND_SIGNER
         });
     }

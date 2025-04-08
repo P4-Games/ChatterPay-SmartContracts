@@ -38,6 +38,8 @@ contract DeployAllContracts is Script {
     // Environment Variables
     string NFTBaseUri = vm.envString("NFT_BASE_URI");
 
+    string deployNetworkEnv = vm.envString("DEPLOY_NETWORK_ENV");
+
     // Comma-separated list of tokens
     string tokensEnv = vm.envString("TOKENS");
 
@@ -186,7 +188,7 @@ contract DeployAllContracts is Script {
 
         // Update the factory with the correct implementation.
         factory.setImplementationAddress(implementation);
-        console2.log("Factory implementation updated to %s", implementation);
+        console2.log("Wallet Factory implementation updated to %s", implementation);
 
         // Set chatterPay to the proxy address.
         chatterPay = ChatterPay(payable(proxy));
@@ -232,6 +234,12 @@ contract DeployAllContracts is Script {
      * @dev Creates and initializes the pool if it doesn't exist, and adds liquidity if below threshold.
      */
     function configureUniswapPool() internal {
+        // Only in test networks
+        if (keccak256(bytes(deployNetworkEnv)) == keccak256(bytes("PROD"))) {
+            console2.log("Skipping Uniswap pool configuration in PROD environment.");
+            return;
+        }
+
         // Ensure there are at least two tokens for the pool.
         require(tokens.length >= 2, "At least two tokens are needed for the pool");
         address tokenA = tokens[0];
