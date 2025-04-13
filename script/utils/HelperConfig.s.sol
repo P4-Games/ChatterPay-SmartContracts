@@ -20,7 +20,7 @@ contract HelperConfig is Script {
                                  TYPES
     //////////////////////////////////////////////////////////////*/
 
-     /**
+    /**
      * @notice Configuration struct containing token-specific parameters
      * @param token The ERC20 token address
      * @param priceFeed The Chainlink price feed address for the token (e.g. USDT/USD)

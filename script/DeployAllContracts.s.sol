@@ -86,7 +86,10 @@ contract DeployAllContracts is Script {
         deployFactory(); // 2. Deploy Wallet Factory
         deployChatterPay(); // 3. Deploy ChatterPay using UUPS Proxy
         deployNFT(); // 4. Deploy NFT with Transparent Proxy
-        configureUniswapPool(); // 5. Configure Uniswap V3 Pool
+
+        if (block.chainid != 31337) { // anvil
+            configureUniswapPool(); // 5. Configure Uniswap V3 Pool (skip in Anvil)
+        }
 
         // Stop broadcasting transactions
         vm.stopBroadcast();
