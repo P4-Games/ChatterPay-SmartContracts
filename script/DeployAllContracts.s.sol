@@ -25,10 +25,12 @@ contract DeployAllContracts is Script {
     ChatterPayPaymaster paymaster;
     ChatterPayNFT chatterPayNFT;
 
-    // Uniswap V3 Addresses (immutable)
-    address immutable uniswapFactory;
-    address immutable uniswapPositionManager;
-    uint24 poolFee = 3000; // Fee tier of 0.3%
+    // Uniswap V3 Addresses
+    address uniswapFactory;
+    address uniswapPositionManager;
+
+    // Fee tier of 0.3%
+    uint24 poolFee = 3000;
 
     // Tokens, Price Feeds and tokens-stable flags arrays
     address[] tokens;
@@ -38,11 +40,6 @@ contract DeployAllContracts is Script {
     // Environment Variables
     string NFTBaseUri = vm.envString("NFT_BASE_URI");
     string deployNetworkEnv = vm.envString("DEPLOY_NETWORK_ENV");
-
-    constructor() {
-        uniswapFactory = vm.envAddress("UNISWAP_FACTORY");
-        uniswapPositionManager = vm.envAddress("POSITION_MANAGER");
-    }
 
     /**
      * @notice Main deployment function
@@ -54,6 +51,9 @@ contract DeployAllContracts is Script {
         // Initialize network configuration
         helperConfig = new HelperConfig();
         config = helperConfig.getConfig();
+
+        uniswapFactory = config.uniswapConfig.factory;
+        uniswapPositionManager = config.uniswapConfig.positionManager;
 
         // Extract tokens, priceFeeds and flags from config.tokensConfig
         uint256 numTokens = config.tokensConfig.length;

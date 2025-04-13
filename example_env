@@ -16,32 +16,3 @@ ROUTER_ADDRESS=Uniswap SwapRouter02 address
 NFT_BASE_URI=https://dev.back.chatterpay.net/nft/metadata/opensea/
 DEPLOYED_PAYMASTER_ADDRESS=Address of an existing Paymaster contrct to avoid creating a new one in the deployment script
 DEPLOYED_NFT_ADDRESS=Address of an existing NFT Contract to avoid creating a new one in the deployment script
-
-# Uniswap V3 Addresses (arbitrum)
-# https://docs.uniswap.org/contracts/v3/reference/deployments/arbitrum-deployments
-# UNISWAP_FACTORY=0x1F98431c8aD98523631AE4a59f267346ea31F984
-# POSITION_MANAGER=0xC36442b4a4522E871399CD717aBDD847Ab11FE88
-
-# Uniswap V3 Addresses (arbitrum-sepolia)
-# https://docs.uniswap.org/contracts/v3/reference/deployments/arbitrum-deployments
-UNISWAP_FACTORY=0x248AB79Bbb9bC29bB72f7Cd42F17e054Fc40188e
-POSITION_MANAGER=0x6b2937Bde17889EDCf8fbD8dE31C3C2a70Bc4d65
-
-# Uniswap V3 Addresses (scroll-sepolia)
-# https://sepolia.scrollscan.com/address/0x0287f57A1a17a725428689dfD9E65ECA01d82510#code
-UNISWAP_FACTORY=0x0287f57A1a17a725428689dfD9E65ECA01d82510
-# https://sepolia.scrollscan.com/address/0xa9c7c2bced22d1d47111610af21a53b6d1e69eed#code
-POSITION_MANAGER=0xA9c7C2BCEd22D1d47111610Af21a53B6D1e69eeD
-
-# Tokens and their respective Price Feeds (ensure the order matches between tokens[i], price_feeds[i] and TOKENS_ARE_STABLE[i])
-# USDT, WETH
-TOKENS=0xe6B817E31421929403040c3e42A6a5C5D2958b4A,0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,0x8431eBc62F7B08af1bBf80eE7c85364ffc24ae24
-# USDT/USD, ETH/USD, USDC/USD (from chainlink:https://docs.chain.link/data-feeds/price-feeds)
-PRICE_FEEDS=0x80EDee6f667eCc9f63a0a6f55578F870651f06A4,0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165,0x0153002d20B96532C639313c2d54c3dA09109309
-TOKENS_ARE_STABLE=true,false,true
-
-# scroll-sepolia: USDT, WETH, USDC
-# TOKENS=0x776133ea03666b73a8e3FC23f39f90e66360716E,0xd5654b986d5aDba8662c06e847E32579078561dC,0x7878290DB8C4f02bd06E0E249617871c19508bE6
-# PRICE_FEEDS=0xb84a700192A78103B2dA2530D99718A2a954cE86,0x59F1ec1f10bD7eD9B938431086bC1D9e233ECf41,0xFadA8b0737D4A3AE7118918B7E69E689034c0127
-# TOKENS_ARE_STABLE=true,false,true
-

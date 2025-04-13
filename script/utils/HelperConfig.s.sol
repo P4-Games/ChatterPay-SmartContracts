@@ -21,10 +21,12 @@ contract HelperConfig is Script {
     //////////////////////////////////////////////////////////////*/
     /**
      * @notice Configuration struct containing token-specific parameters
-     * @param symbol The ERC20 token symbol
+     * @param symbol The ERC20 token symbol (e.g., "USDC")
      * @param token The ERC20 token address
-     * @param priceFeed The Chainlink price feed address for the token (e.g. USDT/USD)
-     * @param isStable Boolean indicating if the token is considered stable (e.g. true for USDC/USDT)
+     * @param priceFeed Chainlink price feed address (e.g., USDC/USD)
+     * @param isStable Whether the token is considered stable (e.g., true for USDC/USDT)
+     *
+     * @dev Chainlink price feeds reference: https://docs.chain.link/data-feeds/price-feeds
      */
     struct TokenConfig {
         string symbol;
@@ -34,17 +36,29 @@ contract HelperConfig is Script {
     }
 
     /**
+     * @notice Configuration struct for Uniswap V3
+     * @param factory Address of the Uniswap V3 factory
+     * @param positionManager Address of the Uniswap V3 non-fungible position manager
+     */
+    struct UniswapConfig {
+        address factory;
+        address positionManager;
+    }
+
+    /**
      * @notice Configuration struct containing network-specific addresses
      * @param entryPoint The EntryPoint contract address
      * @param uniswapRouter Uniswap Router contract address
      * @param backendSigner Backend signer account address
      * @param tokensConfig Array of token configurations, including address, price feed, and stability flag
+     * @param uniswapConfig Uniswap-specific configuration (factory + positionManager)
      */
     struct NetworkConfig {
         address entryPoint;
         address uniswapRouter;
         address backendSigner;
         TokenConfig[] tokensConfig;
+        UniswapConfig uniswapConfig;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -154,7 +168,11 @@ contract HelperConfig is Script {
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
             uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
             backendSigner: BACKEND_SIGNER,
-            tokensConfig: tokenConfigs
+            tokensConfig: tokenConfigs,
+            uniswapConfig: UniswapConfig({
+                factory: 0x248AB79Bbb9bC29bB72f7Cd42F17e054Fc40188e,
+                positionManager: 0x6b2937Bde17889EDCf8fbD8dE31C3C2a70Bc4d65
+            })
         });
     }
 
@@ -191,7 +209,11 @@ contract HelperConfig is Script {
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
             uniswapRouter: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
             backendSigner: BACKEND_SIGNER,
-            tokensConfig: tokenConfigs
+            tokensConfig: tokenConfigs,
+            uniswapConfig: UniswapConfig({
+                factory: 0x0287f57A1a17a725428689dfD9E65ECA01d82510,
+                positionManager: 0xA9c7C2BCEd22D1d47111610Af21a53B6D1e69eeD
+            })
         });
     }
 
@@ -228,9 +250,10 @@ contract HelperConfig is Script {
 
         localNetworkConfig = NetworkConfig({
             entryPoint: address(entryPoint),
-            uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
+            uniswapRouter: address(0),
             backendSigner: BACKEND_SIGNER,
-            tokensConfig: tokenConfigs
+            tokensConfig: tokenConfigs,
+            uniswapConfig: UniswapConfig({factory: address(0), positionManager: address(0)})
         });
         return localNetworkConfig;
     }
