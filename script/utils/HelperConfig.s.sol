@@ -21,11 +21,13 @@ contract HelperConfig is Script {
     //////////////////////////////////////////////////////////////*/
     /**
      * @notice Configuration struct containing token-specific parameters
+     * @param symbol The ERC20 token symbol
      * @param token The ERC20 token address
      * @param priceFeed The Chainlink price feed address for the token (e.g. USDT/USD)
      * @param isStable Boolean indicating if the token is considered stable (e.g. true for USDC/USDT)
      */
     struct TokenConfig {
+        string symbol;
         address token;
         address priceFeed;
         bool isStable;
@@ -34,21 +36,15 @@ contract HelperConfig is Script {
     /**
      * @notice Configuration struct containing network-specific addresses
      * @param entryPoint The EntryPoint contract address
-     * @param usdc USDC token address
-     * @param usdt USDT token address
-     * @param weth WETH token address
-     * @param matic MATIC token address
-     * @param uniswapRouter uniswap Router
+     * @param uniswapRouter Uniswap Router contract address
      * @param backendSigner Backend signer account address
+     * @param tokensConfig Array of token configurations, including address, price feed, and stability flag
      */
     struct NetworkConfig {
         address entryPoint;
-        address usdc;
-        address usdt;
-        address weth;
-        address matic;
         address uniswapRouter;
         address backendSigner;
+        TokenConfig[] tokensConfig;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -60,6 +56,7 @@ contract HelperConfig is Script {
     uint256 constant ARBITRUM_SEPOLIA_CHAIN_ID = 421614;
     uint256 constant OPTIMISM_SEPOLIA_CHAIN_ID = 11155420;
     uint256 constant LOCAL_CHAIN_ID = 31337;
+
     address constant BURNER_WALLET = 0x08f88ef7ecD64a2eA1f3887d725F78DDF1bacDF1;
     address constant ANVIL_DEFAULT_ACCOUNT = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     address immutable BACKEND_SIGNER;
@@ -76,12 +73,8 @@ contract HelperConfig is Script {
      */
     constructor() {
         BACKEND_SIGNER = vm.envAddress("BACKEND_EOA");
-        console.log("backend_signer account", BACKEND_SIGNER);
-        networkConfigs[ETHEREUM_SEPOLIA_CHAIN_ID] = getEthereumSepoliaConfig();
         networkConfigs[SCROLL_SEPOLIA_CHAIN_ID] = getScrollSepoliaConfig();
-        networkConfigs[SCROLL_DEVNET_CHAIN_ID] = getScrollDevnetConfig();
         networkConfigs[ARBITRUM_SEPOLIA_CHAIN_ID] = getArbitrumSepoliaConfig();
-        networkConfigs[OPTIMISM_SEPOLIA_CHAIN_ID] = getOptimismSepoliaConfig();
     }
 
     /**
@@ -108,71 +101,60 @@ contract HelperConfig is Script {
         }
     }
 
+    /**
+     * @notice Retrieves a token address by its symbol for the current network
+     * @dev Performs a linear search through the tokensConfig array of the current network config
+     * @param symbol The symbol of the token to search for (e.g., "USDC", "USDT", "WETH")
+     * @return token The ERC20 token address matching the given symbol
+     */
+    function getTokenBySymbol(string memory symbol) external view returns (address token) {
+        NetworkConfig memory config = networkConfigs[block.chainid];
+        for (uint256 i = 0; i < config.tokensConfig.length; i++) {
+            if (keccak256(bytes(config.tokensConfig[i].symbol)) == keccak256(bytes(symbol))) {
+                return config.tokensConfig[i].token;
+            }
+        }
+        revert(string(abi.encodePacked("Token symbol not found: ", symbol)));
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 CONFIGS
     //////////////////////////////////////////////////////////////*/
-
-    /**
-     * /// @notice Returns the configuration for the Arbitrum mainnet
-     * /// @return NetworkConfig Configuration with addresses on Arbitrum One
-     */
-    function getArbitrumOneConfig() public view returns (NetworkConfig memory) {
-        return NetworkConfig({
-            entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
-            usdc: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831, // native (circle) USDC
-            usdt: 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9, // USDT
-            weth: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1, // WETH
-            matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
-            uniswapRouter: 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45, // SwapRouter02
-            backendSigner: BACKEND_SIGNER
-        });
-    }
-
-    /**
-     * @notice Gets configuration for Ethereum Sepolia testnet
-     * @return NetworkConfig Configuration with Ethereum Sepolia addresses
-     */
-    function getEthereumSepoliaConfig() public view returns (NetworkConfig memory) {
-        return NetworkConfig({
-            entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
-            usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
-            usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
-            weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
-            matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
-            uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E, // SwapRouter02
-            backendSigner: BACKEND_SIGNER
-        });
-    }
 
     /**
      * @notice Gets configuration for Arbitrum Sepolia testnet
      * @return NetworkConfig Configuration with Arbitrum Sepolia addresses
      */
     function getArbitrumSepoliaConfig() public view returns (NetworkConfig memory) {
-        return NetworkConfig({
-            entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
-            usdc: 0x8431eBc62F7B08af1bBf80eE7c85364ffc24ae24, // USDC (Manteca)
-            usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
-            weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
-            matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
-            uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E, // SwapRouter02
-            backendSigner: BACKEND_SIGNER
-        });
-    }
+        // 0: USDT, 1: WETH, 2: USDC
+        TokenConfig[] memory tokenConfigs = new TokenConfig[](3);
 
-    /**
-     * @notice Gets configuration for Scroll devnet
-     * @return NetworkConfig Configuration with Scroll devnet addresses
-     */
-    function getScrollDevnetConfig() public view returns (NetworkConfig memory) {
+        tokenConfigs[0] = TokenConfig({
+            symbol: "UDST",
+            token: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
+            priceFeed: 0x80EDee6f667eCc9f63a0a6f55578F870651f06A4,
+            isStable: true
+        });
+
+        tokenConfigs[1] = TokenConfig({
+            symbol: "WETH",
+            token: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
+            priceFeed: 0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165,
+            isStable: false
+        });
+
+        tokenConfigs[2] = TokenConfig({
+            symbol: "UDDC",
+            token: 0x8431eBc62F7B08af1bBf80eE7c85364ffc24ae24,
+            priceFeed: 0x0153002d20B96532C639313c2d54c3dA09109309,
+            isStable: true
+        });
+
         return NetworkConfig({
-            entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
-            usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
-            usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
-            weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
-            matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
+            entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
             uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
-            backendSigner: BACKEND_SIGNER
+            backendSigner: BACKEND_SIGNER,
+            tokensConfig: tokenConfigs
         });
     }
 
@@ -181,30 +163,35 @@ contract HelperConfig is Script {
      * @return NetworkConfig Configuration with Scroll Sepolia addresses
      */
     function getScrollSepoliaConfig() public view returns (NetworkConfig memory) {
-        return NetworkConfig({
-            entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
-            usdc: 0x7878290DB8C4f02bd06E0E249617871c19508bE6,
-            usdt: 0x776133ea03666b73a8e3FC23f39f90e66360716E,
-            weth: 0xd5654b986d5aDba8662c06e847E32579078561dC,
-            matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
-            uniswapRouter: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
-            backendSigner: BACKEND_SIGNER
-        });
-    }
+        // 0: USDT, 1: WETH, 2: USDC
+        TokenConfig[] memory tokenConfigs = new TokenConfig[](3);
 
-    /**
-     * @notice Gets configuration for Optimism Sepolia testnet
-     * @return NetworkConfig Configuration with Optimism Sepolia addresses
-     */
-    function getOptimismSepoliaConfig() public view returns (NetworkConfig memory) {
+        tokenConfigs[0] = TokenConfig({
+            symbol: "UDST",
+            token: 0x776133ea03666b73a8e3FC23f39f90e66360716E,
+            priceFeed: 0xb84a700192A78103B2dA2530D99718A2a954cE86,
+            isStable: true
+        });
+
+        tokenConfigs[1] = TokenConfig({
+            symbol: "WETH",
+            token: 0xd5654b986d5aDba8662c06e847E32579078561dC,
+            priceFeed: 0x59F1ec1f10bD7eD9B938431086bC1D9e233ECf41,
+            isStable: false
+        });
+
+        tokenConfigs[2] = TokenConfig({
+            symbol: "USDC",
+            token: 0x7878290DB8C4f02bd06E0E249617871c19508bE6,
+            priceFeed: 0xFadA8b0737D4A3AE7118918B7E69E689034c0127,
+            isStable: true
+        });
+
         return NetworkConfig({
-            entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
-            usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
-            usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
-            weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
-            matic: 0x0000000000000000000000000000000000000000, // address TBD
-            uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
-            backendSigner: BACKEND_SIGNER
+            entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
+            uniswapRouter: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
+            backendSigner: BACKEND_SIGNER,
+            tokensConfig: tokenConfigs
         });
     }
 
@@ -229,19 +216,21 @@ contract HelperConfig is Script {
         console.log("USDT deployed! %s", address(usdtMock));
         ERC20Mock wethMock = new ERC20Mock("Wrapped ETH", "WETH");
         console.log("WETH deployed! %s", address(wethMock));
-        ERC20Mock maticMock = new ERC20Mock("MATIC", "MATIC");
-        console.log("MATIC deployed! %s", address(maticMock));
         vm.stopBroadcast();
         console.log("Mocks deployed!");
 
+        // 0: USDT, 1: WETH, 2: USDC
+        TokenConfig[] memory tokenConfigs = new TokenConfig[](3);
+        tokenConfigs[0] = TokenConfig({symbol: "USDT", token: address(usdtMock), priceFeed: address(0), isStable: true});
+        tokenConfigs[1] =
+            TokenConfig({symbol: "WETH", token: address(wethMock), priceFeed: address(0), isStable: false});
+        tokenConfigs[2] = TokenConfig({symbol: "USDC", token: address(usdcMock), priceFeed: address(0), isStable: true});
+
         localNetworkConfig = NetworkConfig({
             entryPoint: address(entryPoint),
-            usdc: address(usdcMock),
-            usdt: address(usdtMock),
-            weth: address(wethMock),
-            matic: address(maticMock),
             uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
-            backendSigner: BACKEND_SIGNER
+            backendSigner: BACKEND_SIGNER,
+            tokensConfig: tokenConfigs
         });
         return localNetworkConfig;
     }
