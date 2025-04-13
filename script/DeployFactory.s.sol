@@ -38,7 +38,7 @@ contract DeployFactory is Script {
             config.entryPoint, // _entryPoint
             config.backendSigner, // _owner
             vm.envAddress("PAYMASTER_ADDRESS"), // _paymaster
-            config.uniswapRouter, // _router
+            config.uniswapConfig.router, // _router
             config.backendSigner, // _feeAdmin (using account as fee admin)
             tokens, // _whitelistedTokens
             priceFeeds, // _priceFeeds

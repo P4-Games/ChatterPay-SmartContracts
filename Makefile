@@ -10,62 +10,18 @@ deploy_anvil_all :; $(BUILD) && \
 	--private-key $(PRIVATE_KEY)
 
 # Deploy all contracts
-deploy_verify_arbitrum_sepolia_all :; $(BUILD) && \
+deploy_all :; $(BUILD) && \
 	FOUNDRY_PROFILE=local forge script script/DeployAllContracts.s.sol \
-	--rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--broadcast
+
+# Deploy and verify all contracts
+deploy_verify_all :; $(BUILD) && \
+	FOUNDRY_PROFILE=local forge script script/DeployAllContracts.s.sol \
+	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
 	--verify \
-	--etherscan-api-key $(ARBISCAN_API_KEY) \
+	--etherscan-api-key $(NETWORK_EXPLORER_API_KEY) \
 	--broadcast
 
-deploy_arbitrum_sepolia_all :; $(BUILD) && \
-	FOUNDRY_PROFILE=local forge script script/DeployAllContracts.s.sol \
-	--rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) \
-	--private-key $(PRIVATE_KEY) \
-	--broadcast
-
-# Deploy only ChatterPay contract
-deploy_verify_arbitrum_sepolia_only_chatterpay :; $(BUILD) && \
-	FOUNDRY_PROFILE=local forge script script/DeployChatterPay.s.sol \
-	--rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) \
-	--private-key $(PRIVATE_KEY) \
-	--verify \
-	--etherscan-api-key $(ARBISCAN_API_KEY) \
-	--broadcast
-
-deploy_arbitrum_sepolia_only_chatterpay :; $(BUILD) && \
-	FOUNDRY_PROFILE=local forge script script/DeployChatterPay.s.sol \
-	--rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) \
-	--private-key $(PRIVATE_KEY) \
-	--broadcast
-
-# Deploy only Paymaster contract
-deploy_verify_arbitrum_sepolia_only_paymaster :; $(BUILD) && \
-	FOUNDRY_PROFILE=local forge script script/DeployPaymaster.s.sol \
-	--rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) \
-	--private-key $(PRIVATE_KEY) \
-	--verify \
-	--etherscan-api-key $(ARBISCAN_API_KEY) \
-	--broadcast
-
-deploy_arbitrum_sepolia_only_paymaster :; $(BUILD) && \
-	FOUNDRY_PROFILE=local forge script script/DeployPaymaster.s.sol \
-	--rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) \
-	--private-key $(PRIVATE_KEY) \
-	--broadcast
-
-
-# Deploy all contracts (Scroll)
-deploy_verify_scroll_sepolia_all :; $(BUILD) && \
-	FOUNDRY_PROFILE=local forge script script/DeployAllContracts.s.sol \
-	--rpc-url $(SCROLL_SEPOLIA_RPC_URL) \
-	--private-key $(PRIVATE_KEY) \
-	--verify \
-	--etherscan-api-key $(SCROLLSCAN_API_KEY) \
-	--broadcast
-
-deploy_scroll_sepolia_all :; $(BUILD) && \
-	FOUNDRY_PROFILE=local forge script script/DeployAllContracts.s.sol \
-	--rpc-url $(SCROLL_SEPOLIA_RPC_URL) \
-	--private-key $(PRIVATE_KEY) \
-	--broadcast
