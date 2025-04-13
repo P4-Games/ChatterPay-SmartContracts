@@ -51,12 +51,14 @@ contract HelperConfig is Script {
      * @notice Configuration struct containing network-specific addresses
      * @param entryPoint The EntryPoint contract address
      * @param backendSigner Backend signer account address
+     * @param nftBaseUri NFT Contract Base Uri
      * @param tokensConfig Array of token configurations, including address, price feed, and stability flag
      * @param uniswapConfig Uniswap-specific configuration (factory + positionManager)
      */
     struct NetworkConfig {
         address entryPoint;
         address backendSigner;
+        string nftBaseUri;
         TokenConfig[] tokensConfig;
         UniswapConfig uniswapConfig;
     }
@@ -167,6 +169,7 @@ contract HelperConfig is Script {
         return NetworkConfig({
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
             backendSigner: BACKEND_SIGNER,
+            nftBaseUri: "https://dev.back.chatterpay.net/nft/metadata/opensea/",
             tokensConfig: tokenConfigs,
             uniswapConfig: UniswapConfig({
                 router: 0x101F443B4d1b059569D643917553c771E1b9663E,
@@ -208,6 +211,7 @@ contract HelperConfig is Script {
         return NetworkConfig({
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
             backendSigner: BACKEND_SIGNER,
+            nftBaseUri: "https://dev.back.chatterpay.net/nft/metadata/opensea/",
             tokensConfig: tokenConfigs,
             uniswapConfig: UniswapConfig({
                 router: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
@@ -251,6 +255,7 @@ contract HelperConfig is Script {
         localNetworkConfig = NetworkConfig({
             entryPoint: address(entryPoint),
             backendSigner: BACKEND_SIGNER,
+            nftBaseUri: "https://dev.back.chatterpay.net/nft/metadata/opensea/",
             tokensConfig: tokenConfigs,
             uniswapConfig: UniswapConfig({router: address(0), factory: address(0), positionManager: address(0)})
         });

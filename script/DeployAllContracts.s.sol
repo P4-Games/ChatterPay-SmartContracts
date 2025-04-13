@@ -39,7 +39,6 @@ contract DeployAllContracts is Script {
     bool[] tokensStableFlags;
 
     // Environment Variables
-    string NFTBaseUri = vm.envString("NFT_BASE_URI");
     string deployNetworkEnv = vm.envString("DEPLOY_NETWORK_ENV");
 
     /**
@@ -211,7 +210,7 @@ contract DeployAllContracts is Script {
                 Upgrades.deployTransparentProxy(
                     "ChatterPayNFT.sol:ChatterPayNFT",
                     config.backendSigner, // Initial owner.
-                    abi.encodeWithSignature("initialize(address,string)", config.backendSigner, NFTBaseUri)
+                    abi.encodeWithSignature("initialize(address,string)", config.backendSigner, config.nftBaseUri)
                 )
             );
         } else {

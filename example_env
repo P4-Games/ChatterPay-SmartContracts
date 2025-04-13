@@ -1,5 +1,9 @@
 DEPLOY_NETWORK_ENV=LOCAL|TEST|PROD
 
+PRIVATE_KEY=Your private key
+BACKEND_EOA=chatterpay backend EOA wallet address
+BACKEND_PK=chatterpay bachend private key
+
 ETH_SEPOLIA_RPC_URL=Your node provider URL for Sepolia
 ETHERSCAN_API_KEY=Your etherscan api key, if you want to verify contracts
 
@@ -9,10 +13,5 @@ ARBISCAN_API_KEY=Your Aribtrum api key, if you want to verify contracts
 SCROLL_SEPOLIA_RPC_URL=Your node provider URL for Scroll-Sepolia
 SCROLLSCAN_API_KEY=Your Scroll api key, if you want to verify contracts
 
-PRIVATE_KEY=Your private key
-BACKEND_EOA=chatterpay backend EOA wallet address
-BACKEND_PK=chatterpay bachend private key
-ROUTER_ADDRESS=Uniswap SwapRouter02 address
-NFT_BASE_URI=https://dev.back.chatterpay.net/nft/metadata/opensea/
 DEPLOYED_PAYMASTER_ADDRESS=Address of an existing Paymaster contrct to avoid creating a new one in the deployment script
 DEPLOYED_NFT_ADDRESS=Address of an existing NFT Contract to avoid creating a new one in the deployment script

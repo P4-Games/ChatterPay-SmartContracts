@@ -17,7 +17,6 @@ env:
   PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
   BACKEND_EOA: ${{ secrets.BACKEND_EOA }}
   BACKEND_PK: ${{ secrets.BACKEND_PK }}
-  NFT_BASE_URI: https://dev.back.chatterpay.net/nft/metadata/opensea/
   FOUNDRY_DISABLE_NIGHTLY_WARNING: 1
 
 jobs:
@@ -50,7 +49,7 @@ jobs:
           version: nightly
 
       - name: Export all required environment variables to .env
-        run: env | grep -E '^(FOUNDRY_PROFILE|ARBITRUM_SEPOLIA_RPC_URL|ETH_SEPOLIA_RPC_URL|SCROLL_SEPOLIA_RPC_URL|PRIVATE_KEY|BACKEND_EOA|BACKEND_PK|NFT_BASE_URI|FOUNDRY_DISABLE_NIGHTLY_WARNING)=' > .env
+        run: env | grep -E '^(FOUNDRY_PROFILE|ARBITRUM_SEPOLIA_RPC_URL|ETH_SEPOLIA_RPC_URL|SCROLL_SEPOLIA_RPC_URL|PRIVATE_KEY|BACKEND_EOA|BACKEND_PK|FOUNDRY_DISABLE_NIGHTLY_WARNING)=' > .env
 
       - name: Run Forge build
         run: |
