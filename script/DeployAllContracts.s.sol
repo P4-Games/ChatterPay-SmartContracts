@@ -199,13 +199,27 @@ contract DeployAllContracts is Script {
      * @notice Deploys the ChatterPayNFT contract using Transparent Proxy.
      */
     function deployNFT() internal {
-        chatterPayNFT = ChatterPayNFT(
-            Upgrades.deployTransparentProxy(
-                "ChatterPayNFT.sol:ChatterPayNFT", // Contract name as string.
-                config.account, // Initial owner.
-                abi.encodeWithSignature("initialize(address,string)", config.account, NFTBaseUri)
-            )
-        );
+        address nftAddress;
+        try vm.envAddress("DEPLOYED_NFT_ADDRESS") returns (address addr) {
+            nftAddress = addr;
+        } catch {
+            nftAddress = address(0);
+        }
+
+        if (nftAddress == address(0)) {
+            console2.log("Creating NEW NFT Contract!");
+            chatterPayNFT = ChatterPayNFT(
+                Upgrades.deployTransparentProxy(
+                    "ChatterPayNFT.sol:ChatterPayNFT",
+                    config.account, // Initial owner.
+                    abi.encodeWithSignature("initialize(address,string)", config.account, NFTBaseUri)
+                )
+            );
+        } else {
+            console2.log("Using existing NFT Contract!");
+            chatterPayNFT = ChatterPayNFT(nftAddress);
+        }
+
         console2.log("ChatterPayNFT Proxy deployed at address %s", address(chatterPayNFT));
     }
 
