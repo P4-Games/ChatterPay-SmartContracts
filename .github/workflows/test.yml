@@ -52,7 +52,7 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build --sizes 2>&1 | tee forge_build.log || (grep -q "error:" forge_build.log && exit 1 || exit 0)
+          forge build --sizes --via-ir 2>&1 | tee forge_build.log || (grep -q "error:" forge_build.log && exit 1 || exit 0)
         id: build
 
         # run tests
