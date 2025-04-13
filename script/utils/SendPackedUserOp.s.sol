@@ -37,7 +37,8 @@ contract SendPackedUserOp is Script {
         address chatterPayPaymasterAddress =
             DevOpsTools.get_most_recent_deployment("ChatterPayPaymaster", block.chainid);
 
-        address dest = config.usdc;
+        address dest = helperConfig.getTokenBySymbol("USDC");
+
         uint256 value = 0;
         address chatterPayWalletFactoryAddress =
             DevOpsTools.get_most_recent_deployment("ChatterPayWalletFactory", block.chainid);
