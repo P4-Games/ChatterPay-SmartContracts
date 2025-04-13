@@ -28,6 +28,7 @@ contract DeployAllContracts is Script {
     // Uniswap V3 Addresses
     address uniswapFactory;
     address uniswapPositionManager;
+    address uniswapRouter;
 
     // Fee tier of 0.3%
     uint24 poolFee = 3000;
@@ -54,6 +55,7 @@ contract DeployAllContracts is Script {
 
         uniswapFactory = config.uniswapConfig.factory;
         uniswapPositionManager = config.uniswapConfig.positionManager;
+        uniswapRouter = config.uniswapConfig.router;
 
         // Extract tokens, priceFeeds and flags from config.tokensConfig
         uint256 numTokens = config.tokensConfig.length;
@@ -95,7 +97,7 @@ contract DeployAllContracts is Script {
         console2.log('"chatterPayAddress": "%s",', address(chatterPay));
         console2.log('"chatterNFTAddress": "%s",', address(chatterPayNFT));
         console2.log('"paymasterAddress": "%s",', address(paymaster));
-        console2.log('"routerAddress": "%s"', config.uniswapRouter);
+        console2.log('"routerAddress": "%s"', uniswapRouter);
         console2.log("}");
 
         console2.log("------------------------------------------------------------------------------");
@@ -142,7 +144,7 @@ contract DeployAllContracts is Script {
             config.entryPoint, // _entryPoint
             config.backendSigner, // _owner
             address(paymaster), // _paymaster
-            config.uniswapRouter, // _router
+            uniswapRouter, // _router
             config.backendSigner, // _feeAdmin (using account as fee admin)
             tokens, // _whitelistedTokens
             priceFeeds, // _priceFeeds
@@ -170,7 +172,7 @@ contract DeployAllContracts is Script {
                 config.entryPoint, // _entryPoint.
                 config.backendSigner, // _owner (owner must be the creator).
                 address(paymaster), // _paymaster.
-                config.uniswapRouter, // _router.
+                uniswapRouter, // _router.
                 address(factory), // _factory.
                 feeAdmin, // _feeAdmin.
                 tokens, // _whitelistedTokens (token addresses).

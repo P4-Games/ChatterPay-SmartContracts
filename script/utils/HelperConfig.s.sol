@@ -37,10 +37,12 @@ contract HelperConfig is Script {
 
     /**
      * @notice Configuration struct for Uniswap V3
+     * @param router Router contract address
      * @param factory Address of the Uniswap V3 factory
      * @param positionManager Address of the Uniswap V3 non-fungible position manager
      */
     struct UniswapConfig {
+        address router;
         address factory;
         address positionManager;
     }
@@ -48,14 +50,12 @@ contract HelperConfig is Script {
     /**
      * @notice Configuration struct containing network-specific addresses
      * @param entryPoint The EntryPoint contract address
-     * @param uniswapRouter Uniswap Router contract address
      * @param backendSigner Backend signer account address
      * @param tokensConfig Array of token configurations, including address, price feed, and stability flag
      * @param uniswapConfig Uniswap-specific configuration (factory + positionManager)
      */
     struct NetworkConfig {
         address entryPoint;
-        address uniswapRouter;
         address backendSigner;
         TokenConfig[] tokensConfig;
         UniswapConfig uniswapConfig;
@@ -166,10 +166,10 @@ contract HelperConfig is Script {
 
         return NetworkConfig({
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
-            uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
             backendSigner: BACKEND_SIGNER,
             tokensConfig: tokenConfigs,
             uniswapConfig: UniswapConfig({
+                router: 0x101F443B4d1b059569D643917553c771E1b9663E,
                 factory: 0x248AB79Bbb9bC29bB72f7Cd42F17e054Fc40188e,
                 positionManager: 0x6b2937Bde17889EDCf8fbD8dE31C3C2a70Bc4d65
             })
@@ -207,10 +207,10 @@ contract HelperConfig is Script {
 
         return NetworkConfig({
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
-            uniswapRouter: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
             backendSigner: BACKEND_SIGNER,
             tokensConfig: tokenConfigs,
             uniswapConfig: UniswapConfig({
+                router: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
                 factory: 0x0287f57A1a17a725428689dfD9E65ECA01d82510,
                 positionManager: 0xA9c7C2BCEd22D1d47111610Af21a53B6D1e69eeD
             })
@@ -250,10 +250,9 @@ contract HelperConfig is Script {
 
         localNetworkConfig = NetworkConfig({
             entryPoint: address(entryPoint),
-            uniswapRouter: address(0),
             backendSigner: BACKEND_SIGNER,
             tokensConfig: tokenConfigs,
-            uniswapConfig: UniswapConfig({factory: address(0), positionManager: address(0)})
+            uniswapConfig: UniswapConfig({router: address(0), factory: address(0), positionManager: address(0)})
         });
         return localNetworkConfig;
     }
