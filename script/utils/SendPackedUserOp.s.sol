@@ -37,7 +37,8 @@ contract SendPackedUserOp is Script {
         address chatterPayPaymasterAddress =
             DevOpsTools.get_most_recent_deployment("ChatterPayPaymaster", block.chainid);
 
-        address dest = config.usdc;
+        address dest = helperConfig.getTokenBySymbol("USDC");
+
         uint256 value = 0;
         address chatterPayWalletFactoryAddress =
             DevOpsTools.get_most_recent_deployment("ChatterPayWalletFactory", block.chainid);
@@ -75,7 +76,7 @@ contract SendPackedUserOp is Script {
 
         // Send transaction
         vm.startBroadcast();
-        IEntryPoint(config.entryPoint).handleOps(ops, payable(config.account));
+        IEntryPoint(config.entryPoint).handleOps(ops, payable(config.backendSigner));
         vm.stopBroadcast();
     }
 
@@ -147,7 +148,7 @@ contract SendPackedUserOp is Script {
         if (block.chainid == 31337) {
             (v, r, s) = vm.sign(key, digest);
         } else {
-            (v, r, s) = vm.sign(config.account, digest);
+            (v, r, s) = vm.sign(config.backendSigner, digest);
         }
         userOp.signature = abi.encodePacked(r, s, v); // Note the order
         return userOp;

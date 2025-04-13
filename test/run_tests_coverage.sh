@@ -29,7 +29,7 @@ while [ $attempt -le $MAX_RETRIES ]; do
 
     # Execute forge coverage
     FOUNDRY_PROFILE=$PROFILE forge coverage \
-        --fork-url "$ARBITRUM_SEPOLIA_RPC_URL" \
+        --fork-url "$RPC_URL" \
         --match-path "test/modules/*" \
         --cache-path .forge-cache \
         --report lcov \

@@ -25,10 +25,13 @@ contract DeployAllContracts is Script {
     ChatterPayPaymaster paymaster;
     ChatterPayNFT chatterPayNFT;
 
-    // Uniswap V3 Addresses (immutable)
-    address immutable uniswapFactory;
-    address immutable uniswapPositionManager;
-    uint24 poolFee = 3000; // Fee tier of 0.3%
+    // Uniswap V3 Addresses
+    address uniswapFactory;
+    address uniswapPositionManager;
+    address uniswapRouter;
+
+    // Fee tier of 0.3%
+    uint24 poolFee = 3000;
 
     // Tokens, Price Feeds and tokens-stable flags arrays
     address[] tokens;
@@ -36,23 +39,7 @@ contract DeployAllContracts is Script {
     bool[] tokensStableFlags;
 
     // Environment Variables
-    string NFTBaseUri = vm.envString("NFT_BASE_URI");
-
     string deployNetworkEnv = vm.envString("DEPLOY_NETWORK_ENV");
-
-    // Comma-separated list of tokens
-    string tokensEnv = vm.envString("TOKENS");
-
-    // Comma-separated list of price feeds
-    string priceFeedsEnv = vm.envString("PRICE_FEEDS");
-
-    // Comma-separated list of tokens stable flag
-    string tokensStableFlagsEnv = vm.envString("TOKENS_ARE_STABLE");
-
-    constructor() {
-        uniswapFactory = vm.envAddress("UNISWAP_FACTORY");
-        uniswapPositionManager = vm.envAddress("POSITION_MANAGER");
-    }
 
     /**
      * @notice Main deployment function
@@ -65,40 +52,51 @@ contract DeployAllContracts is Script {
         helperConfig = new HelperConfig();
         config = helperConfig.getConfig();
 
-        // Parse tokens and price feeds from environment variables
-        tokens = _parseAddresses(tokensEnv);
-        priceFeeds = _parseAddresses(priceFeedsEnv);
-        tokensStableFlags = _parseBools(tokensStableFlagsEnv);
+        uniswapFactory = config.uniswapConfig.factory;
+        uniswapPositionManager = config.uniswapConfig.positionManager;
+        uniswapRouter = config.uniswapConfig.router;
 
-        // Ensure the number of tokens matches the number of price feeds
-        require(tokens.length == priceFeeds.length, "Tokens and Price Feeds must have the same length");
+        // Extract tokens, priceFeeds and flags from config.tokensConfig
+        uint256 numTokens = config.tokensConfig.length;
+        tokens = new address[](numTokens);
+        priceFeeds = new address[](numTokens);
+        tokensStableFlags = new bool[](numTokens);
 
-        // Ensure the number of tokens matches the number of tokens stable flags
-        require(tokens.length == tokensStableFlags.length, "Tokens and Tokens-are-stable must have the same length");
+        for (uint256 i = 0; i < numTokens; i++) {
+            tokens[i] = config.tokensConfig[i].token;
+            priceFeeds[i] = config.tokensConfig[i].priceFeed;
+            tokensStableFlags[i] = config.tokensConfig[i].isStable;
+        }
 
         // Start broadcasting transactions with the configured account
-        vm.startBroadcast(config.account);
+        vm.startBroadcast(config.backendSigner);
 
-        console2.log("Deploying ChatterPay contracts on chainId %d with account: %s", block.chainid, config.account);
+        console2.log(
+            "Deploying ChatterPay contracts on chainId %d with account: %s", block.chainid, config.backendSigner
+        );
 
         // Step-by-step deployment and configuration
         deployPaymaster(); // 1. Deploy Paymaster
         deployFactory(); // 2. Deploy Wallet Factory
         deployChatterPay(); // 3. Deploy ChatterPay using UUPS Proxy
         deployNFT(); // 4. Deploy NFT with Transparent Proxy
-        configureUniswapPool(); // 5. Configure Uniswap V3 Pool
+
+        if (block.chainid != 31337) {
+            // anvil
+            configureUniswapPool(); // 5. Configure Uniswap V3 Pool (skip in Anvil)
+        }
 
         // Stop broadcasting transactions
         vm.stopBroadcast();
 
         console2.log("To Put in bdd:");
         console2.log("{");
-        console2.log('"entryPoint": "%s",', "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789");
+        console2.log('"entryPoint": "%s",', address(config.entryPoint));
         console2.log('"factoryAddress": "%s",', address(factory));
         console2.log('"chatterPayAddress": "%s",', address(chatterPay));
         console2.log('"chatterNFTAddress": "%s",', address(chatterPayNFT));
         console2.log('"paymasterAddress": "%s",', address(paymaster));
-        console2.log('"routerAddress": "%s"', config.router);
+        console2.log('"routerAddress": "%s"', uniswapRouter);
         console2.log("}");
 
         console2.log("------------------------------------------------------------------------------");
@@ -113,7 +111,7 @@ contract DeployAllContracts is Script {
     }
 
     /**
-     * @notice Deploy paymaster with entryPoint and backend signer (config.account)
+     * @notice Deploy paymaster with entryPoint and backend signer (config.backendSigner)
      */
     function deployPaymaster() internal {
         address paymasterAddress;
@@ -125,28 +123,28 @@ contract DeployAllContracts is Script {
 
         if (paymasterAddress == address(0)) {
             console2.log("Creating NEW Paymaster!");
-            paymaster = new ChatterPayPaymaster(config.entryPoint, config.account);
+            paymaster = new ChatterPayPaymaster(config.entryPoint, config.backendSigner);
         } else {
             console2.log("Using existing Paymaster!");
             paymaster = ChatterPayPaymaster(payable(paymasterAddress));
         }
         console2.log("Paymaster deployed at address %s", address(paymaster));
         console2.log("EntryPoint used at address %s", config.entryPoint);
-        console2.log("Backend signer set to %s", config.account);
+        console2.log("Backend signer set to %s", config.backendSigner);
     }
 
     /**
      * @notice Deploys the ChatterPayWalletFactory contract.
-     * @dev Factory owner is set as the contract creator (config.account).
+     * @dev Factory owner is set as the contract creator (config.backendSigner).
      */
     function deployFactory() internal {
         factory = new ChatterPayWalletFactory(
-            config.account, // _walletImplementation (temporary, will be updated later)
+            config.backendSigner, // _walletImplementation (temporary, will be updated later)
             config.entryPoint, // _entryPoint
-            config.account, // _owner
+            config.backendSigner, // _owner
             address(paymaster), // _paymaster
-            config.router, // _router
-            config.account, // _feeAdmin (using account as fee admin)
+            uniswapRouter, // _router
+            config.backendSigner, // _feeAdmin (using account as fee admin)
             tokens, // _whitelistedTokens
             priceFeeds, // _priceFeeds
             tokensStableFlags
@@ -154,7 +152,7 @@ contract DeployAllContracts is Script {
         console2.log("Wallet Factory deployed at address %s", address(factory));
 
         // Validate deployment
-        require(factory.owner() == config.account, "Factory owner not set correctly");
+        require(factory.owner() == config.backendSigner, "Factory owner not set correctly");
         require(factory.paymaster() == address(paymaster), "Paymaster not set correctly");
     }
 
@@ -162,8 +160,8 @@ contract DeployAllContracts is Script {
      * @notice Deploys the ChatterPay contract using UUPS Proxy with new initializer parameters.
      */
     function deployChatterPay() internal {
-        // Use config.account as fee admin (must equal factory.owner())
-        address feeAdmin = config.account;
+        // Use config.backendSigner as fee admin (must equal factory.owner())
+        address feeAdmin = config.backendSigner;
 
         // Deploy the ChatterPay contract using UUPS Proxy via Upgrades library.
         address proxy = Upgrades.deployUUPSProxy(
@@ -171,9 +169,9 @@ contract DeployAllContracts is Script {
             abi.encodeWithSignature(
                 "initialize(address,address,address,address,address,address,address[],address[],bool[])",
                 config.entryPoint, // _entryPoint.
-                config.account, // _owner (owner must be the creator).
+                config.backendSigner, // _owner (owner must be the creator).
                 address(paymaster), // _paymaster.
-                config.router, // _router.
+                uniswapRouter, // _router.
                 address(factory), // _factory.
                 feeAdmin, // _feeAdmin.
                 tokens, // _whitelistedTokens (token addresses).
@@ -199,13 +197,27 @@ contract DeployAllContracts is Script {
      * @notice Deploys the ChatterPayNFT contract using Transparent Proxy.
      */
     function deployNFT() internal {
-        chatterPayNFT = ChatterPayNFT(
-            Upgrades.deployTransparentProxy(
-                "ChatterPayNFT.sol:ChatterPayNFT", // Contract name as string.
-                config.account, // Initial owner.
-                abi.encodeWithSignature("initialize(address,string)", config.account, NFTBaseUri)
-            )
-        );
+        address nftAddress;
+        try vm.envAddress("DEPLOYED_NFT_ADDRESS") returns (address addr) {
+            nftAddress = addr;
+        } catch {
+            nftAddress = address(0);
+        }
+
+        if (nftAddress == address(0)) {
+            console2.log("Creating NEW NFT Contract!");
+            chatterPayNFT = ChatterPayNFT(
+                Upgrades.deployTransparentProxy(
+                    "ChatterPayNFT.sol:ChatterPayNFT",
+                    config.backendSigner, // Initial owner.
+                    abi.encodeWithSignature("initialize(address,string)", config.backendSigner, config.nftBaseUri)
+                )
+            );
+        } else {
+            console2.log("Using existing NFT Contract!");
+            chatterPayNFT = ChatterPayNFT(nftAddress);
+        }
+
         console2.log("ChatterPayNFT Proxy deployed at address %s", address(chatterPayNFT));
     }
 
@@ -218,15 +230,15 @@ contract DeployAllContracts is Script {
         uint256 mintAmountWETH = 100_000_000 * 1e18; // WETH uses 18 decimals.
 
         // Mint test tokens by calling the mint function.
-        bytes memory mintData = abi.encodeWithSignature("mint(address,uint256)", config.account, mintAmountUSDT);
+        bytes memory mintData = abi.encodeWithSignature("mint(address,uint256)", config.backendSigner, mintAmountUSDT);
         (bool successA,) = tokens[0].call(mintData);
         require(successA, "Failed to mint tokenA");
-        console2.log("Minted %d tokens A to %s", mintAmountUSDT, config.account);
+        console2.log("Minted %d tokens A to %s", mintAmountUSDT, config.backendSigner);
 
-        mintData = abi.encodeWithSignature("mint(address,uint256)", config.account, mintAmountWETH);
+        mintData = abi.encodeWithSignature("mint(address,uint256)", config.backendSigner, mintAmountWETH);
         (bool successB,) = tokens[1].call(mintData);
         require(successB, "Failed to mint tokenB");
-        console2.log("Minted %d tokens B to %s", mintAmountWETH, config.account);
+        console2.log("Minted %d tokens B to %s", mintAmountWETH, config.backendSigner);
     }
 
     /**
@@ -307,8 +319,8 @@ contract DeployAllContracts is Script {
     function addLiquidityToPool(address tokenA, address tokenB, address pool) internal {
         // Log the pool address to use the parameter.
         console2.log("Adding liquidity to pool: %s", pool);
-        try IERC20Extended(tokenA).balanceOf(config.account) returns (uint256 balanceA) {
-            try IERC20Extended(tokenB).balanceOf(config.account) returns (uint256 balanceB) {
+        try IERC20Extended(tokenA).balanceOf(config.backendSigner) returns (uint256 balanceA) {
+            try IERC20Extended(tokenB).balanceOf(config.backendSigner) returns (uint256 balanceB) {
                 console2.log("Token balances:");
                 console2.log("- TokenA: %d", balanceA);
                 console2.log("- TokenB: %d", balanceB);
@@ -333,7 +345,7 @@ contract DeployAllContracts is Script {
                         amount1Desired: balanceB,
                         amount0Min: 0,
                         amount1Min: 0,
-                        recipient: config.account,
+                        recipient: config.backendSigner,
                         deadline: block.timestamp + 1000
                     });
 
