@@ -19,7 +19,6 @@ contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
                                  TYPES
     //////////////////////////////////////////////////////////////*/
-
     /**
      * @notice Configuration struct containing token-specific parameters
      * @param token The ERC20 token address
@@ -184,9 +183,9 @@ contract HelperConfig is Script {
     function getScrollSepoliaConfig() public view returns (NetworkConfig memory) {
         return NetworkConfig({
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, // v0.6
-            usdc: 0xFadA8b0737D4A3AE7118918B7E69E689034c0127,
-            usdt: 0xb84a700192A78103B2dA2530D99718A2a954cE86,
-            weth: 0x59F1ec1f10bD7eD9B938431086bC1D9e233ECf41,
+            usdc: 0x7878290DB8C4f02bd06E0E249617871c19508bE6,
+            usdt: 0x776133ea03666b73a8e3FC23f39f90e66360716E,
+            weth: 0xd5654b986d5aDba8662c06e847E32579078561dC,
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
             uniswapRouter: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
             backendSigner: BACKEND_SIGNER
