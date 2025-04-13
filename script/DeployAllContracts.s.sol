@@ -37,17 +37,7 @@ contract DeployAllContracts is Script {
 
     // Environment Variables
     string NFTBaseUri = vm.envString("NFT_BASE_URI");
-
     string deployNetworkEnv = vm.envString("DEPLOY_NETWORK_ENV");
-
-    // Comma-separated list of tokens
-    string tokensEnv = vm.envString("TOKENS");
-
-    // Comma-separated list of price feeds
-    string priceFeedsEnv = vm.envString("PRICE_FEEDS");
-
-    // Comma-separated list of tokens stable flag
-    string tokensStableFlagsEnv = vm.envString("TOKENS_ARE_STABLE");
 
     constructor() {
         uniswapFactory = vm.envAddress("UNISWAP_FACTORY");
@@ -65,16 +55,17 @@ contract DeployAllContracts is Script {
         helperConfig = new HelperConfig();
         config = helperConfig.getConfig();
 
-        // Parse tokens and price feeds from environment variables
-        tokens = _parseAddresses(tokensEnv);
-        priceFeeds = _parseAddresses(priceFeedsEnv);
-        tokensStableFlags = _parseBools(tokensStableFlagsEnv);
+        // Extract tokens, priceFeeds and flags from config.tokensConfig
+        uint256 numTokens = config.tokensConfig.length;
+        tokens = new address[](numTokens);
+        priceFeeds = new address[](numTokens);
+        tokensStableFlags = new bool[](numTokens);
 
-        // Ensure the number of tokens matches the number of price feeds
-        require(tokens.length == priceFeeds.length, "Tokens and Price Feeds must have the same length");
-
-        // Ensure the number of tokens matches the number of tokens stable flags
-        require(tokens.length == tokensStableFlags.length, "Tokens and Tokens-are-stable must have the same length");
+        for (uint256 i = 0; i < numTokens; i++) {
+            tokens[i] = config.tokensConfig[i].token;
+            priceFeeds[i] = config.tokensConfig[i].priceFeed;
+            tokensStableFlags[i] = config.tokensConfig[i].isStable;
+        }
 
         // Start broadcasting transactions with the configured account
         vm.startBroadcast(config.backendSigner);
