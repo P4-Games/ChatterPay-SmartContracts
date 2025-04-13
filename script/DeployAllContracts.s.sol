@@ -96,7 +96,7 @@ contract DeployAllContracts is Script {
 
         console2.log("To Put in bdd:");
         console2.log("{");
-        console2.log('"entryPoint": "%s",', "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789");
+        console2.log('"entryPoint": "%s",', address(config.entryPoint));
         console2.log('"factoryAddress": "%s",', address(factory));
         console2.log('"chatterPayAddress": "%s",', address(chatterPay));
         console2.log('"chatterNFTAddress": "%s",', address(chatterPayNFT));
