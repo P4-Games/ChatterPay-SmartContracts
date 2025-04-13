@@ -40,7 +40,7 @@ contract HelperConfig is Script {
      * @param weth WETH token address
      * @param matic MATIC token address
      * @param uniswapRouter uniswap Router
-     * @param account Backend signer account address
+     * @param backendSigner Backend signer account address
      */
     struct NetworkConfig {
         address entryPoint;
@@ -49,7 +49,7 @@ contract HelperConfig is Script {
         address weth;
         address matic;
         address uniswapRouter;
-        address account;
+        address backendSigner;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -101,10 +101,10 @@ contract HelperConfig is Script {
     function getConfigByChainId(uint256 chainId) public returns (NetworkConfig memory) {
         if (chainId == LOCAL_CHAIN_ID) {
             return getOrCreateAnvilEthConfig();
-        } else if (networkConfigs[chainId].account != address(0)) {
+        } else if (networkConfigs[chainId].backendSigner != address(0)) {
             return networkConfigs[chainId];
         } else {
-            console.log("Invalid account %s for chainId: %s", networkConfigs[chainId].account, chainId);
+            console.log("Invalid account %s for chainId: %s", networkConfigs[chainId].backendSigner, chainId);
             revert HelperConfig__InvalidChainId();
         }
     }
@@ -125,7 +125,7 @@ contract HelperConfig is Script {
             weth: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1, // WETH
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
             uniswapRouter: 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45, // SwapRouter02
-            account: BACKEND_SIGNER
+            backendSigner: BACKEND_SIGNER
         });
     }
 
@@ -141,7 +141,7 @@ contract HelperConfig is Script {
             weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
             uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E, // SwapRouter02
-            account: BACKEND_SIGNER
+            backendSigner: BACKEND_SIGNER
         });
     }
 
@@ -157,7 +157,7 @@ contract HelperConfig is Script {
             weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
             uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E, // SwapRouter02
-            account: BACKEND_SIGNER
+            backendSigner: BACKEND_SIGNER
         });
     }
 
@@ -173,7 +173,7 @@ contract HelperConfig is Script {
             weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
             uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
-            account: BACKEND_SIGNER
+            backendSigner: BACKEND_SIGNER
         });
     }
 
@@ -189,7 +189,7 @@ contract HelperConfig is Script {
             weth: 0x59F1ec1f10bD7eD9B938431086bC1D9e233ECf41,
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
             uniswapRouter: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
-            account: BACKEND_SIGNER
+            backendSigner: BACKEND_SIGNER
         });
     }
 
@@ -205,7 +205,7 @@ contract HelperConfig is Script {
             weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
             matic: 0x0000000000000000000000000000000000000000, // address TBD
             uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
-            account: BACKEND_SIGNER
+            backendSigner: BACKEND_SIGNER
         });
     }
 
@@ -215,7 +215,7 @@ contract HelperConfig is Script {
      * @return NetworkConfig Configuration with local network addresses
      */
     function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
-        if (localNetworkConfig.account != address(0)) {
+        if (localNetworkConfig.backendSigner != address(0)) {
             return localNetworkConfig;
         }
 
@@ -242,7 +242,7 @@ contract HelperConfig is Script {
             weth: address(wethMock),
             matic: address(maticMock),
             uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
-            account: BACKEND_SIGNER
+            backendSigner: BACKEND_SIGNER
         });
         return localNetworkConfig;
     }

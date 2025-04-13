@@ -27,11 +27,11 @@ contract DeployChatterPay is Script {
 
         // Set previously deployed NFT proxy contract address
         address proxy = address(0);
-        bytes memory data = abi.encodeWithSignature("initialize(address,string)", config.account, baseURI);
+        bytes memory data = abi.encodeWithSignature("initialize(address,string)", config.backendSigner, baseURI);
 
         vm.startBroadcast();
 
-        Upgrades.upgradeProxy(proxy, "ChatterPayNFT.v2.sol", data, config.account);
+        Upgrades.upgradeProxy(proxy, "ChatterPayNFT.v2.sol", data, config.backendSigner);
 
         console.log("NFT updated to:", address(proxy));
 

@@ -34,7 +34,7 @@ contract DeployChatterPay is Script {
         vm.startBroadcast();
 
         address proxy = Upgrades.deployUUPSProxy(
-            "ChatterPayNFT.sol", abi.encodeCall(ChatterPayNFT.initialize, (config.account, baseURI))
+            "ChatterPayNFT.sol", abi.encodeCall(ChatterPayNFT.initialize, (config.backendSigner, baseURI))
         );
 
         console.log("NFT deployed to:", address(proxy));
