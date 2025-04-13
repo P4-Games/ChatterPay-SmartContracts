@@ -98,7 +98,7 @@ contract DeployAllContracts is Script {
         console2.log('"chatterPayAddress": "%s",', address(chatterPay));
         console2.log('"chatterNFTAddress": "%s",', address(chatterPayNFT));
         console2.log('"paymasterAddress": "%s",', address(paymaster));
-        console2.log('"routerAddress": "%s"', config.router);
+        console2.log('"routerAddress": "%s"', config.uniswapRouter);
         console2.log("}");
 
         console2.log("------------------------------------------------------------------------------");
@@ -145,7 +145,7 @@ contract DeployAllContracts is Script {
             config.entryPoint, // _entryPoint
             config.account, // _owner
             address(paymaster), // _paymaster
-            config.router, // _router
+            config.uniswapRouter, // _router
             config.account, // _feeAdmin (using account as fee admin)
             tokens, // _whitelistedTokens
             priceFeeds, // _priceFeeds
@@ -173,7 +173,7 @@ contract DeployAllContracts is Script {
                 config.entryPoint, // _entryPoint.
                 config.account, // _owner (owner must be the creator).
                 address(paymaster), // _paymaster.
-                config.router, // _router.
+                config.uniswapRouter, // _router.
                 address(factory), // _factory.
                 feeAdmin, // _feeAdmin.
                 tokens, // _whitelistedTokens (token addresses).

@@ -3,6 +3,12 @@
 # Common build command with local profile to ensure AST generation
 BUILD = FOUNDRY_PROFILE=local forge clean && FOUNDRY_PROFILE=local forge build
 
+# Deploy all contracts (Anvil)
+deploy_anvil_all :; $(BUILD) && \
+	FOUNDRY_PROFILE=local forge script script/DeployAllContracts.s.sol \
+	--rpc-url http://127.0.0.1:8545 \
+	--private-key $(PRIVATE_KEY)
+
 # Deploy all contracts
 deploy_verify_arbitrum_sepolia_all :; $(BUILD) && \
 	FOUNDRY_PROFILE=local forge script script/DeployAllContracts.s.sol \
