@@ -19,6 +19,19 @@ contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
                                  TYPES
     //////////////////////////////////////////////////////////////*/
+
+     /**
+     * @notice Configuration struct containing token-specific parameters
+     * @param token The ERC20 token address
+     * @param priceFeed The Chainlink price feed address for the token (e.g. USDT/USD)
+     * @param isStable Boolean indicating if the token is considered stable (e.g. true for USDC/USDT)
+     */
+    struct TokenConfig {
+        address token;
+        address priceFeed;
+        bool isStable;
+    }
+
     /**
      * @notice Configuration struct containing network-specific addresses
      * @param entryPoint The EntryPoint contract address
@@ -26,6 +39,7 @@ contract HelperConfig is Script {
      * @param usdt USDT token address
      * @param weth WETH token address
      * @param matic MATIC token address
+     * @param uniswapRouter uniswap Router
      * @param account Backend signer account address
      */
     struct NetworkConfig {
@@ -34,7 +48,7 @@ contract HelperConfig is Script {
         address usdt;
         address weth;
         address matic;
-        address router;
+        address uniswapRouter;
         address account;
     }
 
@@ -110,7 +124,7 @@ contract HelperConfig is Script {
             usdt: 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9, // USDT
             weth: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1, // WETH
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
-            router: 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45, // SwapRouter02
+            uniswapRouter: 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45, // SwapRouter02
             account: BACKEND_SIGNER
         });
     }
@@ -126,7 +140,7 @@ contract HelperConfig is Script {
             usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
             weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
-            router: 0x101F443B4d1b059569D643917553c771E1b9663E, // SwapRouter02
+            uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E, // SwapRouter02
             account: BACKEND_SIGNER
         });
     }
@@ -142,7 +156,7 @@ contract HelperConfig is Script {
             usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
             weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
-            router: 0x101F443B4d1b059569D643917553c771E1b9663E, // SwapRouter02
+            uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E, // SwapRouter02
             account: BACKEND_SIGNER
         });
     }
@@ -158,7 +172,7 @@ contract HelperConfig is Script {
             usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
             weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
-            router: 0x101F443B4d1b059569D643917553c771E1b9663E,
+            uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
             account: BACKEND_SIGNER
         });
     }
@@ -174,7 +188,7 @@ contract HelperConfig is Script {
             usdt: 0xb84a700192A78103B2dA2530D99718A2a954cE86,
             weth: 0x59F1ec1f10bD7eD9B938431086bC1D9e233ECf41,
             matic: 0x0000000000000000000000000000000000000000, // Not implemented yet
-            router: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
+            uniswapRouter: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
             account: BACKEND_SIGNER
         });
     }
@@ -190,7 +204,7 @@ contract HelperConfig is Script {
             usdt: 0xe6B817E31421929403040c3e42A6a5C5D2958b4A,
             weth: 0xE9C723D01393a437bac13CE8f925A5bc8E1c335c,
             matic: 0x0000000000000000000000000000000000000000, // address TBD
-            router: 0x101F443B4d1b059569D643917553c771E1b9663E,
+            uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
             account: BACKEND_SIGNER
         });
     }
@@ -227,7 +241,7 @@ contract HelperConfig is Script {
             usdt: address(usdtMock),
             weth: address(wethMock),
             matic: address(maticMock),
-            router: 0x101F443B4d1b059569D643917553c771E1b9663E,
+            uniswapRouter: 0x101F443B4d1b059569D643917553c771E1b9663E,
             account: BACKEND_SIGNER
         });
         return localNetworkConfig;
