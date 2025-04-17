@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "lib/entry-point-v6/interfaces/IPaymaster.sol";
 import {IEntryPoint} from "lib/entry-point-v6/interfaces/IEntryPoint.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 error ChatterPayPaymaster__OnlyOwner();
 error ChatterPayPaymaster__OnlyEntryPoint();
@@ -233,27 +234,15 @@ contract ChatterPayPaymaster is IPaymaster {
     }
 
     /**
-     * @notice Recovers the signer of a hashed message
-     * @dev Splits the signature into r, s, v and uses ecrecover to recover the signer address
-     * @param messageHash The hash of the signed message
-     * @param signature The signature to verify
+     * @notice Recovers the signer of a hashed message using OpenZeppelin's ECDSA.recover
+     * @dev Uses ECDSA.recover to extract the signer address from a 65-byte signature.
+     * This function assumes the messageHash is already hashed (e.g. via toEthSignedMessageHash if required).
+     * @param messageHash The hash of the signed message (should follow Ethereum signed message format if applicable)
+     * @param signature The 65-byte signature (r, s, v) to verify
      * @return The address of the recovered signer
-     * @custom:error ChatterPayPaymaster__InvalidSignatureLength if signature length is invalid
-     * @custom:error ChatterPayPaymaster__InvalidVValue if v value is not 27 or 28
+     * @custom:error Reverts if the signature is malformed, has an invalid length, or invalid v/s values
      */
     function _recoverSigner(bytes32 messageHash, bytes memory signature) internal pure returns (address) {
-        if (signature.length != 65) {
-            revert ChatterPayPaymaster__InvalidSignatureLength();
-        }
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        assembly {
-            r := mload(add(signature, 32))
-            s := mload(add(signature, 64))
-            v := byte(0, mload(add(signature, 96)))
-        }
-        if (v != 27 && v != 28) revert ChatterPayPaymaster__InvalidVValue();
-        return ecrecover(messageHash, v, r, s);
+        return ECDSA.recover(messageHash, signature);
     }
 }
