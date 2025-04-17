@@ -11,6 +11,7 @@ error ChatterPayNFT__Unauthorized();
 error ChatterPayNFT__TokenAlreadyMinted(uint256);
 error ChatterPayNFT__OriginalTokenNotMinted(uint256);
 error ChatterPayNFT__LimitExceedsCopies();
+error ChatterPayNFT__InvalidURICharacter();
 
 /**
  * @title ChatterPayNFT
@@ -44,6 +45,7 @@ contract ChatterPayNFT is UUPSUpgradeable, ERC721Upgradeable, ERC721URIStorageUp
      * @custom:reverts ChatterPayNFT__TokenAlreadyMinted if the token ID is already minted.
      */
     function mintOriginal(address to, string memory uri) public {
+        _validateURI(uri);
         s_tokenId++;
         if (s_tokenId % 10 == 0) s_tokenId++;
         uint256 tokenId = s_tokenId;
@@ -71,6 +73,7 @@ contract ChatterPayNFT is UUPSUpgradeable, ERC721Upgradeable, ERC721URIStorageUp
         if (s_copyCount[originalTokenId] >= s_copyLimit[originalTokenId]) {
             revert ChatterPayNFT__LimitExceedsCopies();
         }
+        _validateURI(uri);
         s_copyCount[originalTokenId]++;
         uint256 copyTokenId = originalTokenId * 10 ** 8 + s_copyCount[originalTokenId];
         _mint(to, copyTokenId);
@@ -110,6 +113,20 @@ contract ChatterPayNFT is UUPSUpgradeable, ERC721Upgradeable, ERC721URIStorageUp
      */
     function _baseURI() internal view override returns (string memory) {
         return s_baseURI;
+    }
+
+    /**
+     * @notice Basic validation to prevent dangerous characters in URIs.
+     * @param uri The metadata URI to validate.
+     * @dev Rejects characters commonly used in XSS or injection attacks.
+     */
+    function _validateURI(string memory uri) internal pure {
+        bytes memory uriBytes = bytes(uri);
+        for (uint256 i = 0; i < uriBytes.length; i++) {
+            if (uriBytes[i] == "<" || uriBytes[i] == ">") {
+                revert ChatterPayNFT__InvalidURICharacter();
+            }
+        }
     }
 
     /**
