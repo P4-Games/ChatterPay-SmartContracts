@@ -14,6 +14,7 @@ error ChatterPayPaymaster__InvalidVValue();
 error ChatterPayPaymaster__SliceOutOfBounds();
 error ChatterPayPaymaster__InvalidSignatureLength();
 error ChatterPayPaymaster__ExecutionFailed();
+error ChatterPayPaymaster__WithdrawFailed();
 
 /**
  * @title ChatterPayPaymaster
@@ -199,7 +200,10 @@ contract ChatterPayPaymaster is IPaymaster {
      * @custom:error ChatterPayPaymaster__OnlyOwner if caller is not owner
      */
     function withdraw() external onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
+        (bool success,) = payable(msg.sender).call{value: address(this).balance}("");
+        if (!success) {
+            revert ChatterPayPaymaster__WithdrawFailed();
+        }
     }
 
     /**
