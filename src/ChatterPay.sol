@@ -113,7 +113,7 @@ contract ChatterPay is
 
     // Uniswap pool fees
     uint24 public constant POOL_FEE_LOW = 3000; // 0.3%
-    uint24 public constant POOL_FEE_MEDIUM = 5000; // 0.5%
+    uint24 public constant POOL_FEE_MEDIUM = 3000; // 0.3%
     uint24 public constant POOL_FEE_HIGH = 10000; // 1%
 
     // Default slippage values (in basis points, 1 bp = 0.01%)
