@@ -46,6 +46,8 @@ error ChatterPay__TransferFailed();
 error ChatterPay__ImplementationInitialization();
 error ChatterPay__AlreadyStableToken();
 error ChatterPay__NotStableToken();
+error ChatterPay__InvalidDecimals();
+error ChatterPay__InvalidFeeOverflow();
 
 interface IERC20Extended is IERC20 {
     function symbol() external view returns (string memory);
