@@ -109,8 +109,7 @@ contract ChatterPay is
 
     uint256 public constant PRICE_FEED_PRECISION = 8;
 
-    // Increased gap for future upgrades
-    uint256[100] private __gap;
+
 
     /// @notice Version for upgrades
     string public constant VERSION = "2.0.0";
