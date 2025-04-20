@@ -33,7 +33,6 @@ error ChatterPay__SwapFailed();
 error ChatterPay__TokenNotWhitelisted();
 error ChatterPay__ZeroAmount();
 error ChatterPay__InvalidRouter();
-error ChatterPay__NotFeeAdmin();
 error ChatterPay__ExceedsMaxFee();
 error ChatterPay__ZeroAddress();
 error ChatterPay__InvalidPriceFeed();
@@ -63,7 +62,6 @@ contract ChatterPayStorage {
         IEntryPoint entryPoint;
         address paymaster;
         uint256 feeInCents;
-        address feeAdmin;
         uint24 uniswapPoolFeeLow;
         uint24 uniswapPoolFeeMedium;
         uint24 uniswapPoolFeeHigh;
@@ -126,7 +124,6 @@ contract ChatterPay is
     event FeeUpdated(uint256 indexed oldFee, uint256 indexed newFee);
     event TokenWhitelisted(address indexed token, bool indexed status);
     event PriceFeedUpdated(address indexed token, address indexed priceFeed);
-    event FeeAdminUpdated(address indexed oldAdmin, address indexed newAdmin);
     event CustomPoolFeeSet(address indexed tokenA, address indexed tokenB, uint24 fee);
     event CustomSlippageSet(address indexed token, uint256 slippageBps);
     event TokenTransferCalled(address indexed from, address indexed to, address indexed token, uint256 amount);
@@ -146,13 +143,6 @@ contract ChatterPay is
     modifier requireFromEntryPointOrOwner() {
         if (msg.sender != address(s_state.entryPoint) && msg.sender != owner()) {
             revert ChatterPay__NotFromEntryPointOrOwner();
-        }
-        _;
-    }
-
-    modifier onlyFeeAdmin() {
-        if (msg.sender != s_state.feeAdmin) {
-            revert ChatterPay__NotFeeAdmin();
         }
         _;
     }
@@ -191,7 +181,6 @@ contract ChatterPay is
         address _paymaster,
         address _router,
         address _factory,
-        address _feeAdmin,
         address[] calldata _whitelistedTokens,
         address[] calldata _priceFeeds,
         bool[] calldata _tokensStableFlags
@@ -205,7 +194,6 @@ contract ChatterPay is
         if (_paymaster == address(0)) revert ChatterPay__ZeroAddress();
         if (_router == address(0)) revert ChatterPay__ZeroAddress();
         if (_factory == address(0)) revert ChatterPay__ZeroAddress();
-        if (_feeAdmin == address(0)) revert ChatterPay__ZeroAddress();
 
         // Ensure arrays for token whitelisting match in length (tokens with price fees)
         if (_whitelistedTokens.length != _priceFeeds.length) {
@@ -228,7 +216,6 @@ contract ChatterPay is
         s_state.swapRouter = ISwapRouter(_router);
         s_state.factory = IChatterPayWalletFactory(_factory);
         s_state.feeInCents = 50; // Default fee in cents
-        s_state.feeAdmin = _feeAdmin;
 
         s_state.uniswapPoolFeeLow = 3000; // 0.3%
         s_state.uniswapPoolFeeMedium = 3000; // 0.3%
@@ -280,10 +267,6 @@ contract ChatterPay is
 
     function getFeeInCents() public view returns (uint256) {
         return s_state.feeInCents;
-    }
-
-    function getFeeAdmin() public view returns (address) {
-        return s_state.feeAdmin;
     }
 
     function isTokenWhitelisted(address token) public view returns (bool) {
@@ -547,7 +530,7 @@ contract ChatterPay is
      * @notice Updates the fee amount
      * @param _newFeeInCents New fee in cents
      */
-    function updateFee(uint256 _newFeeInCents) external onlyFeeAdmin {
+    function updateFee(uint256 _newFeeInCents) external onlyOwner {
         if (_newFeeInCents > s_state.maxFeeInCents) {
             revert ChatterPay__ExceedsMaxFee();
         }
@@ -733,12 +716,12 @@ contract ChatterPay is
     }
 
     /**
-     * @dev Transfers fee to fee admin
+     * @dev Transfers fee to owner
      * @param token Token address to transfer
      * @param amount Amount to transfer
      */
     function _transferFee(address token, uint256 amount) internal {
-        IERC20(token).safeTransfer(s_state.feeAdmin, amount);
+        IERC20(token).safeTransfer(owner(), amount);
     }
 
     /**
