@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/**
- * @title ChatterPay
- * @author ChatterPay Team
- * @notice Smart contract wallet implementation for ChatterPay, supporting ERC-4337 account abstraction
- * @dev This contract implements a smart wallet with Uniswap integration, fee management, and token whitelisting
- */
+/*//////////////////////////////////////////////////////////////
+// IMPORTS
+//////////////////////////////////////////////////////////////*/
+
 import {IAccount, UserOperation} from "lib/entry-point-v6/interfaces/IAccount.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
@@ -22,6 +20,10 @@ import {IChatterPayWalletFactory} from "./ChatterPayWalletFactory.sol";
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+
+/*//////////////////////////////////////////////////////////////
+// ERRORS
+//////////////////////////////////////////////////////////////*/
 
 error ChatterPay__NotFromEntryPoint();
 error ChatterPay__NotFromEntryPointOrOwner();
@@ -50,11 +52,21 @@ error ChatterPay__NotStableToken();
 error ChatterPay__InvalidDecimals();
 error ChatterPay__InvalidFeeOverflow();
 
+/*//////////////////////////////////////////////////////////////
+// INTERFACES
+//////////////////////////////////////////////////////////////*/
+
 interface IERC20Extended is IERC20 {
     function symbol() external view returns (string memory);
     function decimals() external view returns (uint8);
 }
 
+/**
+ * @title ChatterPay
+ * @author ChatterPay Team
+ * @notice Smart contract wallet implementation for ChatterPay, supporting ERC-4337 account abstraction
+ * @dev This contract implements a smart wallet with Uniswap integration, fee management, and token whitelisting
+ */
 contract ChatterPay is
     IAccount,
     Initializable,
@@ -65,52 +77,64 @@ contract ChatterPay is
 {
     using SafeERC20 for IERC20;
 
+    /*//////////////////////////////////////////////////////////////
+    // CONSTANTS & VARIABLES
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Internal state struct containing all configurable and runtime parameters for ChatterPay.
+     * @dev This struct is stored at a custom storage slot to support upgradeable proxy patterns.
+     */
     struct ChatterPayState {
-        ISwapRouter swapRouter;
-        IChatterPayWalletFactory factory;
-        IEntryPoint entryPoint;
-        address paymaster;
-        uint256 feeInCents;
-        uint24 uniswapPoolFeeLow;
-        uint24 uniswapPoolFeeMedium;
-        uint24 uniswapPoolFeeHigh;
-        uint256 slippageMaxBps;
-        uint256 maxDeadline;
-        uint256 maxFeeInCents;
-        uint256 priceFreshnessThreshold;
-        uint256 priceFeedPrecision;
-        mapping(address => bool) whitelistedTokens;
-        mapping(address => address) priceFeeds;
-        mapping(bytes32 => uint24) customPoolFees;
-        mapping(address => uint256) customSlippage;
-        mapping(address => bool) stableTokens;
+        ISwapRouter swapRouter; // Uniswap V3 router instance
+        IChatterPayWalletFactory factory; // Factory contract that deployed the wallet
+        IEntryPoint entryPoint; // ERC-4337 EntryPoint contract
+        address paymaster; // Paymaster contract address
+        uint256 feeInCents; // Fee charged on transactions, in cents
+        uint24 uniswapPoolFeeLow; // Pool fee for stable-to-stable swaps
+        uint24 uniswapPoolFeeMedium; // Pool fee for other token swaps
+        uint24 uniswapPoolFeeHigh; // Reserved for high-volatility pairs
+        uint256 slippageMaxBps; // Maximum allowed slippage in basis points
+        uint256 maxDeadline; // Maximum time window (in seconds) for swaps
+        uint256 maxFeeInCents; // Cap for the fee value in cents
+        uint256 priceFreshnessThreshold; // Max age of Chainlink price data in seconds
+        uint256 priceFeedPrecision; // Precision multiplier for price conversions
+        mapping(address => bool) whitelistedTokens; // Allowed tokens for swap operations
+        mapping(address => address) priceFeeds; // Chainlink price feeds for tokens
+        mapping(bytes32 => uint24) customPoolFees; // Optional custom pool fee per token pair
+        mapping(address => uint256) customSlippage; // Custom slippage setting per token
+        mapping(address => bool) stableTokens; // Markers for stablecoins
     }
 
+    /// @notice Internal storage reference for the ChatterPayState struct
     ChatterPayState private s_state;
 
+    /// @notice Storage slot for locating ChatterPay state in upgradeable proxy
     bytes32 internal constant CHATTERPAY_STATE_POSITION = bytes32(uint256(keccak256("chatterpay.proxy.state")) - 1);
 
+    /// @notice Storage slot for the implementation address in proxy pattern
     bytes32 internal constant IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("chatterpay.proxy.implementation")) - 1);
 
-    /// @notice Version for upgrades
+    /// @notice Public version identifier for upgrades
     string public constant VERSION = "2.0.0";
 
-    /*
-    * For simulation purposes, validateUserOp (and validatePaymasterUserOp)
-    * must return this value in case of signature failure, instead of revert.
-    */
+    /**
+     * @notice Signature validation failed return code for ERC-4337 simulations.
+     * @dev Used to signal a bad signature without reverting in simulation.
+     */
     uint256 constant SIG_VALIDATION_FAILED = 1;
 
-    /*
-    * For simulation purposes, validateUserOp (and validatePaymasterUserOp)
-    * return this value on success.
-    */
+    /**
+     * @notice Signature validation success return code for ERC-4337 simulations.
+     * @dev Used to signal a valid signature during simulation.
+     */
     uint256 constant SIG_VALIDATION_SUCCESS = 0;
 
+    /// @notice Precision constant used for price feed normalization (e.g., 8 decimals)
     uint256 public constant PRICE_FEED_PRECISION = 8;
 
     /*//////////////////////////////////////////////////////////////
-                                EVENTS
+    // EVENTS
     //////////////////////////////////////////////////////////////*/
 
     event TokenApproved(address indexed token, address indexed spender, uint256 amount);
@@ -125,6 +149,14 @@ contract ChatterPay is
     event TokenTransferCalled(address indexed from, address indexed to, address indexed token, uint256 amount);
     event TokenTransferred(address indexed from, address indexed to, address indexed token, uint256 amount);
 
+    /*//////////////////////////////////////////////////////////////
+    MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Restricts access to the ChatterPay admin (factory owner).
+     * @dev Reverts with ChatterPay__NotFromChatterPayAdmin if caller is not the factory owner.
+     */
     modifier onlyChatterPayAdmin() {
         if (msg.sender != _getChatterPayState().factory.owner()) {
             revert ChatterPay__NotFromChatterPayAdmin();
@@ -132,6 +164,10 @@ contract ChatterPay is
         _;
     }
 
+    /**
+     * @notice Allows access only from the EntryPoint contract or the wallet owner.
+     * @dev Reverts with ChatterPay__NotFromEntryPointOrOwner if caller is neither EntryPoint nor owner.
+     */
     modifier requireFromEntryPointOrOwner() {
         if (msg.sender != address(_getChatterPayState().entryPoint) && msg.sender != owner()) {
             revert ChatterPay__NotFromEntryPointOrOwner();
@@ -139,6 +175,10 @@ contract ChatterPay is
         _;
     }
 
+    /**
+     * @notice Allows access only from the EntryPoint contract.
+     * @dev Reverts with ChatterPay__NotFromEntryPoint if caller is not the EntryPoint.
+     */
     modifier requireFromEntryPoint() {
         if (msg.sender != address(_getChatterPayState().entryPoint)) {
             revert ChatterPay__NotFromEntryPoint();
@@ -146,19 +186,19 @@ contract ChatterPay is
         _;
     }
 
-    /**
-     * ChatterPay__NotFromChatterPayAdmin
-     * @dev Disables initialization for the implementation contract
-     */
+    /*//////////////////////////////////////////////////////////////
+    // INITIALIZATION
+    //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Constructor for the implementation contract.
+     * @dev Disables initializers to prevent misuse of the implementation logic directly.
+     * This is a standard safety pattern for upgradeable contracts.
+     */
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
-
-    /*//////////////////////////////////////////////////////////////
-                            INITIALIZATION
-    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Initializes the contract
@@ -248,9 +288,13 @@ contract ChatterPay is
     }
 
     /*//////////////////////////////////////////////////////////////
-                         GETTER FUNCTIONS
+    // GETTER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Returns the address of the current implementation.
+     * @return impl The implementation contract address.
+     */
     function implementation() public view returns (address impl) {
         bytes32 slot = IMPLEMENTATION_SLOT;
         assembly {
@@ -258,6 +302,10 @@ contract ChatterPay is
         }
     }
 
+    /**
+     * @notice Retrieves the current storage pointer to ChatterPayState.
+     * @return state A storage reference to the ChatterPayState struct.
+     */
     function _getChatterPayState() internal pure returns (ChatterPayState storage state) {
         bytes32 position = CHATTERPAY_STATE_POSITION;
         assembly {
@@ -265,42 +313,89 @@ contract ChatterPay is
         }
     }
 
+    /**
+     * @notice Returns the owner of the ChatterPay wallet.
+     * @return The address of the ChatterPay wallet owner.
+     */
     function getChatterPayOwner() public view returns (address) {
         return _getChatterPayState().factory.owner();
     }
 
+    /**
+     * @notice Returns the fee configured for token operations.
+     * @return The fee in cents.
+     */
     function getFeeInCents() public view returns (uint256) {
         return _getChatterPayState().feeInCents;
     }
 
+    /**
+     * @notice Checks if a token is whitelisted for swaps.
+     * @param token The address of the token.
+     * @return True if the token is whitelisted, false otherwise.
+     */
     function isTokenWhitelisted(address token) public view returns (bool) {
         return _getChatterPayState().whitelistedTokens[token];
     }
 
+    /**
+     * @notice Returns the price feed address for a given token.
+     * @param token The address of the token.
+     * @return The Chainlink price feed address.
+     */
     function getPriceFeed(address token) public view returns (address) {
         return _getChatterPayState().priceFeeds[token];
     }
 
+    /**
+     * @notice Returns a custom Uniswap pool fee set for a specific token pair.
+     * @param pairHash The hash identifying the token pair.
+     * @return The custom pool fee in basis points.
+     */
     function getCustomPoolFee(bytes32 pairHash) public view returns (uint24) {
         return _getChatterPayState().customPoolFees[pairHash];
     }
 
+    /**
+     * @notice Returns the custom slippage value set for a given token.
+     * @param token The token address.
+     * @return The slippage value in basis points.
+     */
     function getCustomSlippage(address token) public view returns (uint256) {
         return _getChatterPayState().customSlippage[token];
     }
 
+    /**
+     * @notice Returns the current Uniswap router configured.
+     * @return The ISwapRouter instance.
+     */
     function getSwapRouter() public view returns (ISwapRouter) {
         return _getChatterPayState().swapRouter;
     }
 
+    /**
+     * @notice Returns the address of the EntryPoint used by this wallet.
+     * @return The EntryPoint contract address.
+     */
     function getEntryPoint() external view returns (address) {
         return address(_getChatterPayState().entryPoint);
     }
 
+    /**
+     * @notice Checks if a token is marked as stable.
+     * @param token The address of the token.
+     * @return True if the token is stable, false otherwise.
+     */
     function isStableToken(address token) public view returns (bool) {
         return _getChatterPayState().stableTokens[token];
     }
 
+    /**
+     * @notice Returns the configured pool fees (low, medium, high).
+     * @return low The low tier fee.
+     * @return medium The medium tier fee.
+     * @return high The high tier fee.
+     */
     function getPoolFees() external view returns (uint24 low, uint24 medium, uint24 high) {
         return (
             _getChatterPayState().uniswapPoolFeeLow,
@@ -309,22 +404,42 @@ contract ChatterPay is
         );
     }
 
+    /**
+     * @notice Returns the maximum allowed slippage in basis points.
+     * @return The slippage value.
+     */
     function getSlippageMaxBps() external view returns (uint256) {
         return _getChatterPayState().slippageMaxBps;
     }
 
+    /**
+     * @notice Returns the maximum allowed deadline for a swap.
+     * @return The deadline in seconds.
+     */
     function getMaxDeadline() external view returns (uint256) {
         return _getChatterPayState().maxDeadline;
     }
 
+    /**
+     * @notice Returns the maximum fee allowed in cents.
+     * @return The maximum fee.
+     */
     function getMaxFeeInCents() external view returns (uint256) {
         return _getChatterPayState().maxFeeInCents;
     }
 
+    /**
+     * @notice Returns the price freshness threshold used to validate Chainlink feeds.
+     * @return The threshold in seconds.
+     */
     function getPriceFreshnessThreshold() external view returns (uint256) {
         return _getChatterPayState().priceFreshnessThreshold;
     }
 
+    /**
+     * @notice Returns the precision factor used when calculating prices.
+     * @return The precision scalar.
+     */
     function getPriceFeedPrecision() external view returns (uint256) {
         return _getChatterPayState().priceFeedPrecision;
     }
@@ -344,7 +459,7 @@ contract ChatterPay is
     }
 
     /*//////////////////////////////////////////////////////////////
-                           MAIN FUNCTIONS
+    // MAIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     /**
@@ -522,7 +637,7 @@ contract ChatterPay is
     }
 
     /*//////////////////////////////////////////////////////////////
-                           ADMIN FUNCTIONS
+    // ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     /**
@@ -640,28 +755,52 @@ contract ChatterPay is
         emit CustomSlippageSet(token, slippageBps);
     }
 
+    /**
+     * @notice Updates the Uniswap pool fee tiers used for swaps.
+     * @dev Only callable by the contract owner.
+     * @param low Pool fee for stable-to-stable token swaps.
+     * @param medium Pool fee for regular token swaps.
+     * @param high Pool fee reserved for high-volatility pairs.
+     */
     function updateUniswapPoolFees(uint24 low, uint24 medium, uint24 high) external onlyOwner {
         _getChatterPayState().uniswapPoolFeeLow = low;
         _getChatterPayState().uniswapPoolFeeMedium = medium;
         _getChatterPayState().uniswapPoolFeeHigh = high;
     }
 
+    /**
+     * @notice Updates the maximum allowed slippage for swaps.
+     * @dev Only callable by the contract owner.
+     * @param slippageMaxBps New slippage limit in basis points.
+     */
     function updateSlippageMaxBps(uint256 slippageMaxBps) external onlyOwner {
         _getChatterPayState().slippageMaxBps = slippageMaxBps;
     }
 
+    /**
+     * @notice Updates the configuration for Chainlink price feeds.
+     * @dev Only callable by the contract owner.
+     * @param freshness New freshness threshold in seconds.
+     * @param precision New precision factor for price normalization.
+     */
     function updatePriceConfig(uint256 freshness, uint256 precision) external onlyOwner {
         _getChatterPayState().priceFreshnessThreshold = freshness;
         _getChatterPayState().priceFeedPrecision = precision;
     }
 
+    /**
+     * @notice Updates swap operation limits.
+     * @dev Only callable by the contract owner.
+     * @param deadline New maximum deadline in seconds for swap execution.
+     * @param maxFeeCents New maximum fee in cents allowed for a transaction.
+     */
     function updateLimits(uint256 deadline, uint256 maxFeeCents) external onlyOwner {
         _getChatterPayState().maxDeadline = deadline;
         _getChatterPayState().maxFeeInCents = maxFeeCents;
     }
 
     /*//////////////////////////////////////////////////////////////
-                         INTERNAL FUNCTIONS
+    // INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     /**
@@ -756,6 +895,14 @@ contract ChatterPay is
         return numerator / denominator;
     }
 
+    /**
+     * @notice Validates the signature of a UserOperation according to ERC-4337.
+     * @dev Compares the recovered signer from the signature with the wallet owner.
+     * Uses EIP-191 to hash the user operation before recovering.
+     * @param userOp The UserOperation to validate.
+     * @param userOpHash The hash of the UserOperation used for signature verification.
+     * @return validationData Returns 0 (SIG_VALIDATION_SUCCESS) if valid, or 1 (SIG_VALIDATION_FAILED) if invalid.
+     */
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
         internal
         view
@@ -796,5 +943,9 @@ contract ChatterPay is
      */
     function _authorizeUpgrade(address newImplementation) internal override onlyChatterPayAdmin {}
 
+    /**
+     * @notice Allows the contract to receive native ETH transfers.
+     * @dev This function is called when ETH is sent without calldata.
+     */
     receive() external payable {}
 }
