@@ -33,6 +33,6 @@ library BaseConstants {
     // Test configuration
     /// @notice Initial liquidity used in tests.
     uint256 public constant INITIAL_LIQUIDITY = 1_000_000e6;
-    /// @notice Fee tier for the Uniswap pool (0.1%).
-    uint24 public constant POOL_FEE = 1000;
+    /// @notice Fee tier for the Uniswap pool (0.3%).
+    uint24 public constant POOL_FEE = 3000;
 }
