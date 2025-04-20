@@ -24,7 +24,7 @@ import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cont
 
 error ChatterPay__NotFromEntryPoint();
 error ChatterPay__NotFromEntryPointOrOwner();
-error ChatterPay__NotFromFactoryOwner();
+error ChatterPay__NotFromChatterPayAdmin();
 error ChatterPay__ExecuteCallFailed(bytes);
 error ChatterPay__PriceFeedNotSet();
 error ChatterPay__InvalidPrice();
@@ -133,9 +133,9 @@ contract ChatterPay is
                                MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
-    modifier onlyFactoryOwner() {
+    modifier onlyChatterPayAdmin() {
         if (msg.sender != s_state.factory.owner()) {
-            revert ChatterPay__NotFromFactoryOwner();
+            revert ChatterPay__NotFromChatterPayAdmin();
         }
         _;
     }
@@ -155,6 +155,7 @@ contract ChatterPay is
     }
 
     /**
+     * ChatterPay__NotFromChatterPayAdmin
      * @dev Disables initialization for the implementation contract
      */
 
@@ -491,7 +492,7 @@ contract ChatterPay is
      * @param value ETH value to send
      * @param func Function call data
      */
-    function execute(address dest, uint256 value, bytes calldata func) external onlyFactoryOwner nonReentrant {
+    function execute(address dest, uint256 value, bytes calldata func) external onlyChatterPayAdmin nonReentrant {
         if (dest == address(this)) revert ChatterPay__InvalidTarget();
         (bool success, bytes memory result) = dest.call{value: value}(func);
         if (!success) revert ChatterPay__ExecuteCallFailed(result);
@@ -530,7 +531,7 @@ contract ChatterPay is
      * @notice Updates the fee amount
      * @param _newFeeInCents New fee in cents
      */
-    function updateFee(uint256 _newFeeInCents) external onlyOwner {
+    function updateFee(uint256 _newFeeInCents) external onlyChatterPayAdmin {
         if (_newFeeInCents > s_state.maxFeeInCents) {
             revert ChatterPay__ExceedsMaxFee();
         }
