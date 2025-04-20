@@ -266,6 +266,10 @@ contract ChatterPay is
         }
     }
 
+    function getChatterPayOwner() public view returns (address) {
+        return s_state.factory.owner();
+    }
+
     function getFeeInCents() public view returns (uint256) {
         return s_state.feeInCents;
     }
@@ -776,7 +780,7 @@ contract ChatterPay is
      * @dev Function that authorizes an upgrade to a new implementation
      * @param newImplementation Address of the new implementation
      */
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyChatterPayAdmin {}
 
     receive() external payable {}
 }
