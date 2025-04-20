@@ -710,13 +710,10 @@ contract ChatterPay is
         uint24 customFee = _getChatterPayState().customPoolFees[pairHash];
         if (customFee != 0) return customFee;
 
-        // Default logic
         if (_isStableToken(tokenIn) && _isStableToken(tokenOut)) {
             return _getChatterPayState().uniswapPoolFeeLow;
-            // return  POOL_FEE_LOW;
         }
-        return _getChatterPayState().uniswapPoolFeeMedium; //
-            // return POOL_FEE_MEDIUM;
+        return _getChatterPayState().uniswapPoolFeeMedium;
     }
 
     /**
