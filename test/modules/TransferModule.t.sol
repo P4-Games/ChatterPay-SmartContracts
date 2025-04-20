@@ -5,7 +5,6 @@ import {Test, console} from "forge-std/Test.sol";
 import {BaseTest} from "../setup/BaseTest.sol";
 import {ChatterPay} from "../../src/ChatterPay.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {AggregatorV3Interface} from "../../src/interfaces/AggregatorV3Interface.sol";
 import {IERC20Extended} from "../../src/ChatterPay.sol";
 
 /**
@@ -36,6 +35,10 @@ contract TransferModule is BaseTest {
         walletInstance.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
         walletInstance.addStableToken(USDC);
         walletInstance.addStableToken(USDT);
+
+        // Disable freshness check for price feeds in tests
+        walletInstance.updatePriceConfig(1 days, 8);
+
         vm.stopPrank();
     }
 

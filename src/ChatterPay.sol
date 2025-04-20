@@ -46,6 +46,8 @@ error ChatterPay__TransferFailed();
 error ChatterPay__ImplementationInitialization();
 error ChatterPay__AlreadyStableToken();
 error ChatterPay__NotStableToken();
+error ChatterPay__InvalidDecimals();
+error ChatterPay__InvalidFeeOverflow();
 
 interface IERC20Extended is IERC20 {
     function symbol() external view returns (string memory);
@@ -672,9 +674,11 @@ contract ChatterPay is
     }
 
     /**
-     * @dev Gets token price from oracle
-     * @param token Token address to get price for
-     * @return uint256 Token price with 8 decimals precision
+     * @notice Retrieves the latest token price from the Chainlink oracle.
+     * @dev Verifies that the price is positive, fresh (not stale), and comes from a completed round.
+     *      Reverts if the price data is invalid, stale, or incomplete.
+     * @param token The address of the token to fetch the price for.
+     * @return The latest token price with 8 decimals of precision.
      */
     function _getTokenPrice(address token) internal view returns (uint256) {
         address priceFeedAddr = s_state.priceFeeds[token];
@@ -682,9 +686,11 @@ contract ChatterPay is
 
         AggregatorV3Interface priceFeed = AggregatorV3Interface(priceFeedAddr);
 
-        (, int256 price,,,) = priceFeed.latestRoundData();
+        (uint80 roundId, int256 price,, uint256 updatedAt, uint80 answeredInRound) = priceFeed.latestRoundData();
 
         if (price <= 0) revert ChatterPay__InvalidPrice();
+        if (answeredInRound < roundId) revert ChatterPay__InvalidPrice();
+        if (block.timestamp - updatedAt > s_state.priceFreshnessThreshold) revert ChatterPay__InvalidPrice();
 
         return uint256(price);
     }
@@ -737,9 +743,17 @@ contract ChatterPay is
      */
     function _calculateFee(address token, uint256 feeInCents) internal view returns (uint256) {
         uint256 tokenPrice = _getTokenPrice(token); // Price has 8 decimals from Chainlink
+        if (tokenPrice == 0) revert ChatterPay__InvalidPrice();
+
         uint256 tokenDecimals = IERC20Extended(token).decimals();
-        uint256 fee = (feeInCents * (10 ** tokenDecimals) * 1e8) / (tokenPrice * 100);
-        return fee;
+        if (tokenDecimals > 77) revert ChatterPay__InvalidDecimals();
+
+        if (feeInCents >= type(uint256).max / 1e8 / 1e18) revert ChatterPay__InvalidFeeOverflow();
+
+        uint256 numerator = feeInCents * (10 ** tokenDecimals) * 1e8;
+        uint256 denominator = tokenPrice * 100;
+
+        return numerator / denominator;
     }
 
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
