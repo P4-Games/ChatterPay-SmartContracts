@@ -739,9 +739,17 @@ contract ChatterPay is
      */
     function _calculateFee(address token, uint256 feeInCents) internal view returns (uint256) {
         uint256 tokenPrice = _getTokenPrice(token); // Price has 8 decimals from Chainlink
+        if (tokenPrice == 0) revert ChatterPay__InvalidPrice();
+
         uint256 tokenDecimals = IERC20Extended(token).decimals();
-        uint256 fee = (feeInCents * (10 ** tokenDecimals) * 1e8) / (tokenPrice * 100);
-        return fee;
+        if (tokenDecimals > 77) revert ChatterPay__InvalidDecimals();
+
+        if (feeInCents >= type(uint256).max / 1e8 / 1e18) revert ChatterPay__InvalidFeeOverflow();
+
+        uint256 numerator = feeInCents * (10 ** tokenDecimals) * 1e8;
+        uint256 denominator = tokenPrice * 100;
+
+        return numerator / denominator;
     }
 
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
