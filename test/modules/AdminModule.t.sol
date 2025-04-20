@@ -21,7 +21,6 @@ contract AdminModule is BaseTest {
     event FeeUpdated(uint256 oldFee, uint256 newFee);
     event TokenWhitelisted(address indexed token, bool status);
     event PriceFeedUpdated(address indexed token, address indexed priceFeed);
-    event FeeAdminUpdated(address indexed oldAdmin, address indexed newAdmin);
     event CustomPoolFeeSet(address indexed tokenA, address indexed tokenB, uint24 fee);
     event CustomSlippageSet(address indexed token, uint256 slippageBps);
 

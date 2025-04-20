@@ -157,17 +157,16 @@ contract SwapModule is BaseTest {
         uint256 amountIn = 1000e6;
 
         _fundWallet(moduleWalletAddress, amountIn);
-        address feeAdmin = moduleWallet.getFeeAdmin();
         uint256 minAmountOut = 0; // Set minimum amount for testing purposes
 
         // Get initial balances
-        uint256 initialFeeAdminBalance = IERC20(USDC).balanceOf(feeAdmin);
-        console.log("Fee admin:", feeAdmin);
-        console.log("Initial balance:", initialFeeAdminBalance);
+        uint256 initialOwnerBalance = IERC20(USDC).balanceOf(owner);
+        console.log("admin:", owner);
+        console.log("Initial balance:", initialOwnerBalance);
 
         // Approve router to spend USDC
         address router = address(moduleWallet.getSwapRouter());
-        vm.startPrank(moduleWalletAddress); // La wallet misma debe hacer el approve
+        vm.startPrank(moduleWalletAddress);
         IERC20(USDC).approve(router, amountIn);
         vm.stopPrank();
 
@@ -176,9 +175,9 @@ contract SwapModule is BaseTest {
         moduleWallet.executeSwap(USDC, USDT, amountIn, minAmountOut, owner);
 
         // Get final balance
-        uint256 finalFeeAdminBalance = IERC20(USDC).balanceOf(feeAdmin);
-        console.log("Final balance:", finalFeeAdminBalance);
-        uint256 feeCollected = finalFeeAdminBalance - initialFeeAdminBalance;
+        uint256 finalOwnerBalance = IERC20(USDC).balanceOf(owner);
+        console.log("Final balance:", finalOwnerBalance);
+        uint256 feeCollected = finalOwnerBalance - initialOwnerBalance;
         console.log("Fee collected:", feeCollected);
 
         // Calculate expected fee and check within margin
