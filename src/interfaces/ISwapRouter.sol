@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title Uniswap V3 Swap Router Interface
+ * @author ChatterPay Team
  * @notice Interface for executing token swaps through Uniswap V3
  * @dev Handles single-hop and multi-hop swaps with exact input amounts
  */

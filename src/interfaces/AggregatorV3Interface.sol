@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title Chainlink Price Feed Interface
+ * @author ChatterPay Team
  * @notice Interface for interacting with Chainlink price feed aggregators
  * @dev This interface allows reading price data from Chainlink's decentralized oracle network
  */

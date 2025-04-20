@@ -1,9 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+/*//////////////////////////////////////////////////////////////
+// IMPORTS
+//////////////////////////////////////////////////////////////*/
+
 import "lib/entry-point-v6/interfaces/IPaymaster.sol";
 import {IEntryPoint} from "lib/entry-point-v6/interfaces/IEntryPoint.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
+/*//////////////////////////////////////////////////////////////
+// ERRORS
+//////////////////////////////////////////////////////////////*/
 
 error ChatterPayPaymaster__OnlyOwner();
 error ChatterPayPaymaster__OnlyEntryPoint();
@@ -18,18 +26,25 @@ error ChatterPayPaymaster__WithdrawFailed();
 
 /**
  * @title ChatterPayPaymaster
+ * @author ChatterPay Team
  * @notice A Paymaster contract for managing user operations with signature-based validation
  * @dev Integrates with the EntryPoint contract and validates operations signed by a backend signer
  */
 contract ChatterPayPaymaster is IPaymaster {
+    /*//////////////////////////////////////////////////////////////
+    // CONSTANTS & VARIABLES
+    //////////////////////////////////////////////////////////////*/
+
     address public owner;
     IEntryPoint public entryPoint;
     address private backendSigner;
     uint256 private immutable chainId;
-
-    // Offset constants
     uint256 private constant SIGNATURE_OFFSET = 20;
     uint256 private constant EXPIRATION_OFFSET = 85;
+
+    /*//////////////////////////////////////////////////////////////
+    // MODIFIERS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Ensures that only the contract owner can call the function
@@ -40,6 +55,10 @@ contract ChatterPayPaymaster is IPaymaster {
         if (msg.sender != owner) revert ChatterPayPaymaster__OnlyOwner();
         _;
     }
+
+    /*//////////////////////////////////////////////////////////////
+    // INITIALIZATION
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Initializes the ChatterPayPaymaster contract
@@ -53,6 +72,21 @@ contract ChatterPayPaymaster is IPaymaster {
         backendSigner = _backendSigner;
         chainId = block.chainid;
     }
+
+    /*//////////////////////////////////////////////////////////////
+    // GETTER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * Return current paymaster's deposit on the entryPoint.
+     */
+    function getDeposit() public view returns (uint256) {
+        return entryPoint.balanceOf(address(this));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+    // MAIN FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Allows the contract to receive ETH payments
@@ -138,6 +172,10 @@ contract ChatterPayPaymaster is IPaymaster {
         _requireFromEntryPoint();
     }
 
+    /*//////////////////////////////////////////////////////////////
+    // ADMIN FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
     /**
      * Add stake for this paymaster.
      * This method can also carry eth value to add to the current stake.
@@ -145,13 +183,6 @@ contract ChatterPayPaymaster is IPaymaster {
      */
     function addStake(uint32 unstakeDelaySec) external payable onlyOwner {
         entryPoint.addStake{value: msg.value}(unstakeDelaySec);
-    }
-
-    /**
-     * Return current paymaster's deposit on the entryPoint.
-     */
-    function getDeposit() public view returns (uint256) {
-        return entryPoint.balanceOf(address(this));
     }
 
     /**
@@ -205,6 +236,10 @@ contract ChatterPayPaymaster is IPaymaster {
             revert ChatterPayPaymaster__WithdrawFailed();
         }
     }
+
+    /*//////////////////////////////////////////////////////////////
+    // INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Ensures that the function is only callable by the EntryPoint contract

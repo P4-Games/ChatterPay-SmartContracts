@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
+
+/*//////////////////////////////////////////////////////////////
+// IMPORTS
+//////////////////////////////////////////////////////////////*/
 
 import {ERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import {ERC721URIStorageUpgradeable} from
     "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
+/*//////////////////////////////////////////////////////////////
+// ERRORS
+//////////////////////////////////////////////////////////////*/
 
 error ChatterPayNFT__Unauthorized();
 error ChatterPayNFT__TokenAlreadyMinted(uint256);
@@ -15,15 +23,24 @@ error ChatterPayNFT__InvalidURICharacter();
 
 /**
  * @title ChatterPayNFT
+ * @author ChatterPay Team
  * @notice This contract allows minting of original NFTs and their limited copies.
  * @dev Uses OpenZeppelin's UUPS upgradeable and ERC721 modules.
  */
 contract ChatterPayNFT is UUPSUpgradeable, ERC721Upgradeable, ERC721URIStorageUpgradeable, OwnableUpgradeable {
+    /*//////////////////////////////////////////////////////////////
+    // CONSTANTS & VARIABLES
+    //////////////////////////////////////////////////////////////*/
+
     uint256 private s_tokenId;
     mapping(uint256 tokenId => address minter) public s_originalMinter;
     mapping(uint256 tokenId => uint256 copies) public s_copyCount;
     mapping(uint256 tokenId => uint256 copyLimit) public s_copyLimit;
     string private s_baseURI;
+
+    /*//////////////////////////////////////////////////////////////
+    // INITIALIZATION
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Initializes the contract with an initial owner and base URI.
@@ -36,6 +53,10 @@ contract ChatterPayNFT is UUPSUpgradeable, ERC721Upgradeable, ERC721URIStorageUp
         __Ownable_init(initialOwner);
         s_baseURI = baseURI;
     }
+
+    /*//////////////////////////////////////////////////////////////
+    // MAIN FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Mints a new original NFT.
@@ -81,15 +102,6 @@ contract ChatterPayNFT is UUPSUpgradeable, ERC721Upgradeable, ERC721URIStorageUp
     }
 
     /**
-     * @notice Updates the base URI for NFT metadata.
-     * @dev Only callable by the contract owner.
-     * @param _newBaseURI The new base URI.
-     */
-    function setBaseURI(string memory _newBaseURI) public onlyOwner {
-        s_baseURI = _newBaseURI;
-    }
-
-    /**
      * @notice Updates the copy limit for an original NFT.
      * @dev Only the original minter of the NFT can update the copy limit.
      * @param tokenId The token ID of the original NFT.
@@ -108,12 +120,59 @@ contract ChatterPayNFT is UUPSUpgradeable, ERC721Upgradeable, ERC721URIStorageUp
     }
 
     /**
+     * @notice Returns the URI for a given token ID.
+     * @dev Combines logic from ERC721 and ERC721URIStorage.
+     * @param tokenId The ID of the token.
+     * @return The token URI as a string.
+     */
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+
+    /**
+     * @notice Checks if the contract supports a specific interface.
+     * @dev Required override for multiple inheritance.
+     * @param interfaceId The interface identifier.
+     * @return True if the interface is supported, false otherwise.
+     */
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+    // ADMIN FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Updates the base URI for NFT metadata.
+     * @dev Only callable by the contract owner.
+     * @param _newBaseURI The new base URI.
+     */
+    function setBaseURI(string memory _newBaseURI) public onlyOwner {
+        s_baseURI = _newBaseURI;
+    }
+
+    /**
      * @notice Retrieves the base URI for NFT metadata.
      * @return The base URI as a string.
      */
     function _baseURI() internal view override returns (string memory) {
         return s_baseURI;
     }
+
+    /*//////////////////////////////////////////////////////////////
+    // INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Basic validation to prevent dangerous characters in URIs.
@@ -131,27 +190,9 @@ contract ChatterPayNFT is UUPSUpgradeable, ERC721Upgradeable, ERC721URIStorageUp
 
     /**
      * @notice Authorizes an upgrade to a new implementation.
-     * @dev Only callable by the contract owner.
+     * @dev This function is required by UUPS and must be protected.
+     * Only the contract owner can authorize upgrades.
      * @param newImplementation The address of the new implementation contract.
      */
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
-
-    // The following functions are overrides required by Solidity.
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
-        returns (string memory)
-    {
-        return super.tokenURI(tokenId);
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
 }
