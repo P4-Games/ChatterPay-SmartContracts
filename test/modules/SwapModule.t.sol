@@ -39,6 +39,9 @@ contract SwapModule is BaseTest {
         // Verify router configuration
         require(address(moduleWallet.getSwapRouter()) != address(0), "Router not set");
 
+        // Disable freshness check for price feeds in tests
+        moduleWallet.updatePriceConfig(1 days, 8);
+
         // Setup tokens using parent contract constants
         moduleWallet.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         moduleWallet.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);

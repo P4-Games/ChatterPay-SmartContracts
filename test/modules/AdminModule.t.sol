@@ -35,6 +35,9 @@ contract AdminModule is BaseTest {
         walletAddress = factory.createProxy(owner);
         walletInstance = ChatterPay(payable(walletAddress));
 
+        // Disable freshness check for price feeds in tests
+        walletInstance.updatePriceConfig(1 days, 8);
+
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         walletInstance.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
         walletInstance.addStableToken(USDC);

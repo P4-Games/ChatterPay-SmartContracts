@@ -36,6 +36,10 @@ contract SecurityModule is BaseTest {
         walletInstance = ChatterPay(payable(walletAddress));
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         walletInstance.addStableToken(USDC);
+
+        // Disable freshness check for price feeds in tests
+        walletInstance.updatePriceConfig(1 days, 8);
+
         vm.stopPrank();
 
         // Setup additional test accounts
