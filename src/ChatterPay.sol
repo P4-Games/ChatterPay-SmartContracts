@@ -674,9 +674,11 @@ contract ChatterPay is
     }
 
     /**
-     * @dev Gets token price from oracle
-     * @param token Token address to get price for
-     * @return uint256 Token price with 8 decimals precision
+     * @notice Retrieves the latest token price from the Chainlink oracle.
+     * @dev Verifies that the price is positive, fresh (not stale), and comes from a completed round.
+     *      Reverts if the price data is invalid, stale, or incomplete.
+     * @param token The address of the token to fetch the price for.
+     * @return The latest token price with 8 decimals of precision.
      */
     function _getTokenPrice(address token) internal view returns (uint256) {
         address priceFeedAddr = s_state.priceFeeds[token];
@@ -684,9 +686,11 @@ contract ChatterPay is
 
         AggregatorV3Interface priceFeed = AggregatorV3Interface(priceFeedAddr);
 
-        (, int256 price,,,) = priceFeed.latestRoundData();
+        (uint80 roundId, int256 price,, uint256 updatedAt, uint80 answeredInRound) = priceFeed.latestRoundData();
 
         if (price <= 0) revert ChatterPay__InvalidPrice();
+        if (answeredInRound < roundId) revert ChatterPay__InvalidPrice();
+        if (block.timestamp - updatedAt > s_state.priceFreshnessThreshold) revert ChatterPay__InvalidPrice();
 
         return uint256(price);
     }
