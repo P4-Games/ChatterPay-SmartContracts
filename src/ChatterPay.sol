@@ -770,7 +770,7 @@ contract ChatterPay is
      */
     function _payPrefund(uint256 missingAccountFunds) internal {
         if (missingAccountFunds != 0) {
-            (bool success,) = payable(msg.sender).call{value: missingAccountFunds, gas: type(uint256).max}("");
+            (bool success,) = payable(msg.sender).call{value: missingAccountFunds, gas: gasleft()}("");
             // Intentionally ignoring success — EntryPoint validates received funds
             (success);
         }
