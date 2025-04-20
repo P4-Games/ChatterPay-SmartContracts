@@ -135,6 +135,32 @@ contract AdminModule is BaseTest {
     }
 
     /**
+     * @notice Ensures storage is preserved after an upgrade from proxy
+     */
+    function testStoragePreservedAcrossUpgrade() public {
+        vm.startPrank(owner);
+
+        // Initial state setup
+        walletInstance.updateFee(111);
+        walletInstance.setCustomSlippage(USDC, 250);
+
+        // Deploy new implementation
+        ChatterPay newImpl = new ChatterPay();
+
+        // Upgrade via proxy
+        walletInstance.upgradeToAndCall(address(newImpl), "");
+
+        // Re-attach
+        ChatterPay upgraded = ChatterPay(payable(walletAddress));
+
+        // Only verify state
+        assertEq(upgraded.getFeeInCents(), 111);
+        assertEq(upgraded.getCustomSlippage(USDC), 250);
+
+        vm.stopPrank();
+    }
+
+    /**
      * @notice Tests access control for admin functions
      */
     function testAccessControl() public {

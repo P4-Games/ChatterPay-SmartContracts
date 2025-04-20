@@ -19,6 +19,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISwapRouter} from "./interfaces/ISwapRouter.sol";
 import {IChatterPayWalletFactory} from "./ChatterPayWalletFactory.sol";
+
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
@@ -54,10 +55,16 @@ interface IERC20Extended is IERC20 {
     function decimals() external view returns (uint8);
 }
 
-/**
- * @dev Storage layout contract to prevent storage collisions
- */
-contract ChatterPayStorage {
+contract ChatterPay is
+    IAccount,
+    Initializable,
+    ContextUpgradeable,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
+{
+    using SafeERC20 for IERC20;
+
     struct ChatterPayState {
         ISwapRouter swapRouter;
         IChatterPayWalletFactory factory;
@@ -78,22 +85,15 @@ contract ChatterPayStorage {
         mapping(address => uint256) customSlippage;
         mapping(address => bool) stableTokens;
     }
-}
 
-contract ChatterPay is
-    IAccount,
-    Initializable,
-    ContextUpgradeable,
-    OwnableUpgradeable,
-    ReentrancyGuardUpgradeable,
-    UUPSUpgradeable,
-    ChatterPayStorage
-{
-    using SafeERC20 for IERC20;
-
-    // Storage
-    bytes32 internal constant IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("chatterpay.proxy.implementation")) - 1);
     ChatterPayState private s_state;
+
+    bytes32 internal constant CHATTERPAY_STATE_POSITION = bytes32(uint256(keccak256("chatterpay.proxy.state")) - 1);
+
+    bytes32 internal constant IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("chatterpay.proxy.implementation")) - 1);
+
+    /// @notice Version for upgrades
+    string public constant VERSION = "2.0.0";
 
     /*
     * For simulation purposes, validateUserOp (and validatePaymasterUserOp)
@@ -109,14 +109,8 @@ contract ChatterPay is
 
     uint256 public constant PRICE_FEED_PRECISION = 8;
 
-    // Increased gap for future upgrades
-    uint256[100] private __gap;
-
-    /// @notice Version for upgrades
-    string public constant VERSION = "2.0.0";
-
     /*//////////////////////////////////////////////////////////////
-                                 EVENTS
+                                EVENTS
     //////////////////////////////////////////////////////////////*/
 
     event TokenApproved(address indexed token, address indexed spender, uint256 amount);
@@ -131,26 +125,22 @@ contract ChatterPay is
     event TokenTransferCalled(address indexed from, address indexed to, address indexed token, uint256 amount);
     event TokenTransferred(address indexed from, address indexed to, address indexed token, uint256 amount);
 
-    /*//////////////////////////////////////////////////////////////
-                               MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
     modifier onlyChatterPayAdmin() {
-        if (msg.sender != s_state.factory.owner()) {
+        if (msg.sender != _getChatterPayState().factory.owner()) {
             revert ChatterPay__NotFromChatterPayAdmin();
         }
         _;
     }
 
     modifier requireFromEntryPointOrOwner() {
-        if (msg.sender != address(s_state.entryPoint) && msg.sender != owner()) {
+        if (msg.sender != address(_getChatterPayState().entryPoint) && msg.sender != owner()) {
             revert ChatterPay__NotFromEntryPointOrOwner();
         }
         _;
     }
 
     modifier requireFromEntryPoint() {
-        if (msg.sender != address(s_state.entryPoint)) {
+        if (msg.sender != address(_getChatterPayState().entryPoint)) {
             revert ChatterPay__NotFromEntryPoint();
         }
         _;
@@ -214,21 +204,21 @@ contract ChatterPay is
         __ReentrancyGuard_init();
         __UUPSUpgradeable_init_unchained();
 
-        s_state.entryPoint = IEntryPoint(_entryPoint);
-        s_state.paymaster = _paymaster;
-        s_state.swapRouter = ISwapRouter(_router);
-        s_state.factory = IChatterPayWalletFactory(_factory);
-        s_state.feeInCents = 50; // Default fee in cents
+        _getChatterPayState().entryPoint = IEntryPoint(_entryPoint);
+        _getChatterPayState().paymaster = _paymaster;
+        _getChatterPayState().swapRouter = ISwapRouter(_router);
+        _getChatterPayState().factory = IChatterPayWalletFactory(_factory);
+        _getChatterPayState().feeInCents = 50; // Default fee in cents
 
-        s_state.uniswapPoolFeeLow = 3000; // 0.3%
-        s_state.uniswapPoolFeeMedium = 3000; // 0.3%
-        s_state.uniswapPoolFeeHigh = 10000; // 1%
-        s_state.slippageMaxBps = 5000;
+        _getChatterPayState().uniswapPoolFeeLow = 3000; // 0.3%
+        _getChatterPayState().uniswapPoolFeeMedium = 3000; // 0.3%
+        _getChatterPayState().uniswapPoolFeeHigh = 10000; // 1%
+        _getChatterPayState().slippageMaxBps = 5000;
 
-        s_state.maxDeadline = 3 minutes;
-        s_state.maxFeeInCents = 1000; // $10.00
-        s_state.priceFreshnessThreshold = 1 hours;
-        s_state.priceFeedPrecision = 8;
+        _getChatterPayState().maxDeadline = 3 minutes;
+        _getChatterPayState().maxFeeInCents = 1000; // $10.00
+        _getChatterPayState().priceFreshnessThreshold = 1 hours;
+        _getChatterPayState().priceFeedPrecision = 8;
 
         // Set initial token whitelist and price feeds
         for (uint256 i = 0; i < _whitelistedTokens.length; i++) {
@@ -248,9 +238,9 @@ contract ChatterPay is
             } catch {
                 revert ChatterPay__InvalidPriceFeed();
             }
-            s_state.whitelistedTokens[token] = true;
-            s_state.priceFeeds[token] = priceFeed;
-            s_state.stableTokens[token] = tokenStableFlag;
+            _getChatterPayState().whitelistedTokens[token] = true;
+            _getChatterPayState().priceFeeds[token] = priceFeed;
+            _getChatterPayState().stableTokens[token] = tokenStableFlag;
 
             emit PriceFeedUpdated(token, priceFeed);
             emit TokenWhitelisted(token, true);
@@ -268,64 +258,75 @@ contract ChatterPay is
         }
     }
 
+    function _getChatterPayState() internal pure returns (ChatterPayState storage state) {
+        bytes32 position = CHATTERPAY_STATE_POSITION;
+        assembly {
+            state.slot := position
+        }
+    }
+
     function getChatterPayOwner() public view returns (address) {
-        return s_state.factory.owner();
+        return _getChatterPayState().factory.owner();
     }
 
     function getFeeInCents() public view returns (uint256) {
-        return s_state.feeInCents;
+        return _getChatterPayState().feeInCents;
     }
 
     function isTokenWhitelisted(address token) public view returns (bool) {
-        return s_state.whitelistedTokens[token];
+        return _getChatterPayState().whitelistedTokens[token];
     }
 
     function getPriceFeed(address token) public view returns (address) {
-        return s_state.priceFeeds[token];
+        return _getChatterPayState().priceFeeds[token];
     }
 
     function getCustomPoolFee(bytes32 pairHash) public view returns (uint24) {
-        return s_state.customPoolFees[pairHash];
+        return _getChatterPayState().customPoolFees[pairHash];
     }
 
     function getCustomSlippage(address token) public view returns (uint256) {
-        return s_state.customSlippage[token];
+        return _getChatterPayState().customSlippage[token];
     }
 
     function getSwapRouter() public view returns (ISwapRouter) {
-        return s_state.swapRouter;
+        return _getChatterPayState().swapRouter;
     }
 
     function getEntryPoint() external view returns (address) {
-        return address(s_state.entryPoint);
+        return address(_getChatterPayState().entryPoint);
     }
 
     function isStableToken(address token) public view returns (bool) {
-        return s_state.stableTokens[token];
+        return _getChatterPayState().stableTokens[token];
     }
 
     function getPoolFees() external view returns (uint24 low, uint24 medium, uint24 high) {
-        return (s_state.uniswapPoolFeeLow, s_state.uniswapPoolFeeMedium, s_state.uniswapPoolFeeHigh);
+        return (
+            _getChatterPayState().uniswapPoolFeeLow,
+            _getChatterPayState().uniswapPoolFeeMedium,
+            _getChatterPayState().uniswapPoolFeeHigh
+        );
     }
 
     function getSlippageMaxBps() external view returns (uint256) {
-        return s_state.slippageMaxBps;
+        return _getChatterPayState().slippageMaxBps;
     }
 
     function getMaxDeadline() external view returns (uint256) {
-        return s_state.maxDeadline;
+        return _getChatterPayState().maxDeadline;
     }
 
     function getMaxFeeInCents() external view returns (uint256) {
-        return s_state.maxFeeInCents;
+        return _getChatterPayState().maxFeeInCents;
     }
 
     function getPriceFreshnessThreshold() external view returns (uint256) {
-        return s_state.priceFreshnessThreshold;
+        return _getChatterPayState().priceFreshnessThreshold;
     }
 
     function getPriceFeedPrecision() external view returns (uint256) {
-        return s_state.priceFeedPrecision;
+        return _getChatterPayState().priceFeedPrecision;
     }
 
     /**
@@ -336,10 +337,10 @@ contract ChatterPay is
      * @dev Reverts if the token is not whitelisted
      */
     function getTokenFee(address token) external view returns (uint256) {
-        if (!s_state.whitelistedTokens[token]) {
+        if (!_getChatterPayState().whitelistedTokens[token]) {
             revert ChatterPay__TokenNotWhitelisted();
         }
-        return _calculateFee(token, s_state.feeInCents);
+        return _calculateFee(token, _getChatterPayState().feeInCents);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -353,12 +354,12 @@ contract ChatterPay is
      */
     function approveToken(address token, uint256 amount) external requireFromEntryPointOrOwner nonReentrant {
         if (amount == 0) revert ChatterPay__ZeroAmount();
-        if (!s_state.whitelistedTokens[token]) {
+        if (!_getChatterPayState().whitelistedTokens[token]) {
             revert ChatterPay__TokenNotWhitelisted();
         }
 
-        IERC20(token).safeIncreaseAllowance(address(s_state.swapRouter), amount);
-        emit TokenApproved(token, address(s_state.swapRouter), amount);
+        IERC20(token).safeIncreaseAllowance(address(_getChatterPayState().swapRouter), amount);
+        emit TokenApproved(token, address(_getChatterPayState().swapRouter), amount);
     }
 
     /**
@@ -377,12 +378,12 @@ contract ChatterPay is
 
         if (amount == 0) revert ChatterPay__ZeroAmount();
         if (recipient == address(0)) revert ChatterPay__ZeroAddress();
-        if (!s_state.whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
+        if (!_getChatterPayState().whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
 
         uint256 balance = IERC20(token).balanceOf(address((this)));
         if (balance < amount) revert ChatterPay__InsufficientBalance();
 
-        uint256 fee = _calculateFee(token, s_state.feeInCents);
+        uint256 fee = _calculateFee(token, _getChatterPayState().feeInCents);
         if (amount < fee * 2) revert ChatterPay__AmountTooLow();
 
         _transferFee(token, fee);
@@ -419,7 +420,7 @@ contract ChatterPay is
             // Validate parameters
             if (amount == 0) revert ChatterPay__ZeroAmount();
             if (recipient == address(0)) revert ChatterPay__ZeroAddress();
-            if (!s_state.whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
+            if (!_getChatterPayState().whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
 
             // Check balance
             if (IERC20(token).balanceOf(address(this)) < amount) {
@@ -427,7 +428,7 @@ contract ChatterPay is
             }
 
             // Calculate fee
-            uint256 fee = _calculateFee(token, s_state.feeInCents);
+            uint256 fee = _calculateFee(token, _getChatterPayState().feeInCents);
             if (amount < fee * 2) revert ChatterPay__AmountTooLow();
 
             // Transfer fee first
@@ -454,7 +455,7 @@ contract ChatterPay is
     {
         if (amountIn == 0) revert ChatterPay__ZeroAmount();
         if (recipient == address(0)) revert ChatterPay__ZeroAddress();
-        if (!s_state.whitelistedTokens[tokenIn] || !s_state.whitelistedTokens[tokenOut]) {
+        if (!_getChatterPayState().whitelistedTokens[tokenIn] || !_getChatterPayState().whitelistedTokens[tokenOut]) {
             revert ChatterPay__TokenNotWhitelisted();
         }
 
@@ -464,7 +465,7 @@ contract ChatterPay is
         }
 
         // Calculate fee
-        uint256 fee = _calculateFee(tokenIn, s_state.feeInCents);
+        uint256 fee = _calculateFee(tokenIn, _getChatterPayState().feeInCents);
         if (amountIn < fee * 2) revert ChatterPay__AmountTooLow();
 
         // Charge fee first
@@ -482,7 +483,7 @@ contract ChatterPay is
             sqrtPriceLimitX96: 0
         });
 
-        try s_state.swapRouter.exactInputSingle(params) returns (uint256 amountOut) {
+        try _getChatterPayState().swapRouter.exactInputSingle(params) returns (uint256 amountOut) {
             emit SwapExecuted(tokenIn, tokenOut, amountIn, amountOut, recipient);
         } catch Error(string memory) {
             revert ChatterPay__SwapFailed();
@@ -538,11 +539,11 @@ contract ChatterPay is
      * @param _newFeeInCents New fee in cents
      */
     function updateFee(uint256 _newFeeInCents) external onlyChatterPayAdmin {
-        if (_newFeeInCents > s_state.maxFeeInCents) {
+        if (_newFeeInCents > _getChatterPayState().maxFeeInCents) {
             revert ChatterPay__ExceedsMaxFee();
         }
-        uint256 oldFee = s_state.feeInCents;
-        s_state.feeInCents = _newFeeInCents;
+        uint256 oldFee = _getChatterPayState().feeInCents;
+        _getChatterPayState().feeInCents = _newFeeInCents;
         emit FeeUpdated(oldFee, _newFeeInCents);
     }
 
@@ -566,9 +567,9 @@ contract ChatterPay is
             revert ChatterPay__InvalidPriceFeed();
         }
 
-        s_state.whitelistedTokens[token] = status;
+        _getChatterPayState().whitelistedTokens[token] = status;
         if (status) {
-            s_state.priceFeeds[token] = priceFeed;
+            _getChatterPayState().priceFeeds[token] = priceFeed;
             emit PriceFeedUpdated(token, priceFeed);
         }
         emit TokenWhitelisted(token, status);
@@ -581,8 +582,8 @@ contract ChatterPay is
     function removeTokenFromWhitelist(address token) external onlyOwner {
         if (token == address(0)) revert ChatterPay__ZeroAddress();
 
-        delete s_state.whitelistedTokens[token];
-        delete s_state.priceFeeds[token];
+        delete _getChatterPayState().whitelistedTokens[token];
+        delete _getChatterPayState().priceFeeds[token];
 
         emit TokenWhitelisted(token, false);
         emit PriceFeedUpdated(token, address(0));
@@ -597,8 +598,8 @@ contract ChatterPay is
      */
     function addStableToken(address token) external onlyOwner {
         if (token == address(0)) revert ChatterPay__ZeroAddress();
-        if (s_state.stableTokens[token]) revert ChatterPay__AlreadyStableToken();
-        s_state.stableTokens[token] = true;
+        if (_getChatterPayState().stableTokens[token]) revert ChatterPay__AlreadyStableToken();
+        _getChatterPayState().stableTokens[token] = true;
     }
 
     /**
@@ -610,8 +611,8 @@ contract ChatterPay is
      */
     function removeStableToken(address token) external onlyOwner {
         if (token == address(0)) revert ChatterPay__ZeroAddress();
-        if (!s_state.stableTokens[token]) revert ChatterPay__NotStableToken();
-        delete s_state.stableTokens[token];
+        if (!_getChatterPayState().stableTokens[token]) revert ChatterPay__NotStableToken();
+        delete _getChatterPayState().stableTokens[token];
     }
 
     /**
@@ -621,10 +622,10 @@ contract ChatterPay is
      * @param fee Custom fee to use
      */
     function setCustomPoolFee(address tokenA, address tokenB, uint24 fee) external onlyOwner {
-        if (fee > s_state.uniswapPoolFeeHigh) revert ChatterPay__InvalidPoolFee();
+        if (fee > _getChatterPayState().uniswapPoolFeeHigh) revert ChatterPay__InvalidPoolFee();
 
         bytes32 pairHash = _getPairHash(tokenA, tokenB);
-        s_state.customPoolFees[pairHash] = fee;
+        _getChatterPayState().customPoolFees[pairHash] = fee;
         emit CustomPoolFeeSet(tokenA, tokenB, fee);
     }
 
@@ -634,29 +635,29 @@ contract ChatterPay is
      * @param slippageBps Slippage in basis points
      */
     function setCustomSlippage(address token, uint256 slippageBps) external onlyOwner {
-        if (slippageBps > s_state.slippageMaxBps) revert ChatterPay__InvalidSlippage();
-        s_state.customSlippage[token] = slippageBps;
+        if (slippageBps > _getChatterPayState().slippageMaxBps) revert ChatterPay__InvalidSlippage();
+        _getChatterPayState().customSlippage[token] = slippageBps;
         emit CustomSlippageSet(token, slippageBps);
     }
 
     function updateUniswapPoolFees(uint24 low, uint24 medium, uint24 high) external onlyOwner {
-        s_state.uniswapPoolFeeLow = low;
-        s_state.uniswapPoolFeeMedium = medium;
-        s_state.uniswapPoolFeeHigh = high;
+        _getChatterPayState().uniswapPoolFeeLow = low;
+        _getChatterPayState().uniswapPoolFeeMedium = medium;
+        _getChatterPayState().uniswapPoolFeeHigh = high;
     }
 
     function updateSlippageMaxBps(uint256 slippageMaxBps) external onlyOwner {
-        s_state.slippageMaxBps = slippageMaxBps;
+        _getChatterPayState().slippageMaxBps = slippageMaxBps;
     }
 
     function updatePriceConfig(uint256 freshness, uint256 precision) external onlyOwner {
-        s_state.priceFreshnessThreshold = freshness;
-        s_state.priceFeedPrecision = precision;
+        _getChatterPayState().priceFreshnessThreshold = freshness;
+        _getChatterPayState().priceFeedPrecision = precision;
     }
 
     function updateLimits(uint256 deadline, uint256 maxFeeCents) external onlyOwner {
-        s_state.maxDeadline = deadline;
-        s_state.maxFeeInCents = maxFeeCents;
+        _getChatterPayState().maxDeadline = deadline;
+        _getChatterPayState().maxFeeInCents = maxFeeCents;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -670,7 +671,7 @@ contract ChatterPay is
      */
     function _isStableToken(address token) internal view returns (bool) {
         if (token == address(0)) revert ChatterPay__ZeroAddress();
-        return s_state.stableTokens[token];
+        return _getChatterPayState().stableTokens[token];
     }
 
     /**
@@ -681,7 +682,7 @@ contract ChatterPay is
      * @return The latest token price with 8 decimals of precision.
      */
     function _getTokenPrice(address token) internal view returns (uint256) {
-        address priceFeedAddr = s_state.priceFeeds[token];
+        address priceFeedAddr = _getChatterPayState().priceFeeds[token];
         if (priceFeedAddr == address(0)) revert ChatterPay__PriceFeedNotSet();
 
         AggregatorV3Interface priceFeed = AggregatorV3Interface(priceFeedAddr);
@@ -690,7 +691,9 @@ contract ChatterPay is
 
         if (price <= 0) revert ChatterPay__InvalidPrice();
         if (answeredInRound < roundId) revert ChatterPay__InvalidPrice();
-        if (block.timestamp - updatedAt > s_state.priceFreshnessThreshold) revert ChatterPay__InvalidPrice();
+        if (block.timestamp - updatedAt > _getChatterPayState().priceFreshnessThreshold) {
+            revert ChatterPay__InvalidPrice();
+        }
 
         return uint256(price);
     }
@@ -704,15 +707,15 @@ contract ChatterPay is
     function _getPoolFee(address tokenIn, address tokenOut) internal view returns (uint24) {
         // Check for custom fee first
         bytes32 pairHash = _getPairHash(tokenIn, tokenOut);
-        uint24 customFee = s_state.customPoolFees[pairHash];
+        uint24 customFee = _getChatterPayState().customPoolFees[pairHash];
         if (customFee != 0) return customFee;
 
         // Default logic
         if (_isStableToken(tokenIn) && _isStableToken(tokenOut)) {
-            return s_state.uniswapPoolFeeLow;
+            return _getChatterPayState().uniswapPoolFeeLow;
             // return  POOL_FEE_LOW;
         }
-        return s_state.uniswapPoolFeeMedium; //
+        return _getChatterPayState().uniswapPoolFeeMedium; //
             // return POOL_FEE_MEDIUM;
     }
 
