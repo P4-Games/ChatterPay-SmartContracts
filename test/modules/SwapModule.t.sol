@@ -115,7 +115,7 @@ contract SwapModule is BaseTest {
      */
     function testSwapWithCustomPoolFee() public {
         vm.startPrank(owner);
-        uint24 customFee = 3000; // 0.3%
+        uint24 customFee = 1000; // 0.1%
         moduleWallet.setCustomPoolFee(USDC, USDT, customFee);
         vm.stopPrank();
 
