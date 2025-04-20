@@ -2,7 +2,7 @@
 
 ## Contracts Deployment
 
-Find contract deployment addresses by network at these links:
+Find contracts deployment addresses by network at these links:
 
 - USDT: [Tethet Contracts Addresses](https://tether.to/es/supported-protocols) 
 - USDC (Circle): [Circle Contracts Addresses](https://www.circle.com/blog/usdc-on-arbitrum-now-available)

@@ -42,6 +42,9 @@ contract SwapModule is BaseTest {
         // Disable freshness check for price feeds in tests
         moduleWallet.updatePriceConfig(1 days, 8);
 
+        // update pool fees
+        moduleWallet.updateUniswapPoolFees(3000, 3000, 5000);
+
         // Setup tokens using parent contract constants
         moduleWallet.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         moduleWallet.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
