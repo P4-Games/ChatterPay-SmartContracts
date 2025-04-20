@@ -9,7 +9,6 @@ import {UserOperation} from "lib/entry-point-v6/interfaces/IAccount.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IERC20Extended} from "../../src/ChatterPay.sol";
-import {AggregatorV3Interface} from "../../src/interfaces/AggregatorV3Interface.sol";
 
 /**
  * @title EntryPointModule Test Contract

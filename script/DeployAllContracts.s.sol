@@ -144,7 +144,6 @@ contract DeployAllContracts is Script {
             config.backendSigner, // _owner
             address(paymaster), // _paymaster
             uniswapRouter, // _router
-            config.backendSigner, // _feeAdmin (using account as fee admin)
             tokens, // _whitelistedTokens
             priceFeeds, // _priceFeeds
             tokensStableFlags
@@ -160,20 +159,16 @@ contract DeployAllContracts is Script {
      * @notice Deploys the ChatterPay contract using UUPS Proxy with new initializer parameters.
      */
     function deployChatterPay() internal {
-        // Use config.backendSigner as fee admin (must equal factory.owner())
-        address feeAdmin = config.backendSigner;
-
         // Deploy the ChatterPay contract using UUPS Proxy via Upgrades library.
         address proxy = Upgrades.deployUUPSProxy(
             "ChatterPay.sol:ChatterPay", // Contract name as string.
             abi.encodeWithSignature(
-                "initialize(address,address,address,address,address,address,address[],address[],bool[])",
+                "initialize(address,address,address,address,address,address[],address[],bool[])",
                 config.entryPoint, // _entryPoint.
                 config.backendSigner, // _owner (owner must be the creator).
                 address(paymaster), // _paymaster.
                 uniswapRouter, // _router.
                 address(factory), // _factory.
-                feeAdmin, // _feeAdmin.
                 tokens, // _whitelistedTokens (token addresses).
                 priceFeeds, // _priceFeeds (corresponding price feed addresses).
                 tokensStableFlags // __tokensStableFlags.

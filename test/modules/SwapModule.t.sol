@@ -39,6 +39,12 @@ contract SwapModule is BaseTest {
         // Verify router configuration
         require(address(moduleWallet.getSwapRouter()) != address(0), "Router not set");
 
+        // Disable freshness check for price feeds in tests
+        moduleWallet.updatePriceConfig(1 days, 8);
+
+        // update pool fees
+        moduleWallet.updateUniswapPoolFees(3000, 3000, 5000);
+
         // Setup tokens using parent contract constants
         moduleWallet.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         moduleWallet.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
@@ -157,17 +163,16 @@ contract SwapModule is BaseTest {
         uint256 amountIn = 1000e6;
 
         _fundWallet(moduleWalletAddress, amountIn);
-        address feeAdmin = moduleWallet.getFeeAdmin();
         uint256 minAmountOut = 0; // Set minimum amount for testing purposes
 
         // Get initial balances
-        uint256 initialFeeAdminBalance = IERC20(USDC).balanceOf(feeAdmin);
-        console.log("Fee admin:", feeAdmin);
-        console.log("Initial balance:", initialFeeAdminBalance);
+        uint256 initialOwnerBalance = IERC20(USDC).balanceOf(owner);
+        console.log("admin:", owner);
+        console.log("Initial balance:", initialOwnerBalance);
 
         // Approve router to spend USDC
         address router = address(moduleWallet.getSwapRouter());
-        vm.startPrank(moduleWalletAddress); // La wallet misma debe hacer el approve
+        vm.startPrank(moduleWalletAddress);
         IERC20(USDC).approve(router, amountIn);
         vm.stopPrank();
 
@@ -176,9 +181,9 @@ contract SwapModule is BaseTest {
         moduleWallet.executeSwap(USDC, USDT, amountIn, minAmountOut, owner);
 
         // Get final balance
-        uint256 finalFeeAdminBalance = IERC20(USDC).balanceOf(feeAdmin);
-        console.log("Final balance:", finalFeeAdminBalance);
-        uint256 feeCollected = finalFeeAdminBalance - initialFeeAdminBalance;
+        uint256 finalOwnerBalance = IERC20(USDC).balanceOf(owner);
+        console.log("Final balance:", finalOwnerBalance);
+        uint256 feeCollected = finalOwnerBalance - initialOwnerBalance;
         console.log("Fee collected:", feeCollected);
 
         // Calculate expected fee and check within margin
@@ -214,45 +219,56 @@ contract SwapModule is BaseTest {
      * @dev Validates entire swap process including setup, funding, approval and execution
      */
     function testTokenSetupAndSwap() public {
-        // Set block timestamp
-        vm.warp(1737341661);
+        uint256 SWAP_AMOUNT = 1000e6;
 
-        // Setup swap parameters
-        uint256 amountIn = 1000e6;
-        uint256 fee = 5e5; // 0.5 cents in USDC
-        uint256 swapAmount = amountIn - fee;
-        uint256 minOut = ((swapAmount * 1e12) * 7) / 10;
+        // === Test Setup ===
+        console.log("=== Test Setup ===");
+        console.log("Swap amount:", SWAP_AMOUNT);
+        console.log("USDC address:", USDC);
+        console.log("USDT address:", USDT);
 
-        // Log initial state
-        _logSwapState("Initial State", moduleWalletAddress);
+        // Get pool
+        address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(USDC, USDT, POOL_FEE);
+        require(pool != address(0), "Pool doesn't exist");
+        console.log("Pool address:", pool);
 
         // Fund wallet
-        _fundWallet(moduleWalletAddress, amountIn);
+        _fundWallet(moduleWalletAddress, SWAP_AMOUNT);
+        console.log("Wallet funded with:", SWAP_AMOUNT);
 
-        // Verify funding
-        _logSwapState("After Funding", moduleWalletAddress);
-        require(IERC20(USDC).balanceOf(moduleWalletAddress) == amountIn, "Funding failed");
+        // Verify initial USDC balance
+        uint256 initialUSDCBalance = IERC20(USDC).balanceOf(moduleWalletAddress);
+        console.log("Initial wallet USDC balance:", initialUSDCBalance);
+        require(initialUSDCBalance == SWAP_AMOUNT, "Funding failed");
 
-        // Log router info
-        _logRouterInfo(moduleWalletAddress);
+        // Verify initial USDT balance
+        uint256 initialUSDTBalance = IERC20(USDT).balanceOf(owner);
+        console.log("Initial owner USDT balance:", initialUSDTBalance);
+
+        // Calculate expected fee
+        uint256 expectedFee = _calculateExpectedFee(USDC, 50);
+        console.log("Expected fee:", expectedFee);
+
+        // Calculate minimum amount out (3% slippage)
+        uint256 minAmountOut = ((SWAP_AMOUNT - expectedFee) * 97) / 100;
+        console.log("Minimum amount out:", minAmountOut);
 
         // Approve and execute swap
         vm.startPrank(ENTRY_POINT);
-        moduleWallet.approveToken(USDC, amountIn);
+        moduleWallet.approveToken(USDC, SWAP_AMOUNT);
+        console.log("Token approved for swap");
 
-        _logSwapState("After Approval", moduleWalletAddress);
-
-        // Log pool state
-        _logPoolState();
-
-        // Execute swap
-        moduleWallet.executeSwap(USDC, USDT, amountIn, minOut, owner);
+        moduleWallet.executeSwap(USDC, USDT, SWAP_AMOUNT, minAmountOut, owner);
         vm.stopPrank();
 
-        // Log final state
-        _logSwapState("Final State", moduleWalletAddress);
-    }
+        // Final balance checks
+        uint256 finalUSDTBalance = IERC20(USDT).balanceOf(owner);
+        console.log("Final owner USDT balance:", finalUSDTBalance);
+        console.log("USDT received:", finalUSDTBalance - initialUSDTBalance);
 
+        // Assert received USDT
+        assertTrue(finalUSDTBalance > initialUSDTBalance);
+    }
     /**
      * @notice Calculates expected fee amount for a given token
      * @dev Converts fee from cents to token decimals
@@ -260,6 +276,7 @@ contract SwapModule is BaseTest {
      * @param feeInCents The fee amount in cents
      * @return The calculated fee amount in token decimals
      */
+
     function _calculateExpectedFee(address token, uint256 feeInCents) internal view returns (uint256) {
         uint256 tokenDecimals = IERC20Extended(token).decimals();
 

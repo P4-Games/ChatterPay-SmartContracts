@@ -40,10 +40,4 @@ These smart contracts collectively form a powerful ecosystem for wallet manageme
 
 ---
 
-Representation of Chatterpay's Smart Contracts Flow:
-
-
-![ChatterPay Smart Contracts Flow](./images/chatterpay-contracts-flow.png)
-
-
 [Here](./contracts-details.md) you can see a detailed breakdown of the provided smart contracts used for ChatterPay. 
