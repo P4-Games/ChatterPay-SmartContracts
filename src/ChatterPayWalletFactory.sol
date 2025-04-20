@@ -129,6 +129,7 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
      * @return bytes memory Raw bytes data of the owner
      */
     function getProxyOwner(address proxy) public returns (bytes memory) {
+        if (proxy == address(0)) revert ChatterPayWalletFactory__InvalidOwner();
         (bool success, bytes memory data) = proxy.call(abi.encodeWithSignature("owner()"));
         if (!success) revert ChatterPayWalletFactory__InvalidProxyCall();
         return data;

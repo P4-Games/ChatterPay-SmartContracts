@@ -13,6 +13,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 // ERRORS
 //////////////////////////////////////////////////////////////*/
 
+error ChatterPayPaymaster__InvalidAddress();
 error ChatterPayPaymaster__OnlyOwner();
 error ChatterPayPaymaster__OnlyEntryPoint();
 error ChatterPayPaymaster__InvalidDataLength();
@@ -67,6 +68,8 @@ contract ChatterPayPaymaster is IPaymaster {
      * @param _backendSigner The address authorized to sign paymaster operations
      */
     constructor(address _entryPoint, address _backendSigner) {
+        if (_entryPoint == address(0)) revert ChatterPayPaymaster__InvalidAddress();
+        if (_backendSigner == address(0)) revert ChatterPayPaymaster__InvalidAddress();
         owner = msg.sender;
         entryPoint = IEntryPoint(_entryPoint);
         backendSigner = _backendSigner;
