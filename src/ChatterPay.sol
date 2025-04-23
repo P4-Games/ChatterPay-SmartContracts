@@ -257,7 +257,7 @@ contract ChatterPay is
 
         _getChatterPayState().maxDeadline = 3 minutes;
         _getChatterPayState().maxFeeInCents = 1000; // $10.00
-        _getChatterPayState().priceFreshnessThreshold = 1 hours;
+        _getChatterPayState().priceFreshnessThreshold = 100 hours;
         _getChatterPayState().priceFeedPrecision = 8;
 
         // Set initial token whitelist and price feeds
