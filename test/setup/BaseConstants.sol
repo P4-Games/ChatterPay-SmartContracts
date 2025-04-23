@@ -10,7 +10,9 @@ pragma solidity ^0.8.24;
 library BaseConstants {
     // Token addresses
     /// @notice USDC token address (6 decimals)
-    address public constant USDC = 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d;
+    // address public constant USDC = 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d;
+    address public constant USDC = 0x8431eBc62F7B08af1bBf80eE7c85364ffc24ae24; // Manteca USDC
+
     /// @notice USDT token address (18 decimals)
     address public constant USDT = 0xe6B817E31421929403040c3e42A6a5C5D2958b4A;
 
