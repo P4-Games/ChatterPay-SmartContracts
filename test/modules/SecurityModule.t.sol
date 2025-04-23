@@ -3,17 +3,18 @@ pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
 import {BaseTest} from "../setup/BaseTest.sol";
+import {BaseConstants} from "../setup/BaseConstants.sol";
 import {ChatterPay} from "../../src/ChatterPay.sol";
 import {UserOperation} from "lib/entry-point-v6/interfaces/IAccount.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-
 /**
  * @title SecurityModule
  * @notice Test module for ChatterPay security features
  * @dev Tests access controls, signature validation, reentrancy protection, and other security measures
  */
+
 contract SecurityModule is BaseTest {
     // Test walletInstance instance
     ChatterPay public walletInstance;
@@ -154,7 +155,7 @@ contract SecurityModule is BaseTest {
         // Verify old owner lost privileges
         vm.prank(owner);
         vm.expectRevert();
-        walletInstance.removeTokenFromWhitelist(0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d);
+        walletInstance.removeTokenFromWhitelist(BaseConstants.USDC);
     }
 
     /**
@@ -207,11 +208,7 @@ contract MaliciousContract {
         if (!attacked) {
             attacked = true;
             // Try to execute another transfer during the first transfer
-            wallet.executeTokenTransfer(
-                0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d, // USDC
-                address(this),
-                100e6
-            );
+            wallet.executeTokenTransfer(BaseConstants.USDC, address(this), 100e6);
         }
     }
 }
@@ -228,6 +225,6 @@ contract ReentrancyAttacker {
 
     function attack() external {
         // Call executeTokenTransfer first from ENTRY_POINT
-        wallet.executeTokenTransfer(0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d, address(this), 50e6);
+        wallet.executeTokenTransfer(BaseConstants.USDC, address(this), 50e6);
     }
 }
