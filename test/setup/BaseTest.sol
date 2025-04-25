@@ -64,6 +64,9 @@ abstract contract BaseTest is Test {
                         STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
 
+    // network to test
+    uint256 chainId = 421614;
+
     // Core contract instances
     ChatterPay public implementation;
     ChatterPayWalletFactory public factory;
@@ -75,16 +78,17 @@ abstract contract BaseTest is Test {
     address public user;
     uint256 public ownerKey;
 
-    address constant ENTRY_POINT = BaseConstants.ENTRY_POINT;
-    address constant UNISWAP_ROUTER = BaseConstants.UNISWAP_ROUTER;
-    address constant UNISWAP_FACTORY = BaseConstants.UNISWAP_FACTORY;
-    address constant POSITION_MANAGER = BaseConstants.POSITION_MANAGER;
-    address constant USDC = BaseConstants.USDC;
-    address constant USDT = BaseConstants.USDT;
-    address constant USDC_USD_FEED = BaseConstants.USDC_USD_FEED;
-    address constant USDT_USD_FEED = BaseConstants.USDT_USD_FEED;
-    uint256 constant INITIAL_LIQUIDITY = BaseConstants.INITIAL_LIQUIDITY;
-    uint24 constant POOL_FEE = BaseConstants.POOL_FEE;
+    // Config constants (readable after setUp)
+    address public ENTRY_POINT;
+    address public UNISWAP_ROUTER;
+    address public UNISWAP_FACTORY;
+    address public POSITION_MANAGER;
+    address public USDC;
+    address public USDT;
+    address public USDC_USD_FEED;
+    address public USDT_USD_FEED;
+    uint256 public INITIAL_LIQUIDITY;
+    uint24 public POOL_FEE;
 
     /*//////////////////////////////////////////////////////////////
                            SETUP
@@ -95,6 +99,19 @@ abstract contract BaseTest is Test {
      * @dev Deploys contracts and configures initial state.
      */
     function setUp() public virtual {
+        // Load network-specific constants
+        BaseConstants.Config memory config = BaseConstants.getConfig(chainId);
+        ENTRY_POINT = config.ENTRY_POINT;
+        UNISWAP_ROUTER = config.UNISWAP_ROUTER;
+        UNISWAP_FACTORY = config.UNISWAP_FACTORY;
+        POSITION_MANAGER = config.POSITION_MANAGER;
+        USDC = config.USDC;
+        USDT = config.USDT;
+        USDC_USD_FEED = config.USDC_USD_FEED;
+        USDT_USD_FEED = config.USDT_USD_FEED;
+        INITIAL_LIQUIDITY = config.INITIAL_LIQUIDITY;
+        POOL_FEE = config.POOL_FEE;
+
         // Initialize test accounts
 
         // Burned Key for local blk with adr: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
@@ -112,6 +129,14 @@ abstract contract BaseTest is Test {
 
         // Setup Uniswap liquidity
         _setupUniswapLiquidity();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        GETTERS FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+    function getUSDCAddress() public virtual returns (address) {
+        BaseConstants.Config memory config = BaseConstants.getConfig(chainId);
+        return config.USDC;
     }
 
     /*//////////////////////////////////////////////////////////////
