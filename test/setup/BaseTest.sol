@@ -64,6 +64,9 @@ abstract contract BaseTest is Test {
                         STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
 
+    // network to test
+    uint256 chainId = 421614;
+
     // Core contract instances
     ChatterPay public implementation;
     ChatterPayWalletFactory public factory;
@@ -75,16 +78,17 @@ abstract contract BaseTest is Test {
     address public user;
     uint256 public ownerKey;
 
-    address constant ENTRY_POINT = BaseConstants.ENTRY_POINT;
-    address constant UNISWAP_ROUTER = BaseConstants.UNISWAP_ROUTER;
-    address constant UNISWAP_FACTORY = BaseConstants.UNISWAP_FACTORY;
-    address constant POSITION_MANAGER = BaseConstants.POSITION_MANAGER;
-    address constant USDC = BaseConstants.USDC;
-    address constant USDT = BaseConstants.USDT;
-    address constant USDC_USD_FEED = BaseConstants.USDC_USD_FEED;
-    address constant USDT_USD_FEED = BaseConstants.USDT_USD_FEED;
-    uint256 constant INITIAL_LIQUIDITY = BaseConstants.INITIAL_LIQUIDITY;
-    uint24 constant POOL_FEE = BaseConstants.POOL_FEE;
+    // Config constants (readable after setUp)
+    address public ENTRY_POINT;
+    address public UNISWAP_ROUTER;
+    address public UNISWAP_FACTORY;
+    address public POSITION_MANAGER;
+    address public USDC;
+    address public USDT;
+    address public USDC_USD_FEED;
+    address public USDT_USD_FEED;
+    uint256 public INITIAL_LIQUIDITY;
+    uint24 public POOL_FEE;
 
     /*//////////////////////////////////////////////////////////////
                            SETUP
@@ -95,8 +99,24 @@ abstract contract BaseTest is Test {
      * @dev Deploys contracts and configures initial state.
      */
     function setUp() public virtual {
+        // Load network-specific constants
+        BaseConstants.Config memory config = BaseConstants.getConfig(chainId);
+        ENTRY_POINT = config.ENTRY_POINT;
+        UNISWAP_ROUTER = config.UNISWAP_ROUTER;
+        UNISWAP_FACTORY = config.UNISWAP_FACTORY;
+        POSITION_MANAGER = config.POSITION_MANAGER;
+        USDC = config.USDC;
+        USDT = config.USDT;
+        USDC_USD_FEED = config.USDC_USD_FEED;
+        USDT_USD_FEED = config.USDT_USD_FEED;
+        INITIAL_LIQUIDITY = config.INITIAL_LIQUIDITY;
+        POOL_FEE = config.POOL_FEE;
+
         // Initialize test accounts
+
+        // Burned Key for local blk with adr: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
         ownerKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+
         owner = vm.addr(ownerKey);
         user = makeAddr("user");
 
@@ -109,6 +129,14 @@ abstract contract BaseTest is Test {
 
         // Setup Uniswap liquidity
         _setupUniswapLiquidity();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        GETTERS FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+    function getUSDCAddress() public virtual returns (address) {
+        BaseConstants.Config memory config = BaseConstants.getConfig(chainId);
+        return config.USDC;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -166,17 +194,53 @@ abstract contract BaseTest is Test {
         uint256 usdtAmount = INITIAL_LIQUIDITY * 1e12;
 
         // Mint tokens to owner
-        deal(USDC, owner, usdcAmount);
-        deal(USDT, owner, usdtAmount);
+        _ensureBalance(USDC, owner, usdcAmount);
+        _ensureBalance(USDT, owner, usdtAmount);
 
         // Create and initialize pool if it doesn't exist
         address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(USDC, USDT, POOL_FEE);
+
         if (pool == address(0)) {
+            console.log("Pool not found, creating and initializing...");
             pool = _createAndInitializePool();
+            console.log("Pool created at:", pool);
+
+            console.log("Adding Pool liquidity...");
             _addInitialLiquidity(usdcAmount, usdtAmount);
+            console.log("Initial liquidity added");
+        } else {
+            console.log("Pool already exists, skipping creation");
         }
 
+        console.log("_setupUniswapLiquidity end");
         vm.stopPrank();
+    }
+
+    /**
+     * @notice Ensures that the given address holds at least the desired token amount.
+     * @dev Uses `deal` to top up the token balance if it is below the specified threshold.
+     *      Useful for preparing test accounts with mock ERC20 balances.
+     * @param token The ERC20 token address.
+     * @param to The recipient address to check and possibly fund.
+     * @param desiredAmount The target token balance to ensure.
+     *
+     * @dev Note that the contract addresses for USDC and USDT in BaseConstants
+     *      belong to Arbitrum Sepolia. Make sure that when running the tests,
+     *      the RPC_URL variable is pointing to a node provider for Arbitrum Sepolia.
+     */
+    function _ensureBalance(address token, address to, uint256 desiredAmount) internal {
+        console.log("Ensuring balance for:", token, to);
+
+        uint256 currentBalance = IERC20(token).balanceOf(to);
+        console.log("Current balance:", currentBalance);
+
+        if (currentBalance < desiredAmount) {
+            console.log("Topping up with deal to:", desiredAmount);
+            deal(token, to, desiredAmount);
+            console.log("Top up complete");
+        } else {
+            console.log("Sufficient balance, skipping deal");
+        }
     }
 
     /**

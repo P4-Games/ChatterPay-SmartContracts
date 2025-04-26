@@ -8,16 +8,17 @@ import {UserOperation} from "lib/entry-point-v6/interfaces/IAccount.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-
 /**
  * @title SecurityModule
  * @notice Test module for ChatterPay security features
  * @dev Tests access controls, signature validation, reentrancy protection, and other security measures
  */
+
 contract SecurityModule is BaseTest {
     // Test walletInstance instance
     ChatterPay public walletInstance;
     address public walletAddress;
+    address public usdcTokenAddress;
 
     // Test accounts
     address public attacker;
@@ -43,6 +44,7 @@ contract SecurityModule is BaseTest {
         vm.stopPrank();
 
         // Setup additional test accounts
+        usdcTokenAddress = super.getUSDCAddress();
         attacker = makeAddr("attacker");
         maliciousContract = makeAddr("maliciousContract");
     }
@@ -105,7 +107,7 @@ contract SecurityModule is BaseTest {
     function testReentrancyProtection() public {
         _fundWallet(walletAddress, 1000e6);
 
-        ReentrancyAttacker attackerContract = new ReentrancyAttacker(address(walletInstance));
+        ReentrancyAttacker attackerContract = new ReentrancyAttacker(address(walletInstance), usdcTokenAddress);
 
         // Whitelist token
         vm.prank(owner);
@@ -154,7 +156,7 @@ contract SecurityModule is BaseTest {
         // Verify old owner lost privileges
         vm.prank(owner);
         vm.expectRevert();
-        walletInstance.removeTokenFromWhitelist(0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d);
+        walletInstance.removeTokenFromWhitelist(usdcTokenAddress);
     }
 
     /**
@@ -197,21 +199,19 @@ contract SecurityModule is BaseTest {
  */
 contract MaliciousContract {
     ChatterPay private wallet;
+    address usdcToken;
     bool private attacked;
 
-    constructor(address _wallet) {
+    constructor(address _wallet, address _usdcToken) {
         wallet = ChatterPay(payable(_wallet));
+        usdcToken = _usdcToken;
     }
 
     receive() external payable {
         if (!attacked) {
             attacked = true;
             // Try to execute another transfer during the first transfer
-            wallet.executeTokenTransfer(
-                0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d, // USDC
-                address(this),
-                100e6
-            );
+            wallet.executeTokenTransfer(usdcToken, address(this), 100e6);
         }
     }
 }
@@ -221,13 +221,15 @@ contract MaliciousContract {
  */
 contract ReentrancyAttacker {
     ChatterPay private immutable wallet;
+    address usdcToken;
 
-    constructor(address _wallet) {
+    constructor(address _wallet, address _usdcToken) {
         wallet = ChatterPay(payable(_wallet));
+        usdcToken = _usdcToken;
     }
 
     function attack() external {
         // Call executeTokenTransfer first from ENTRY_POINT
-        wallet.executeTokenTransfer(0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d, address(this), 50e6);
+        wallet.executeTokenTransfer(usdcToken, address(this), 50e6);
     }
 }

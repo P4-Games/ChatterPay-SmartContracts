@@ -30,7 +30,10 @@ error ChatterPay__NotFromEntryPointOrOwner();
 error ChatterPay__NotFromChatterPayAdmin();
 error ChatterPay__ExecuteCallFailed(bytes);
 error ChatterPay__PriceFeedNotSet();
-error ChatterPay__InvalidPrice();
+error ChatterPay__InvalidPrice(uint256 price);
+error ChatterPay__InvalidPriceRound(uint80 answeredInRound, uint80 roundId);
+error ChatterPay__InvalidPriceFreshnessThreshold(uint256 blockTimestamp, uint256 updatedAt, uint256 threshold);
+error ChatterPay__InvalidPriceFeed();
 error ChatterPay__InvalidSlippage();
 error ChatterPay__SwapFailed();
 error ChatterPay__TokenNotWhitelisted();
@@ -38,7 +41,6 @@ error ChatterPay__ZeroAmount();
 error ChatterPay__InvalidRouter();
 error ChatterPay__ExceedsMaxFee();
 error ChatterPay__ZeroAddress();
-error ChatterPay__InvalidPriceFeed();
 error ChatterPay__AmountTooLow();
 error ChatterPay__InvalidTarget();
 error ChatterPay__InsufficientBalance();
@@ -257,7 +259,7 @@ contract ChatterPay is
 
         _getChatterPayState().maxDeadline = 3 minutes;
         _getChatterPayState().maxFeeInCents = 1000; // $10.00
-        _getChatterPayState().priceFreshnessThreshold = 1 hours;
+        _getChatterPayState().priceFreshnessThreshold = 100 hours;
         _getChatterPayState().priceFeedPrecision = 8;
 
         // Set initial token whitelist and price feeds
@@ -828,10 +830,13 @@ contract ChatterPay is
 
         (uint80 roundId, int256 price,, uint256 updatedAt, uint80 answeredInRound) = priceFeed.latestRoundData();
 
-        if (price <= 0) revert ChatterPay__InvalidPrice();
-        if (answeredInRound < roundId) revert ChatterPay__InvalidPrice();
+        if (price <= 0) revert ChatterPay__InvalidPrice(uint256(price));
+        if (answeredInRound < roundId) revert ChatterPay__InvalidPriceRound(answeredInRound, roundId);
+
         if (block.timestamp - updatedAt > _getChatterPayState().priceFreshnessThreshold) {
-            revert ChatterPay__InvalidPrice();
+            revert ChatterPay__InvalidPriceFreshnessThreshold(
+                block.timestamp, updatedAt, _getChatterPayState().priceFreshnessThreshold
+            );
         }
 
         return uint256(price);
@@ -882,7 +887,7 @@ contract ChatterPay is
      */
     function _calculateFee(address token, uint256 feeInCents) internal view returns (uint256) {
         uint256 tokenPrice = _getTokenPrice(token); // Price has 8 decimals from Chainlink
-        if (tokenPrice == 0) revert ChatterPay__InvalidPrice();
+        if (tokenPrice == 0) revert ChatterPay__InvalidPrice(tokenPrice);
 
         uint256 tokenDecimals = IERC20Extended(token).decimals();
         if (tokenDecimals > 77) revert ChatterPay__InvalidDecimals();
