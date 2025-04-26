@@ -53,7 +53,7 @@ library BaseConstants {
                 POOL_FEE: 3000
             });
         } else if (chainId == 534351) {
-            // Arbitrum Sepolia (ejemplo)
+            // Scroll Sepolia
             return Config({
                 USDC: 0x7878290DB8C4f02bd06E0E249617871c19508bE6,
                 USDT: 0x776133ea03666b73a8e3FC23f39f90e66360716E,
