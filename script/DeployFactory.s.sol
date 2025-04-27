@@ -17,6 +17,7 @@ contract DeployFactory is Script {
     ChatterPay implementation;
     address[] public tokens;
     address[] public priceFeeds;
+    bool[] public tokensStableFlags;
 
     /**
      * @notice Main deployment function
@@ -27,26 +28,26 @@ contract DeployFactory is Script {
         helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
-        vm.startBroadcast(config.account);
+        vm.startBroadcast(config.backendSigner);
 
         implementation = new ChatterPay();
         console2.log("ChatterPay implementation deployed at:", address(implementation));
 
         factory = new ChatterPayWalletFactory(
-            config.account,      // _walletImplementation (temporary, will be updated later)
-            config.entryPoint,   // _entryPoint
-            config.account,      // _owner
-            vm.envAddress("PAYMASTER_ADDRESS"),  // _paymaster
-            config.router,       // _router
-            config.account,      // _feeAdmin (using account as fee admin)
-            tokens,              // _whitelistedTokens
-            priceFeeds           // _priceFeeds
+            config.backendSigner, // _walletImplementation (temporary, will be updated later)
+            config.entryPoint, // _entryPoint
+            config.backendSigner, // _owner
+            vm.envAddress("PAYMASTER_ADDRESS"), // _paymaster
+            config.uniswapConfig.router, // _router
+            tokens, // _whitelistedTokens
+            priceFeeds, // _priceFeeds
+            tokensStableFlags
         );
 
         console2.log("Wallet Factory deployed at address %s", address(factory));
-        
+
         // Validate deployment
-        require(factory.owner() == config.account, "Factory owner not set correctly");
+        require(factory.owner() == config.backendSigner, "Factory owner not set correctly");
         require(factory.paymaster() == vm.envAddress("PAYMASTER_ADDRESS"), "Paymaster not set correctly");
 
         vm.stopBroadcast();

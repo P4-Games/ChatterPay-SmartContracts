@@ -1,25 +1,12 @@
-ETH_SEPOLIA_RPC_URL=Your node provider URL for Sepolia
-SCROLL_SEPOLIA_RPC_URL=Your node provider URL for Scroll-Sepolia
-ARBITRUM_SEPOLIA_RPC_URL=Your node provider URL for arbitrum-Sepolia
+CHAIN_ID=534351|421614 
+DEPLOY_NETWORK_ENV=LOCAL|TEST|PROD
+
 PRIVATE_KEY=Your private key
 BACKEND_EOA=chatterpay backend EOA wallet address
 BACKEND_PK=chatterpay bachend private key
-ETHERSCAN_API_KEY=Your etherscan api key, if you want to verify contracts
-ROUTER_ADDRESS=Uniswap SwapRouter02 address
-ARBISCAN_API_KEY=Your Aribtrum api key, if you want to verify contracts
-NFT_BASE_URI=https://dev.back.chatterpay.net/nft/metadata/opensea/
-DEPLOYED_PAYMASTER_ADDRESS=Address of an existing Paymaster to avoid creating a new one in the deployment script
 
-# Uniswap V3 Addresses (arbitrum)
-# https://docs.uniswap.org/contracts/v3/reference/deployments/arbitrum-deployments
-# UNISWAP_FACTORY=0x1F98431c8aD98523631AE4a59f267346ea31F984
-# POSITION_MANAGER=0xC36442b4a4522E871399CD717aBDD847Ab11FE88
+RPC_URL=Your node provider URL
+NETWORK_EXPLORER_API_KEY=Your Network Explorer api key, if you want to verify contracts
 
-# Uniswap V3 Addresses (arbitrum-sepolia)
-# https://docs.uniswap.org/contracts/v3/reference/deployments/arbitrum-deployments
-UNISWAP_FACTORY=0x248AB79Bbb9bC29bB72f7Cd42F17e054Fc40188e
-POSITION_MANAGER=0x6b2937Bde17889EDCf8fbD8dE31C3C2a70Bc4d65
-
-# Tokens and their respective Price Feeds (ensure the order matches between tokens[i] and price_feeds[i])
-TOKENS=0xe6B817E31421929403040c3e42A6a5C5D2958b4A,0xE9C723D01393a437bac13CE8f925A5bc8E1c335c
-PRICE_FEEDS=0x80EDee6f667eCc9f63a0a6f55578F870651f06A4,0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165
+DEPLOYED_PAYMASTER_ADDRESS=Address of an existing Paymaster contrct to avoid creating a new one in the deployment script
+DEPLOYED_NFT_ADDRESS=Address of an existing NFT Contract to avoid creating a new one in the deployment script

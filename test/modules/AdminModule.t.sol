@@ -21,23 +21,27 @@ contract AdminModule is BaseTest {
     event FeeUpdated(uint256 oldFee, uint256 newFee);
     event TokenWhitelisted(address indexed token, bool status);
     event PriceFeedUpdated(address indexed token, address indexed priceFeed);
-    event FeeAdminUpdated(address indexed oldAdmin, address indexed newAdmin);
     event CustomPoolFeeSet(address indexed tokenA, address indexed tokenB, uint24 fee);
     event CustomSlippageSet(address indexed token, uint256 slippageBps);
 
     function wallet() public view returns (ChatterPay) {
         return walletInstance;
     }
-    
+
     function setUp() public override {
         super.setUp();
-        
+
         vm.startPrank(owner);
         walletAddress = factory.createProxy(owner);
         walletInstance = ChatterPay(payable(walletAddress));
-        
+
+        // Disable freshness check for price feeds in tests
+        walletInstance.updatePriceConfig(1 days, 8);
+
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
         walletInstance.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
+        walletInstance.addStableToken(USDC);
+        walletInstance.addStableToken(USDT);
         vm.stopPrank();
     }
 
@@ -46,7 +50,7 @@ contract AdminModule is BaseTest {
      */
     function testFeeManagement() public {
         vm.startPrank(owner);
-        assertEq(walletInstance.getFeeInCents(), 50);    
+        assertEq(walletInstance.getFeeInCents(), 50);
         walletInstance.updateFee(100);
         assertEq(walletInstance.getFeeInCents(), 100);
         vm.stopPrank();
@@ -131,13 +135,40 @@ contract AdminModule is BaseTest {
     }
 
     /**
+     * @notice Ensures storage is preserved after an upgrade from proxy
+     */
+    function testStoragePreservedAcrossUpgrade() public {
+        vm.startPrank(owner);
+
+        // Initial state setup
+        walletInstance.updateFee(111);
+        walletInstance.setCustomSlippage(USDC, 250);
+
+        // Deploy new implementation
+        ChatterPay newImpl = new ChatterPay();
+
+        // Upgrade via proxy
+        walletInstance.upgradeToAndCall(address(newImpl), "");
+
+        // Re-attach
+        ChatterPay upgraded = ChatterPay(payable(walletAddress));
+
+        // Only verify state
+        assertEq(upgraded.getFeeInCents(), 111);
+        assertEq(upgraded.getCustomSlippage(USDC), 250);
+
+        vm.stopPrank();
+    }
+
+    /**
      * @notice Tests access control for admin functions
      */
     function testAccessControl() public {
         address unauthorized = makeAddr("unauthorized");
+
         vm.startPrank(unauthorized);
 
-        // Owner-only methods
+        // Functions that still use onlyOwner
         vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
         walletInstance.setTokenWhitelistAndPriceFeed(USDC, true, USDC_USD_FEED);
 
@@ -147,8 +178,83 @@ contract AdminModule is BaseTest {
         vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
         walletInstance.setCustomSlippage(USDC, 100);
 
-        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", unauthorized));
+        vm.stopPrank();
+
+        // Functions that use onlyChatterPayAdmin
+        address notAdmin = makeAddr("notAdmin");
+        vm.startPrank(notAdmin);
+
+        vm.expectRevert(abi.encodeWithSignature("ChatterPay__NotFromChatterPayAdmin()"));
+        walletInstance.updateFee(75);
+
+        vm.expectRevert(abi.encodeWithSignature("ChatterPay__NotFromChatterPayAdmin()"));
         walletInstance.upgradeToAndCall(address(0x123), "");
+
+        vm.stopPrank();
+    }
+
+    /**
+     * @notice Tests that the factory admin (ChatterPay admin) can access restricted admin functions
+     * @dev Validates that only the factory.owner() is authorized to call functions guarded by onlyChatterPayAdmin
+     */
+    function testChatterPayAdminCanAccessAdminFunctions() public {
+        // Use the actual ChatterPay admin, which is the factory's owner
+        address admin = factory.owner();
+
+        // Deploy a dummy new implementation for the upgrade
+        ChatterPay newImplementation = new ChatterPay();
+
+        // Act as the admin
+        vm.startPrank(admin);
+
+        // Should succeed without revert
+        walletInstance.updateFee(80);
+        walletInstance.upgradeToAndCall(address(newImplementation), ""); // Safe dummy upgrade
+
+        vm.stopPrank();
+
+        // Check that fee was updated correctly
+        assertEq(walletInstance.getFeeInCents(), 80);
+    }
+
+    /**
+     * @notice Tests adding a token to the stable token list and checks duplicate prevention
+     */
+    function testAddStableToken() public {
+        vm.startPrank(owner);
+
+        address fakeStable = makeAddr("fakeStable");
+
+        // Should add token successfully
+        walletInstance.addStableToken(fakeStable);
+        assertTrue(walletInstance.isStableToken(fakeStable));
+
+        // Should revert if token is already stable
+        vm.expectRevert(abi.encodeWithSignature("ChatterPay__AlreadyStableToken()"));
+        walletInstance.addStableToken(fakeStable);
+
+        vm.stopPrank();
+    }
+
+    /**
+     * @notice Tests removing a token from the stable token list and checks removal edge case
+     */
+    function testRemoveStableToken() public {
+        vm.startPrank(owner);
+
+        address fakeStable = makeAddr("fakeStable");
+
+        // Add first
+        walletInstance.addStableToken(fakeStable);
+        assertTrue(walletInstance.isStableToken(fakeStable));
+
+        // Remove
+        walletInstance.removeStableToken(fakeStable);
+        assertFalse(walletInstance.isStableToken(fakeStable));
+
+        // Should revert if token is already removed
+        vm.expectRevert(abi.encodeWithSignature("ChatterPay__NotStableToken()"));
+        walletInstance.removeStableToken(fakeStable);
 
         vm.stopPrank();
     }
@@ -160,13 +266,7 @@ contract AdminModule is BaseTest {
     /**
      * @dev Calculates hash for token pair
      */
-    function _getPairHash(
-        address tokenA,
-        address tokenB
-    ) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(
-            tokenA < tokenB ? tokenA : tokenB,
-            tokenA < tokenB ? tokenB : tokenA
-        ));
+    function _getPairHash(address tokenA, address tokenB) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(tokenA < tokenB ? tokenA : tokenB, tokenA < tokenB ? tokenB : tokenA));
     }
 }

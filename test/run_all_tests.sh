@@ -25,7 +25,7 @@ mkdir -p .forge-cache
 
 # First test run (execute all tests)
 FOUNDRY_PROFILE=$PROFILE FOUNDRY_FUZZ_RUNS=0 forge test \
-    --fork-url "$ARBITRUM_SEPOLIA_RPC_URL" \
+    --fork-url "$RPC_URL" \
     -vvv \
     --match-path "test/modules/*" \
     --ffi \
@@ -53,7 +53,7 @@ while [[ $attempt -le $MAX_RETRIES && $num_fails -gt 0 ]]; do
     while IFS= read -r test_name; do
         echo "🔁 Retrying $test_name..."
         FOUNDRY_PROFILE=$PROFILE FOUNDRY_FUZZ_RUNS=0 forge test \
-            --fork-url "$ARBITRUM_SEPOLIA_RPC_URL" \
+            --fork-url "$RPC_URL" \
             -vvv \
             --match-test "$test_name" \
             --ffi \
@@ -63,7 +63,7 @@ while [[ $attempt -le $MAX_RETRIES && $num_fails -gt 0 ]]; do
     done < failed_tests.log
 
     # Check if any tests still fail
-    FOUNDRY_PROFILE=$PROFILE forge test --fork-url "$ARBITRUM_SEPOLIA_RPC_URL" --match-path "test/modules/*" --ffi -j 1 --gas-report --cache-path .forge-cache 2>&1 | tee retry_results.log
+    FOUNDRY_PROFILE=$PROFILE forge test --fork-url "$RPC_URL" --match-path "test/modules/*" --ffi -j 1 --gas-report --cache-path .forge-cache 2>&1 | tee retry_results.log
     grep '\[FAIL:' retry_results.log | awk '{print $2}' | sed 's/:.*//' | sort -u > failed_tests.log
     num_fails=$(wc -l < failed_tests.log)
 

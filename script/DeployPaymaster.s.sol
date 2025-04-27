@@ -25,17 +25,11 @@ contract DeployChatterPayPaymaster is Script {
 
         console.log("Deploying ChatterPayPaymaster...");
         console.log("EntryPoint:", config.entryPoint);
-        console.log("Backend Signer:", config.account);
-        
-        ChatterPayPaymaster chatterPayPaymaster = new ChatterPayPaymaster(
-            config.entryPoint,
-            config.account
-        );
+        console.log("Backend Signer:", config.backendSigner);
 
-        console.log(
-            "Paymaster deployed to:",
-            address(chatterPayPaymaster)
-        );
+        ChatterPayPaymaster chatterPayPaymaster = new ChatterPayPaymaster(config.entryPoint, config.backendSigner);
+
+        console.log("Paymaster deployed to:", address(chatterPayPaymaster));
 
         console.log("------------------------------------------------------------------------------");
         console.log("------------------------------ IMPORTANT! ------------------------------------");

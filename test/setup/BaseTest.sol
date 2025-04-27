@@ -7,7 +7,6 @@ import {ChatterPayWalletFactory} from "../../src/ChatterPayWalletFactory.sol";
 import {ChatterPayPaymaster} from "../../src/ChatterPayPaymaster.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {DummyAggregator} from "./DummyAggregator.sol";
 import {BaseConstants} from "./BaseConstants.sol";
 
 /*//////////////////////////////////////////////////////////////
@@ -15,31 +14,26 @@ import {BaseConstants} from "./BaseConstants.sol";
 //////////////////////////////////////////////////////////////*/
 
 interface IUniswapV3Factory {
-    function createPool(
-        address tokenA,
-        address tokenB,
-        uint24 fee
-    ) external returns (address pool);
+    function createPool(address tokenA, address tokenB, uint24 fee) external returns (address pool);
 
-    function getPool(
-        address tokenA,
-        address tokenB,
-        uint24 fee
-    ) external view returns (address pool);
+    function getPool(address tokenA, address tokenB, uint24 fee) external view returns (address pool);
 }
 
 interface IUniswapV3Pool {
     function initialize(uint160 sqrtPriceX96) external;
 
-    function slot0() external view returns (
-        uint160 sqrtPriceX96,
-        int24 tick,
-        uint16 observationIndex,
-        uint16 observationCardinality,
-        uint16 observationCardinalityNext,
-        uint8 feeProtocol,
-        bool unlocked
-    );
+    function slot0()
+        external
+        view
+        returns (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint16 observationIndex,
+            uint16 observationCardinality,
+            uint16 observationCardinalityNext,
+            uint8 feeProtocol,
+            bool unlocked
+        );
 
     function liquidity() external view returns (uint128);
 }
@@ -59,23 +53,19 @@ interface INonfungiblePositionManager {
         uint256 deadline;
     }
 
-    function mint(
-        MintParams calldata params
-    )
+    function mint(MintParams calldata params)
         external
         payable
-        returns (
-            uint256 tokenId,
-            uint128 liquidity,
-            uint256 amount0,
-            uint256 amount1
-        );
+        returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
 }
 
-abstract contract BaseTest is Test{
+abstract contract BaseTest is Test {
     /*//////////////////////////////////////////////////////////////
                         STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
+
+    // network to test
+    uint256 chainId = 421614;
 
     // Core contract instances
     ChatterPay public implementation;
@@ -88,16 +78,17 @@ abstract contract BaseTest is Test{
     address public user;
     uint256 public ownerKey;
 
-    address constant ENTRY_POINT = BaseConstants.ENTRY_POINT;
-    address constant UNISWAP_ROUTER = BaseConstants.UNISWAP_ROUTER;
-    address constant UNISWAP_FACTORY = BaseConstants.UNISWAP_FACTORY;
-    address constant POSITION_MANAGER = BaseConstants.POSITION_MANAGER;
-    address constant USDC = BaseConstants.USDC;
-    address constant USDT = BaseConstants.USDT;
-    address constant USDC_USD_FEED = BaseConstants.USDC_USD_FEED;
-    address constant USDT_USD_FEED = BaseConstants.USDT_USD_FEED;
-    uint256 constant INITIAL_LIQUIDITY = BaseConstants.INITIAL_LIQUIDITY;
-    uint24 constant POOL_FEE = BaseConstants.POOL_FEE;
+    // Config constants (readable after setUp)
+    address public ENTRY_POINT;
+    address public UNISWAP_ROUTER;
+    address public UNISWAP_FACTORY;
+    address public POSITION_MANAGER;
+    address public USDC;
+    address public USDT;
+    address public USDC_USD_FEED;
+    address public USDT_USD_FEED;
+    uint256 public INITIAL_LIQUIDITY;
+    uint24 public POOL_FEE;
 
     /*//////////////////////////////////////////////////////////////
                            SETUP
@@ -108,8 +99,24 @@ abstract contract BaseTest is Test{
      * @dev Deploys contracts and configures initial state.
      */
     function setUp() public virtual {
+        // Load network-specific constants
+        BaseConstants.Config memory config = BaseConstants.getConfig(chainId);
+        ENTRY_POINT = config.ENTRY_POINT;
+        UNISWAP_ROUTER = config.UNISWAP_ROUTER;
+        UNISWAP_FACTORY = config.UNISWAP_FACTORY;
+        POSITION_MANAGER = config.POSITION_MANAGER;
+        USDC = config.USDC;
+        USDT = config.USDT;
+        USDC_USD_FEED = config.USDC_USD_FEED;
+        USDT_USD_FEED = config.USDT_USD_FEED;
+        INITIAL_LIQUIDITY = config.INITIAL_LIQUIDITY;
+        POOL_FEE = config.POOL_FEE;
+
         // Initialize test accounts
+
+        // Burned Key for local blk with adr: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
         ownerKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+
         owner = vm.addr(ownerKey);
         user = makeAddr("user");
 
@@ -122,6 +129,14 @@ abstract contract BaseTest is Test{
 
         // Setup Uniswap liquidity
         _setupUniswapLiquidity();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        GETTERS FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+    function getUSDCAddress() public virtual returns (address) {
+        BaseConstants.Config memory config = BaseConstants.getConfig(chainId);
+        return config.USDC;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -139,24 +154,21 @@ abstract contract BaseTest is Test{
         console.log("ChatterPay implementation deployed at:", address(implementation));
 
         // Deploy & fund paymaster
-        paymaster = new ChatterPayPaymaster(
-            ENTRY_POINT,
-            owner
-        );
+        paymaster = new ChatterPayPaymaster(ENTRY_POINT, owner);
         console.log("Paymaster deployed at:", address(paymaster));
-        (bool success, ) = address(paymaster).call{value: 1 ether}("");
+        (bool success,) = address(paymaster).call{value: 1 ether}("");
         require(success, "Failed to fund paymaster");
 
         // Deploy factory (passing the implementation address)
         factory = new ChatterPayWalletFactory(
-            address(implementation),  // _walletImplementation
-            ENTRY_POINT,             // _entryPoint
-            owner,                   // _owner
-            address(paymaster),      // _paymaster
-            UNISWAP_ROUTER,         // _router
-            owner,                   // _feeAdmin
-            new address[](0),       // _whitelistedTokens
-            new address[](0)        // _priceFeeds
+            address(implementation), // _walletImplementation
+            ENTRY_POINT, // _entryPoint
+            owner, // _owner
+            address(paymaster), // _paymaster
+            UNISWAP_ROUTER, // _router
+            new address[](0), // _whitelistedTokens
+            new address[](0), // _priceFeeds
+            new bool[](0) // _tokensStableFlags
         );
         console.log("Factory deployed at:", address(factory));
 
@@ -167,16 +179,6 @@ abstract contract BaseTest is Test{
         address[] memory priceFeeds = new address[](2);
         priceFeeds[0] = USDC_USD_FEED;
         priceFeeds[1] = USDT_USD_FEED;
-        ChatterPay(payable(address(implementation))).initialize(
-            ENTRY_POINT,
-            owner,
-            address(paymaster),
-            UNISWAP_ROUTER,
-            address(factory),
-            owner, // fee admin
-            whitelistedTokens,
-            priceFeeds
-        );
 
         vm.stopPrank();
     }
@@ -192,17 +194,53 @@ abstract contract BaseTest is Test{
         uint256 usdtAmount = INITIAL_LIQUIDITY * 1e12;
 
         // Mint tokens to owner
-        deal(USDC, owner, usdcAmount);
-        deal(USDT, owner, usdtAmount);
+        _ensureBalance(USDC, owner, usdcAmount);
+        _ensureBalance(USDT, owner, usdtAmount);
 
         // Create and initialize pool if it doesn't exist
         address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(USDC, USDT, POOL_FEE);
+
         if (pool == address(0)) {
+            console.log("Pool not found, creating and initializing...");
             pool = _createAndInitializePool();
+            console.log("Pool created at:", pool);
+
+            console.log("Adding Pool liquidity...");
             _addInitialLiquidity(usdcAmount, usdtAmount);
+            console.log("Initial liquidity added");
+        } else {
+            console.log("Pool already exists, skipping creation");
         }
 
+        console.log("_setupUniswapLiquidity end");
         vm.stopPrank();
+    }
+
+    /**
+     * @notice Ensures that the given address holds at least the desired token amount.
+     * @dev Uses `deal` to top up the token balance if it is below the specified threshold.
+     *      Useful for preparing test accounts with mock ERC20 balances.
+     * @param token The ERC20 token address.
+     * @param to The recipient address to check and possibly fund.
+     * @param desiredAmount The target token balance to ensure.
+     *
+     * @dev Note that the contract addresses for USDC and USDT in BaseConstants
+     *      belong to Arbitrum Sepolia. Make sure that when running the tests,
+     *      the RPC_URL variable is pointing to a node provider for Arbitrum Sepolia.
+     */
+    function _ensureBalance(address token, address to, uint256 desiredAmount) internal {
+        console.log("Ensuring balance for:", token, to);
+
+        uint256 currentBalance = IERC20(token).balanceOf(to);
+        console.log("Current balance:", currentBalance);
+
+        if (currentBalance < desiredAmount) {
+            console.log("Topping up with deal to:", desiredAmount);
+            deal(token, to, desiredAmount);
+            console.log("Top up complete");
+        } else {
+            console.log("Sufficient balance, skipping deal");
+        }
     }
 
     /**
@@ -210,15 +248,11 @@ abstract contract BaseTest is Test{
      */
     function _createAndInitializePool() internal returns (address pool) {
         // Create pool
-        pool = IUniswapV3Factory(UNISWAP_FACTORY).createPool(
-            USDC,
-            USDT,
-            POOL_FEE
-        );
+        pool = IUniswapV3Factory(UNISWAP_FACTORY).createPool(USDC, USDT, POOL_FEE);
         console.log("Pool created at:", pool);
 
         // Initialize pool with price
-        uint160 sqrtPriceX96 = 79228162514264337593543950336;  // 2^96
+        uint160 sqrtPriceX96 = 79228162514264337593543950336; // 2^96
         sqrtPriceX96 = uint160(uint256(sqrtPriceX96) * 1000000); // Multiply by sqrt(10^12)
         IUniswapV3Pool(pool).initialize(sqrtPriceX96);
 
@@ -291,7 +325,7 @@ abstract contract BaseTest is Test{
      */
     function _logPoolState() internal view {
         address pool = IUniswapV3Factory(UNISWAP_FACTORY).getPool(USDC, USDT, POOL_FEE);
-        (uint160 sqrtPriceX96, int24 tick, , , , , ) = IUniswapV3Pool(pool).slot0();
+        (uint160 sqrtPriceX96, int24 tick,,,,,) = IUniswapV3Pool(pool).slot0();
         console.log("=== Pool State ===");
         console.log("Pool initialized price:", sqrtPriceX96);
         console.log("Pool current tick:", tick);

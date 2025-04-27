@@ -2,14 +2,16 @@
 
 ## Contracts Deployment
 
-Find contract deployment addresses by network at these links:
+Find contracts deployment addresses by network at these links:
 
-- USDT 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9 
+- USDT: [Tethet Contracts Addresses](https://tether.to/es/supported-protocols) 
 - USDC (Circle): [Circle Contracts Addresses](https://www.circle.com/blog/usdc-on-arbitrum-now-available)
 - WETH:  [Arbitrum Contract Addresses](https://docs.arbitrum.io/build-decentralized-apps/reference/contract-addresses)
-- Uniswap Swap Router: [Uniswap Contract Deployments](https://docs.uniswap.org/contracts/v3/reference/deployments/polygon-deployments) 
+- Circle: [USDC TOken Addresses](https://developers.circle.com/stablecoins/usdc-on-test-networks)
 - EntryPoint: [eth Infinitism - Account Abstraction](https://github.com/eth-infinitism/account-abstraction/releases/tag/v0.6.0)
-
+- Uniswap: [Uniswap Contract Deployments](https://docs.uniswap.org/contracts/v3/reference/deployments/) 
+- Chainlink: [Price FeedsContract Addresses](https://docs.chain.link/data-feeds/price-feeds/addresses)
+- Scroll: [Scroll Contract Addresses](https://docs.scroll.io/es/developers/scroll-contracts/)
 
 ## Paymaster Deployment
 

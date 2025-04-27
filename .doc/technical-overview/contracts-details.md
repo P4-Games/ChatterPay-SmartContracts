@@ -15,7 +15,6 @@ The `ChatterPay` contract serves as the core of the ChatterPay ecosystem, acting
 
 ### **Relations with Other ChatterPay Contracts**:
 - **ChatterPayPaymaster**: Works alongside the Paymaster to manage fees and user operations.
-- **ChatterPayVault**: Can interact with the vault for secure asset storage and retrieval.
 - **ChatterPayWalletFactory**: Deployed wallets are created and managed by the factory contract.
 
 ### **External Contract Interactions**:
@@ -37,7 +36,6 @@ The `ChatterPayNFT` contract enables the minting and management of both original
 
 ### **Relations with Other ChatterPay Contracts**:
 - **ChatterPay**: NFTs can be linked to wallet activities for rewards or asset tracking.
-- **ChatterPayVault**: Original and copy NFTs may serve as collateral or proof of ownership within the vault.
 
 ### **External Contract Interactions**:
 - **ERC721URIStorage**: Provides extended functionality for metadata management.
@@ -63,26 +61,7 @@ The `ChatterPayPaymaster` contract validates and manages user operations in coll
 
 ---
 
-## 4. [**ChatterPayVault.sol**](../../src/ChatterPayVault.sol)
-
-### **High-Level Overview**:
-The `ChatterPayVault` contract serves as a secure storage mechanism for password-protected commitments. It supports the reservation, redemption, and cancellation of payments.
-
-### **Key Features**:
-- **Password-Protected Payments**: Uses hashed passwords for added security in transactions.
-- **Commitment Expiration**: Ensures timely redemption or cancellation of commitments.
-- **ERC20 Integration**: Handles token-based payments securely.
-
-### **Relations with Other ChatterPay Contracts**:
-- **ChatterPay**: Interacts with the main wallet for secure payment and asset management.
-- **ChatterPayNFT**: Supports NFTs as collateral or proof of ownership.
-
-### **External Contract Interactions**:
-- **ERC20**: Facilitates secure token transfers within the vault.
-
----
-
-## 5. [**ChatterPayWalletFactory.sol**](../../src/ChatterPayWalletFactory.sol)
+## 4. [**ChatterPayWalletFactory.sol**](../../src/ChatterPayWalletFactory.sol)
 
 ### **High-Level Overview**:
 The `ChatterPayWalletFactory` contract is responsible for deploying and managing wallet proxies for users. It leverages deterministic address computation for predictable wallet creation.
@@ -97,7 +76,7 @@ The `ChatterPayWalletFactory` contract is responsible for deploying and managing
 
 ---
 
-## 6. [**ChatterPayWalletProxy.sol**](../../src/ChatterPayWalletProxy.sol)
+## 5. [**ChatterPayWalletProxy.sol**](../../src/ChatterPayWalletProxy.sol)
 
 ### **High-Level Overview**:
 The `ChatterPayWalletProxy` contract provides upgradeable functionality for wallets using the ERC1967 Proxy standard. It ensures that wallets can be updated without changing their addresses.
@@ -112,7 +91,7 @@ The `ChatterPayWalletProxy` contract provides upgradeable functionality for wall
 
 ---
 
-## 7. [**AggregatorV3Interface.sol**](../../src/interfaces/AggregatorV3Interface.sol)
+## 6. [**AggregatorV3Interface.sol**](../../src/interfaces/AggregatorV3Interface.sol)
 
 ### **High-Level Overview**:
 The `AggregatorV3Interface` defines the interface for Chainlink price feeds. It enables the retrieval of real-time token prices and metadata.
@@ -129,7 +108,7 @@ The `AggregatorV3Interface` defines the interface for Chainlink price feeds. It 
 
 ---
 
-## 8. [**ISwapRouter.sol**](../../src/interfaces/ISwapRouter.sol)
+## 7. [**ISwapRouter.sol**](../../src/interfaces/ISwapRouter.sol)
 
 ### **High-Level Overview**:
 The `ISwapRouter` interface facilitates token swaps using the Uniswap V3 protocol. It supports both single-hop and multi-hop swaps with fine-grained control over slippage and fees.

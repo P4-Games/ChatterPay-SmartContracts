@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/** 
+/**
  * @title Chainlink Price Feed Interface
+ * @author ChatterPay Team
  * @notice Interface for interacting with Chainlink price feed aggregators
  * @dev This interface allows reading price data from Chainlink's decentralized oracle network
  */
 interface AggregatorV3Interface {
-    /** 
+    /**
      * @notice Get the number of decimals for the price feed
      * @return The number of decimals used in price feed values
      */
@@ -38,13 +39,7 @@ interface AggregatorV3Interface {
     function getRoundData(uint80 _roundId)
         external
         view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 
     /**
      * @notice Get the latest price data
@@ -57,11 +52,5 @@ interface AggregatorV3Interface {
     function latestRoundData()
         external
         view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 }

@@ -22,21 +22,13 @@ contract UpdateChatterPay is Script {
 
         ChatterPay chatterPay = new ChatterPay();
 
-        address factoryAddress = DevOpsTools.get_most_recent_deployment(
-            "ChatterPayWalletFactory",
-            block.chainid
-        );
+        address factoryAddress = DevOpsTools.get_most_recent_deployment("ChatterPayWalletFactory", block.chainid);
 
-        ChatterPayWalletFactory factory = ChatterPayWalletFactory(
-            factoryAddress
-        );
-        
+        ChatterPayWalletFactory factory = ChatterPayWalletFactory(factoryAddress);
+
         factory.setImplementationAddress(address(chatterPay));
 
-        console.log(
-            "ChatterPay implementation updated to %s and updated in the factory",
-            address(chatterPay)
-        );
+        console.log("ChatterPay implementation updated to %s and updated in the factory", address(chatterPay));
 
         vm.stopBroadcast();
     }
