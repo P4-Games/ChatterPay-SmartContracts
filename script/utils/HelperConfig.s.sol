@@ -66,6 +66,8 @@ contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
+    uint256 constant SCROLL_CHAIN_ID = 534352;
+    uint256 constant ARBITRUM_ONE_CHAIN_ID = 42161;
     uint256 constant ETHEREUM_SEPOLIA_CHAIN_ID = 11155111;
     uint256 constant SCROLL_DEVNET_CHAIN_ID = 2227728;
     uint256 constant SCROLL_SEPOLIA_CHAIN_ID = 534351;
@@ -91,6 +93,8 @@ contract HelperConfig is Script {
         BACKEND_SIGNER = vm.envAddress("BACKEND_EOA");
         networkConfigs[SCROLL_SEPOLIA_CHAIN_ID] = getScrollSepoliaConfig();
         networkConfigs[ARBITRUM_SEPOLIA_CHAIN_ID] = getArbitrumSepoliaConfig();
+        networkConfigs[SCROLL_CHAIN_ID] = getScrollConfig();
+        networkConfigs[ARBITRUM_ONE_CHAIN_ID] = getArbitrumConfig();
     }
 
     /**
