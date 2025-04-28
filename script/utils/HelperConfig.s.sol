@@ -183,7 +183,7 @@ contract HelperConfig is Script {
      * @return NetworkConfig Configuration with Scroll Sepolia addresses
      */
     function getScrollSepoliaConfig() public view returns (NetworkConfig memory) {
-       TokenConfig[] memory tokenConfigs = new TokenConfig[](3);
+        TokenConfig[] memory tokenConfigs = new TokenConfig[](3);
 
         tokenConfigs[0] = TokenConfig({
             symbol: "UDST",
@@ -269,7 +269,7 @@ contract HelperConfig is Script {
 
         tokenConfigs[0] = TokenConfig({
             symbol: "UDST",
-            token: 0xf55bec9cafdbe8730f096aa55dad6d22d44099df,
+            token: 0xf55BEC9cafDbE8730f096Aa55dad6D22d44099Df,
             priceFeed: 0xf376A91Ae078927eb3686D6010a6f1482424954E,
             isStable: true
         });
@@ -293,11 +293,7 @@ contract HelperConfig is Script {
             backendSigner: BACKEND_SIGNER,
             nftBaseUri: "https://back.chatterpay.net/nft/metadata/opensea/",
             tokensConfig: tokenConfigs,
-            uniswapConfig: UniswapConfig({
-                router: address(0),
-                factory: address(0),
-                positionManager: address(0) 
-            })
+            uniswapConfig: UniswapConfig({router: address(0), factory: address(0), positionManager: address(0)})
         });
     }
 
