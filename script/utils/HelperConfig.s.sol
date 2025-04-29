@@ -66,6 +66,8 @@ contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
+    uint256 constant SCROLL_CHAIN_ID = 534352;
+    uint256 constant ARBITRUM_ONE_CHAIN_ID = 42161;
     uint256 constant ETHEREUM_SEPOLIA_CHAIN_ID = 11155111;
     uint256 constant SCROLL_DEVNET_CHAIN_ID = 2227728;
     uint256 constant SCROLL_SEPOLIA_CHAIN_ID = 534351;
@@ -91,6 +93,8 @@ contract HelperConfig is Script {
         BACKEND_SIGNER = vm.envAddress("BACKEND_EOA");
         networkConfigs[SCROLL_SEPOLIA_CHAIN_ID] = getScrollSepoliaConfig();
         networkConfigs[ARBITRUM_SEPOLIA_CHAIN_ID] = getArbitrumSepoliaConfig();
+        networkConfigs[SCROLL_CHAIN_ID] = getScrollConfig();
+        networkConfigs[ARBITRUM_ONE_CHAIN_ID] = getArbitrumConfig();
     }
 
     /**
@@ -142,7 +146,6 @@ contract HelperConfig is Script {
      * @return NetworkConfig Configuration with Arbitrum Sepolia addresses
      */
     function getArbitrumSepoliaConfig() public view returns (NetworkConfig memory) {
-        // 0: USDT, 1: WETH, 2: USDC
         TokenConfig[] memory tokenConfigs = new TokenConfig[](3);
 
         tokenConfigs[0] = TokenConfig({
@@ -184,7 +187,6 @@ contract HelperConfig is Script {
      * @return NetworkConfig Configuration with Scroll Sepolia addresses
      */
     function getScrollSepoliaConfig() public view returns (NetworkConfig memory) {
-        // 0: USDT, 1: WETH, 2: USDC
         TokenConfig[] memory tokenConfigs = new TokenConfig[](3);
 
         tokenConfigs[0] = TokenConfig({
@@ -196,7 +198,8 @@ contract HelperConfig is Script {
 
         tokenConfigs[1] = TokenConfig({
             symbol: "WETH",
-            token: 0xd5654b986d5aDba8662c06e847E32579078561dC,
+            // token: 0xd5654b986d5aDba8662c06e847E32579078561dC,
+            token: 0xC262f22bb6da71fC14c8914f0A3DC02e7bf6E5b0,
             priceFeed: 0x59F1ec1f10bD7eD9B938431086bC1D9e233ECf41,
             isStable: false
         });
@@ -214,10 +217,92 @@ contract HelperConfig is Script {
             nftBaseUri: "https://dev.back.chatterpay.net/nft/metadata/opensea/",
             tokensConfig: tokenConfigs,
             uniswapConfig: UniswapConfig({
-                router: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
-                factory: 0x0287f57A1a17a725428689dfD9E65ECA01d82510,
-                positionManager: 0xA9c7C2BCEd22D1d47111610Af21a53B6D1e69eeD
+                router: 0x68079C38f4f4fa52322Ae88eE7e80AcD4f0B8E81,
+                factory: 0x122aE2cF9C3abFfbE69fF505703945b12C572669,
+                positionManager: 0x3c8d5bf07ac05309327E3029F12f5714b8b0cbEA
             })
+        // router: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
+        // factory: 0x0287f57A1a17a725428689dfD9E65ECA01d82510,
+        // positionManager: 0xA9c7C2BCEd22D1d47111610Af21a53B6D1e69eeD
+
+        });
+    }
+
+    /**
+     * @notice Gets configuration for Arbitrum Mainnet
+     * @return NetworkConfig Configuration with Arbitrum addresses
+     */
+    function getArbitrumConfig() public view returns (NetworkConfig memory) {
+        TokenConfig[] memory tokenConfigs = new TokenConfig[](3);
+
+        tokenConfigs[0] = TokenConfig({
+            symbol: "UDST",
+            token: 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9,
+            priceFeed: 0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7,
+            isStable: true
+        });
+
+        tokenConfigs[1] = TokenConfig({
+            symbol: "WETH",
+            token: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,
+            priceFeed: 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612,
+            isStable: false
+        });
+
+        tokenConfigs[2] = TokenConfig({
+            symbol: "UDDC",
+            token: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831,
+            priceFeed: 0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3,
+            isStable: true
+        });
+
+        return NetworkConfig({
+            entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
+            backendSigner: BACKEND_SIGNER,
+            nftBaseUri: "https://back.chatterpay.net/nft/metadata/opensea/",
+            tokensConfig: tokenConfigs,
+            uniswapConfig: UniswapConfig({
+                router: 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45,
+                factory: 0x1F98431c8aD98523631AE4a59f267346ea31F984,
+                positionManager: 0xC36442b4a4522E871399CD717aBDD847Ab11FE88
+            })
+        });
+    }
+
+    /**
+     * @notice Gets configuration for Scroll Mainnet
+     * @return NetworkConfig Configuration with Scroll addresses
+     */
+    function getScrollConfig() public view returns (NetworkConfig memory) {
+        TokenConfig[] memory tokenConfigs = new TokenConfig[](3);
+
+        tokenConfigs[0] = TokenConfig({
+            symbol: "UDST",
+            token: 0xf55BEC9cafDbE8730f096Aa55dad6D22d44099Df,
+            priceFeed: 0xf376A91Ae078927eb3686D6010a6f1482424954E,
+            isStable: true
+        });
+
+        tokenConfigs[1] = TokenConfig({
+            symbol: "WETH",
+            token: 0x5300000000000000000000000000000000000004,
+            priceFeed: 0x6bF14CB0A831078629D993FDeBcB182b21A8774C,
+            isStable: false
+        });
+
+        tokenConfigs[2] = TokenConfig({
+            symbol: "USDC",
+            token: 0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4,
+            priceFeed: 0x43d12Fb3AfCAd5347fA764EeAB105478337b7200,
+            isStable: true
+        });
+
+        return NetworkConfig({
+            entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
+            backendSigner: BACKEND_SIGNER,
+            nftBaseUri: "https://back.chatterpay.net/nft/metadata/opensea/",
+            tokensConfig: tokenConfigs,
+            uniswapConfig: UniswapConfig({router: address(0), factory: address(0), positionManager: address(0)})
         });
     }
 
