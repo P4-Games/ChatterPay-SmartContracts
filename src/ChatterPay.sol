@@ -252,7 +252,7 @@ contract ChatterPay is
         _getChatterPayState().factory = IChatterPayWalletFactory(_factory);
         _getChatterPayState().feeInCents = 50; // Default fee in cents
 
-        _getChatterPayState().uniswapPoolFeeLow = 1000; // 0.1%
+        _getChatterPayState().uniswapPoolFeeLow = 500; // 0.1%
         _getChatterPayState().uniswapPoolFeeMedium = 3000; // 0.3%
         _getChatterPayState().uniswapPoolFeeHigh = 10000; // 1%
         _getChatterPayState().slippageMaxBps = 5000;
