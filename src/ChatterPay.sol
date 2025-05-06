@@ -17,6 +17,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISwapRouter} from "./interfaces/ISwapRouter.sol";
 import {IChatterPayWalletFactory} from "./ChatterPayWalletFactory.sol";
+import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
@@ -75,7 +76,8 @@ contract ChatterPay is
     ContextUpgradeable,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    EIP712Upgradeable
 {
     using SafeERC20 for IERC20;
 
@@ -101,6 +103,7 @@ contract ChatterPay is
         uint256 maxFeeInCents; // Cap for the fee value in cents
         uint256 priceFreshnessThreshold; // Max age of Chainlink price data in seconds
         uint256 priceFeedPrecision; // Precision multiplier for price conversions
+        bool allowEIP191Fallback; // Flag to allow or disable EIP-191 signature fallback
         mapping(address => bool) whitelistedTokens; // Allowed tokens for swap operations
         mapping(address => address) priceFeeds; // Chainlink price feeds for tokens
         mapping(bytes32 => uint24) customPoolFees; // Optional custom pool fee per token pair
@@ -134,6 +137,11 @@ contract ChatterPay is
 
     /// @notice Precision constant used for price feed normalization (e.g., 8 decimals)
     uint256 public constant PRICE_FEED_PRECISION = 8;
+
+    /// @notice EIP-712 type hash for the UserOperation struct used in signature validation
+    bytes32 private constant USER_OP_TYPEHASH = keccak256(
+        "UserOperation(address sender,uint256 nonce,bytes initCode,bytes callData,uint256 callGasLimit,uint256 verificationGasLimit,uint256 preVerificationGas,uint256 maxFeePerGas,uint256 maxPriorityFeePerGas,bytes paymasterAndData,uint256 chainId)"
+    );
 
     /*//////////////////////////////////////////////////////////////
     // EVENTS
@@ -245,6 +253,7 @@ contract ChatterPay is
         __Ownable_init(_owner);
         __ReentrancyGuard_init();
         __UUPSUpgradeable_init_unchained();
+        __EIP712_init("ChatterPay", VERSION);
 
         _getChatterPayState().entryPoint = IEntryPoint(_entryPoint);
         _getChatterPayState().paymaster = _paymaster;
@@ -261,6 +270,7 @@ contract ChatterPay is
         _getChatterPayState().maxFeeInCents = 1000; // $10.00
         _getChatterPayState().priceFreshnessThreshold = 100 hours;
         _getChatterPayState().priceFeedPrecision = 8;
+        _getChatterPayState().allowEIP191Fallback = true;
 
         // Set initial token whitelist and price feeds
         for (uint256 i = 0; i < _whitelistedTokens.length; i++) {
@@ -444,6 +454,14 @@ contract ChatterPay is
      */
     function getPriceFeedPrecision() external view returns (uint256) {
         return _getChatterPayState().priceFeedPrecision;
+    }
+
+    /**
+     * @notice Returns whether EIP-191 fallback is allowed for signature validation.
+     * @return True if EIP-191 fallback is enabled, false otherwise.
+     */
+    function isEIP191FallbackAllowed() external view returns (bool) {
+        return _getChatterPayState().allowEIP191Fallback;
     }
 
     /**
@@ -801,6 +819,15 @@ contract ChatterPay is
         _getChatterPayState().maxFeeInCents = maxFeeCents;
     }
 
+    /**
+     * @notice Enables or disables the fallback to EIP-191 for signature validation.
+     * @dev Only callable by the contract owner.
+     * @param allowed Pass true to enable fallback to EIP-191, or false to disable it.
+     */
+    function setEIP191FallbackAllowed(bool allowed) external onlyOwner {
+        _getChatterPayState().allowEIP191Fallback = allowed;
+    }
+
     /*//////////////////////////////////////////////////////////////
     // INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -902,28 +929,43 @@ contract ChatterPay is
 
     /**
      * @notice Validates the signature of a UserOperation according to ERC-4337.
-     * @dev Compares the recovered signer from the signature with the wallet owner.
-     * Uses EIP-191 to hash the user operation before recovering.
+     * @dev Tries to recover the signer using EIP-712 (typed data hash). If it fails and
+     *      `allowEIP191Fallback` is true, it falls back to EIP-191 recovery using `eth_sign`.
+     *      - EIP-712 is preferred as it provides strong domain separation (chainId, contract address).
+     *      - EIP-191 is a legacy mechanism and should only be used for backward compatibility.
+     *
      * @param userOp The UserOperation to validate.
-     * @param userOpHash The hash of the UserOperation used for signature verification.
-     * @return validationData Returns 0 (SIG_VALIDATION_SUCCESS) if valid, or 1 (SIG_VALIDATION_FAILED) if invalid.
+     * @param userOpHash The userOp hash provided by EntryPoint (used only in fallback).
+     * @return validationData 0 if signature is valid, 1 if invalid.
      */
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
         internal
         view
         returns (uint256 validationData)
     {
-        // EIP-191 version of the signed hash
-        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
-        address signer = ECDSA.recover(ethSignedMessageHash, userOp.signature);
+        address signer;
 
-        // owner: Returns the user's wallet (executed via the EntryPoint!).
-        // If requested from the command line, it will return the owner who deployed the contract (backend signer).
-        // signer: The person who signed the userOperation, which must be the wallet owner.
-        if (signer != owner()) {
-            return SIG_VALIDATION_FAILED;
+        // Preferred path: EIP-712
+        bytes32 digest = _hashUserOp(userOp);
+        signer = ECDSA.recover(digest, userOp.signature);
+        if (signer == owner()) {
+            return SIG_VALIDATION_SUCCESS;
         }
-        return SIG_VALIDATION_SUCCESS;
+
+        // Optional fallback: EIP-191
+        if (_getChatterPayState().allowEIP191Fallback) {
+            bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
+            signer = ECDSA.recover(ethSignedMessageHash, userOp.signature);
+            // owner: Returns the user's wallet (executed via the EntryPoint!).
+            // If requested from the command line, it will return the owner who deployed the
+            // contract (backend signer).
+            // signer: The person who signed the userOperation, which must be the wallet owner.
+            if (signer == owner()) {
+                return SIG_VALIDATION_SUCCESS;
+            }
+        }
+
+        return SIG_VALIDATION_FAILED;
     }
 
     /**
@@ -940,6 +982,32 @@ contract ChatterPay is
             // Intentionally ignoring success — EntryPoint validates received funds
             (success);
         }
+    }
+
+    /**
+     * @notice Computes the EIP-712 digest for a UserOperation
+     * @param userOp The UserOperation struct
+     * @return The EIP-712 typed data hash to be signed
+     */
+    function _hashUserOp(UserOperation calldata userOp) internal view returns (bytes32) {
+        return _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    USER_OP_TYPEHASH,
+                    userOp.sender,
+                    userOp.nonce,
+                    keccak256(userOp.initCode),
+                    keccak256(userOp.callData),
+                    userOp.callGasLimit,
+                    userOp.verificationGasLimit,
+                    userOp.preVerificationGas,
+                    userOp.maxFeePerGas,
+                    userOp.maxPriorityFeePerGas,
+                    keccak256(userOp.paymasterAndData),
+                    block.chainid
+                )
+            )
+        );
     }
 
     /**
