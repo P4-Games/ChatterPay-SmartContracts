@@ -198,8 +198,7 @@ contract HelperConfig is Script {
 
         tokenConfigs[1] = TokenConfig({
             symbol: "WETH",
-            // token: 0xd5654b986d5aDba8662c06e847E32579078561dC, // T
-            token: 0xC262f22bb6da71fC14c8914f0A3DC02e7bf6E5b0, // D
+            token: 0xC262f22bb6da71fC14c8914f0A3DC02e7bf6E5b0,
             priceFeed: 0x59F1ec1f10bD7eD9B938431086bC1D9e233ECf41,
             isStable: false
         });

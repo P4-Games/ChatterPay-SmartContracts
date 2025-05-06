@@ -1,15 +1,27 @@
 #!/bin/bash
 
+#---------------------------------------------------------
+# set:
+# export ENTRYPOINT_ADDRESS=0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789
+# export PAYMASTER_ADDRESS=0x33F43e0165f2B6Ad829594649FbdA70d878F1462
+# export BACKEND_SIGNER_ADDRESS=0xe54b48F8caF88a08849dCdDE3D3d41Cd6D7ab369
+# export BACKEND_SIGNER_SK=0xxxxxxxxxxx
+# export RPC_URL=https://scroll-sepolia.g.alchemy.com/v2/cSwp__cy4eqSYmiiIMXtZ810r3AptmiL
+
+# run:
+# 
+#---------------------------------------------------------
+
 # Token addresses
 #WETH_TOKEN="0xd5654b986d5aDba8662c06e847E32579078561dC"
 WETH_TOKEN="0xC262f22bb6da71fC14c8914f0A3DC02e7bf6E5b0"
 UDST_TOKEN="0x776133ea03666b73a8e3FC23f39f90e66360716E"
 
 # Uniswap V3 factory
-FACTORY="0x0287f57A1a17a725428689dfD9E65ECA01d82510"
+FACTORY="0xB856587fe1cbA8600F75F1b1176E44250B11C788"
 
 # Fee tiers to check
-FEES=(1000 3000 10000)
+FEES=(500 3000 10000)
 
 # Helper: clean number
 clean_number() {
@@ -77,7 +89,7 @@ show_pool_info() {
 
 # Main execution
 for fee in "${FEES[@]}"; do
-    feeReadable=$(echo "scale=1; $fee / 10000" | bc)
+    feeReadable=$(echo "scale=2; $fee / 10000" | bc)
     echo "🔎 Searching pools for fee ${feeReadable}%..."
 
     # Check WETH -> UDST
