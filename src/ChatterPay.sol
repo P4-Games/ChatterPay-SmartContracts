@@ -17,6 +17,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISwapRouter} from "./interfaces/ISwapRouter.sol";
 import {IChatterPayWalletFactory} from "./ChatterPayWalletFactory.sol";
+import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
@@ -75,7 +76,8 @@ contract ChatterPay is
     ContextUpgradeable,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    EIP712Upgradeable
 {
     using SafeERC20 for IERC20;
 
@@ -134,6 +136,11 @@ contract ChatterPay is
 
     /// @notice Precision constant used for price feed normalization (e.g., 8 decimals)
     uint256 public constant PRICE_FEED_PRECISION = 8;
+
+    /// @notice EIP-712 type hash for the UserOperation struct used in signature validation
+    bytes32 private constant USER_OP_TYPEHASH = keccak256(
+        "UserOperation(address sender,uint256 nonce,bytes initCode,bytes callData,uint256 callGasLimit,uint256 verificationGasLimit,uint256 preVerificationGas,uint256 maxFeePerGas,uint256 maxPriorityFeePerGas,bytes paymasterAndData,uint256 chainId)"
+    );
 
     /*//////////////////////////////////////////////////////////////
     // EVENTS
@@ -245,6 +252,7 @@ contract ChatterPay is
         __Ownable_init(_owner);
         __ReentrancyGuard_init();
         __UUPSUpgradeable_init_unchained();
+        __EIP712_init("ChatterPay", VERSION);
 
         _getChatterPayState().entryPoint = IEntryPoint(_entryPoint);
         _getChatterPayState().paymaster = _paymaster;
@@ -625,16 +633,15 @@ contract ChatterPay is
     /**
      * @dev Validates a UserOperation signature
      * @param userOp User operation to validate
-     * @param userOpHash Hash of the user operation
      * @param missingAccountFunds Missing funds to be paid
      * @return validationData Packed validation data
      */
-    function validateUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
+    function validateUserOp(UserOperation calldata userOp, bytes32 /* userOpHash */, uint256 missingAccountFunds)
         external
         requireFromEntryPoint
         returns (uint256 validationData)
     {
-        validationData = _validateSignature(userOp, userOpHash);
+        validationData = _validateSignature(userOp);
         _payPrefund(missingAccountFunds);
     }
 
@@ -902,20 +909,16 @@ contract ChatterPay is
 
     /**
      * @notice Validates the signature of a UserOperation according to ERC-4337.
-     * @dev Compares the recovered signer from the signature with the wallet owner.
-     * Uses EIP-191 to hash the user operation before recovering.
-     * @param userOp The UserOperation to validate.
-     * @param userOpHash The hash of the UserOperation used for signature verification.
+     * @param userOp The UserOperation to validate
      * @return validationData Returns 0 (SIG_VALIDATION_SUCCESS) if valid, or 1 (SIG_VALIDATION_FAILED) if invalid.
      */
-    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
-        internal
-        view
-        returns (uint256 validationData)
-    {
+    function _validateSignature(UserOperation calldata userOp) internal view returns (uint256 validationData) {
         // EIP-191 version of the signed hash
-        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
-        address signer = ECDSA.recover(ethSignedMessageHash, userOp.signature);
+        // bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
+        // address signer = ECDSA.recover(ethSignedMessageHash, userOp.signature);
+
+        bytes32 digest = _hashUserOp(userOp);
+        address signer = ECDSA.recover(digest, userOp.signature);
 
         // owner: Returns the user's wallet (executed via the EntryPoint!).
         // If requested from the command line, it will return the owner who deployed the contract (backend signer).
@@ -940,6 +943,32 @@ contract ChatterPay is
             // Intentionally ignoring success — EntryPoint validates received funds
             (success);
         }
+    }
+
+    /**
+     * @notice Computes the EIP-712 digest for a UserOperation
+     * @param userOp The UserOperation struct
+     * @return The EIP-712 typed data hash to be signed
+     */
+    function _hashUserOp(UserOperation calldata userOp) internal view returns (bytes32) {
+        return _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    USER_OP_TYPEHASH,
+                    userOp.sender,
+                    userOp.nonce,
+                    keccak256(userOp.initCode),
+                    keccak256(userOp.callData),
+                    userOp.callGasLimit,
+                    userOp.verificationGasLimit,
+                    userOp.preVerificationGas,
+                    userOp.maxFeePerGas,
+                    userOp.maxPriorityFeePerGas,
+                    keccak256(userOp.paymasterAndData),
+                    block.chainid
+                )
+            )
+        );
     }
 
     /**
