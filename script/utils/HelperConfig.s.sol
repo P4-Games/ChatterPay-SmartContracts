@@ -198,8 +198,8 @@ contract HelperConfig is Script {
 
         tokenConfigs[1] = TokenConfig({
             symbol: "WETH",
-            // token: 0xd5654b986d5aDba8662c06e847E32579078561dC,
-            token: 0xC262f22bb6da71fC14c8914f0A3DC02e7bf6E5b0,
+            // token: 0xd5654b986d5aDba8662c06e847E32579078561dC, // T
+            token: 0xC262f22bb6da71fC14c8914f0A3DC02e7bf6E5b0, // D
             priceFeed: 0x59F1ec1f10bD7eD9B938431086bC1D9e233ECf41,
             isStable: false
         });
@@ -217,14 +217,10 @@ contract HelperConfig is Script {
             nftBaseUri: "https://dev.back.chatterpay.net/nft/metadata/opensea/",
             tokensConfig: tokenConfigs,
             uniswapConfig: UniswapConfig({
-                router: 0x68079C38f4f4fa52322Ae88eE7e80AcD4f0B8E81,
-                factory: 0x122aE2cF9C3abFfbE69fF505703945b12C572669,
-                positionManager: 0x3c8d5bf07ac05309327E3029F12f5714b8b0cbEA
+                router: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
+                factory: 0xB856587fe1cbA8600F75F1b1176E44250B11C788,
+                positionManager: 0xbbAd0e891922A8A4a7e9c39d4cc0559117016fec
             })
-        // router: 0x17AFD0263D6909Ba1F9a8EAC697f76532365Fb95,
-        // factory: 0x0287f57A1a17a725428689dfD9E65ECA01d82510,
-        // positionManager: 0xA9c7C2BCEd22D1d47111610Af21a53B6D1e69eeD
-
         });
     }
 
