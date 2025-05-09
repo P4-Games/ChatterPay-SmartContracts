@@ -84,8 +84,9 @@ contract FactoryTokenModule is BaseTest {
      * @notice Tests that local wallet whitelist takes precedence over global whitelist
      */
     function testLocalWhitelistPrecedence() public {
-        // Set up global and local price feeds with different values
-        address customPriceFeed = makeAddr("customPriceFeed");
+        // Use USDT_USD_FEED as the custom price feed, which is a different
+        // but valid price feed already set up in BaseTest
+        address customPriceFeed = USDT_USD_FEED;
         
         // Whitelist at factory level
         vm.prank(owner);

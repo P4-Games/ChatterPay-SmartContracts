@@ -267,15 +267,16 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         globalWhitelistedTokens[token] = status;
         if (status) {
             globalPriceFeeds[token] = priceFeed;
+            emit GlobalTokenWhitelisted(token, status);
             emit GlobalPriceFeedUpdated(token, priceFeed);
         } else {
             // Clear price feed if token is removed from whitelist
+            emit GlobalTokenWhitelisted(token, status);
             if (globalPriceFeeds[token] != address(0)) {
                 delete globalPriceFeeds[token];
                 emit GlobalPriceFeedUpdated(token, address(0));
             }
         }
-        emit GlobalTokenWhitelisted(token, status);
     }
 
     /*//////////////////////////////////////////////////////////////
