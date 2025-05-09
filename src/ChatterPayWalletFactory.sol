@@ -37,6 +37,8 @@ interface IChatterPayWalletFactory {
     function owner() external view returns (address);
     function walletImplementation() external view returns (address);
     function paymaster() external view returns (address);
+    function globalWhitelistedTokens(address token) external view returns (bool);
+    function globalPriceFeeds(address token) external view returns (address);
 }
 
 /**
@@ -57,6 +59,10 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
     address[] public defaultWhitelistedTokens;
     address[] public defaultPriceFeeds;
     bool[] public defaultTokensStableFlags;
+    
+    // Global whitelist and price feed management
+    mapping(address => bool) public globalWhitelistedTokens;
+    mapping(address => address) public globalPriceFeeds;
 
     /*//////////////////////////////////////////////////////////////
     // EVENTS
@@ -65,6 +71,8 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
     event ProxyCreated(address indexed owner, address indexed proxyAddress);
     event NewImplementation(address indexed _walletImplementation);
     event DefaultTokensUpdated(address[] tokens, address[] priceFeeds);
+    event GlobalTokenWhitelisted(address indexed token, bool status);
+    event GlobalPriceFeedUpdated(address indexed token, address indexed priceFeed);
 
     /*//////////////////////////////////////////////////////////////
     // INITIALIZATION
@@ -240,6 +248,34 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
         defaultWhitelistedTokens = _tokens;
         defaultPriceFeeds = _priceFeeds;
         emit DefaultTokensUpdated(_tokens, _priceFeeds);
+    }
+
+    /**
+     * @notice Sets global token whitelist and price feed
+     * @param token Token address
+     * @param status Whitelist status
+     * @param priceFeed Oracle price feed address
+     */
+    function setGlobalTokenWhitelistAndPriceFeed(
+        address token,
+        bool status,
+        address priceFeed
+    ) external onlyOwner {
+        if (token == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
+        if (priceFeed == address(0)) revert ChatterPayWalletFactory__ZeroAddress();
+        
+        globalWhitelistedTokens[token] = status;
+        if (status) {
+            globalPriceFeeds[token] = priceFeed;
+            emit GlobalPriceFeedUpdated(token, priceFeed);
+        } else {
+            // Clear price feed if token is removed from whitelist
+            if (globalPriceFeeds[token] != address(0)) {
+                delete globalPriceFeeds[token];
+                emit GlobalPriceFeedUpdated(token, address(0));
+            }
+        }
+        emit GlobalTokenWhitelisted(token, status);
     }
 
     /*//////////////////////////////////////////////////////////////

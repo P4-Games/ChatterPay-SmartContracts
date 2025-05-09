@@ -342,12 +342,12 @@ contract ChatterPay is
     }
 
     /**
-     * @notice Checks if a token is whitelisted for swaps.
-     * @param token The address of the token.
+     * @notice Checks if the given token address is whitelisted.
+     * @param token The token address to check.
      * @return True if the token is whitelisted, false otherwise.
      */
     function isTokenWhitelisted(address token) public view returns (bool) {
-        return _getChatterPayState().whitelistedTokens[token];
+        return _getChatterPayState().whitelistedTokens[token] || _getChatterPayState().factory.globalWhitelistedTokens(token);
     }
 
     /**
@@ -356,7 +356,11 @@ contract ChatterPay is
      * @return The Chainlink price feed address.
      */
     function getPriceFeed(address token) public view returns (address) {
-        return _getChatterPayState().priceFeeds[token];
+        address localFeed = _getChatterPayState().priceFeeds[token];
+        if (localFeed != address(0)) {
+            return localFeed;
+        }
+        return _getChatterPayState().factory.globalPriceFeeds(token);
     }
 
     /**
@@ -472,7 +476,7 @@ contract ChatterPay is
      * @dev Reverts if the token is not whitelisted
      */
     function getTokenFee(address token) external view returns (uint256) {
-        if (!_getChatterPayState().whitelistedTokens[token]) {
+        if (!isTokenWhitelisted(token)) {
             revert ChatterPay__TokenNotWhitelisted();
         }
         return _calculateFee(token, _getChatterPayState().feeInCents);
@@ -489,7 +493,7 @@ contract ChatterPay is
      */
     function approveToken(address token, uint256 amount) external requireFromEntryPointOrOwner nonReentrant {
         if (amount == 0) revert ChatterPay__ZeroAmount();
-        if (!_getChatterPayState().whitelistedTokens[token]) {
+        if (!isTokenWhitelisted(token)) {
             revert ChatterPay__TokenNotWhitelisted();
         }
 
@@ -513,7 +517,7 @@ contract ChatterPay is
 
         if (amount == 0) revert ChatterPay__ZeroAmount();
         if (recipient == address(0)) revert ChatterPay__ZeroAddress();
-        if (!_getChatterPayState().whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
+        if (!isTokenWhitelisted(token)) revert ChatterPay__TokenNotWhitelisted();
 
         uint256 balance = IERC20(token).balanceOf(address((this)));
         if (balance < amount) revert ChatterPay__InsufficientBalance();
@@ -555,7 +559,7 @@ contract ChatterPay is
             // Validate parameters
             if (amount == 0) revert ChatterPay__ZeroAmount();
             if (recipient == address(0)) revert ChatterPay__ZeroAddress();
-            if (!_getChatterPayState().whitelistedTokens[token]) revert ChatterPay__TokenNotWhitelisted();
+            if (!isTokenWhitelisted(token)) revert ChatterPay__TokenNotWhitelisted();
 
             // Check balance
             if (IERC20(token).balanceOf(address(this)) < amount) {
@@ -590,7 +594,7 @@ contract ChatterPay is
     {
         if (amountIn == 0) revert ChatterPay__ZeroAmount();
         if (recipient == address(0)) revert ChatterPay__ZeroAddress();
-        if (!_getChatterPayState().whitelistedTokens[tokenIn] || !_getChatterPayState().whitelistedTokens[tokenOut]) {
+        if (!isTokenWhitelisted(tokenIn) || !isTokenWhitelisted(tokenOut)) {
             revert ChatterPay__TokenNotWhitelisted();
         }
 
@@ -850,7 +854,7 @@ contract ChatterPay is
      * @return The latest token price with 8 decimals of precision.
      */
     function _getTokenPrice(address token) internal view returns (uint256) {
-        address priceFeedAddr = _getChatterPayState().priceFeeds[token];
+        address priceFeedAddr = getPriceFeed(token);
         if (priceFeedAddr == address(0)) revert ChatterPay__PriceFeedNotSet();
 
         AggregatorV3Interface priceFeed = AggregatorV3Interface(priceFeedAddr);
