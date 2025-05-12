@@ -50,6 +50,7 @@ contract SwapModule is BaseTest {
         moduleWallet.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
         moduleWallet.addStableToken(USDC);
         moduleWallet.addStableToken(USDT);
+        moduleWallet.updateFee(50);
 
         vm.stopPrank();
     }
