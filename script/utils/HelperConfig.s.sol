@@ -269,10 +269,10 @@ contract HelperConfig is Script {
      * @return NetworkConfig Configuration with Scroll addresses
      */
     function getScrollConfig() public view returns (NetworkConfig memory) {
-        TokenConfig[] memory tokenConfigs = new TokenConfig[](3);
+        TokenConfig[] memory tokenConfigs = new TokenConfig[](5);
 
         tokenConfigs[0] = TokenConfig({
-            symbol: "UDST",
+            symbol: "USDT",
             token: 0xf55BEC9cafDbE8730f096Aa55dad6D22d44099Df,
             priceFeed: 0xf376A91Ae078927eb3686D6010a6f1482424954E,
             isStable: true
@@ -292,12 +292,30 @@ contract HelperConfig is Script {
             isStable: true
         });
 
+        tokenConfigs[3] = TokenConfig({
+            symbol: "WBTC",
+            token: 0x3C1BCa5a656e69edCD0D4E36BEbb3FcDAcA60Cf1,
+            priceFeed: 0x61C432B58A43516899d8dF33A5F57edb8d57EB77,
+            isStable: false
+        });
+
+        tokenConfigs[4] = TokenConfig({
+            symbol: "SCR",
+            token: 0xd29687c813D741E2F938F4aC377128810E217b1b,
+            priceFeed: 0x26f6F7C468EE309115d19Aa2055db5A74F8cE7A5,
+            isStable: false
+        });
+
         return NetworkConfig({
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
             backendSigner: BACKEND_SIGNER,
             nftBaseUri: "https://back.chatterpay.net/nft/metadata/opensea/",
             tokensConfig: tokenConfigs,
-            uniswapConfig: UniswapConfig({router: address(0), factory: address(0), positionManager: address(0)})
+            uniswapConfig: UniswapConfig({
+                router: 0x595E7160858b1AdA94Bda790D8699C85e595117E, 
+                factory: 0x70C62C8b8e801124A4Aa81ce07b637A3e83cb919, 
+                positionManager: 0xB39002E4033b162fAc607fc3471E205FA2aE5967
+            })
         });
     }
 
