@@ -9,7 +9,9 @@ Find contracts deployment addresses by network at these links:
 - WETH:  [Arbitrum Contract Addresses](https://docs.arbitrum.io/build-decentralized-apps/reference/contract-addresses)
 - Circle: [USDC TOken Addresses](https://developers.circle.com/stablecoins/usdc-on-test-networks)
 - EntryPoint: [eth Infinitism - Account Abstraction](https://github.com/eth-infinitism/account-abstraction/releases/tag/v0.6.0)
-- Uniswap: [Uniswap Contract Deployments](https://docs.uniswap.org/contracts/v3/reference/deployments/) 
+- Uniswap: 
+   - [Uniswap Contract Deployments](https://docs.uniswap.org/contracts/v3/reference/deployments/)
+   - [Official Uniswap v3 Deployments List](https://gov.uniswap.org/t/official-uniswap-v3-deployments-list/24323/3) 
 - Chainlink: [Price FeedsContract Addresses](https://docs.chain.link/data-feeds/price-feeds/addresses)
 - Scroll: [Scroll Contract Addresses](https://docs.scroll.io/es/developers/scroll-contracts/)
 
