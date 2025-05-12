@@ -42,6 +42,7 @@ contract AdminModule is BaseTest {
         walletInstance.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
         walletInstance.addStableToken(USDC);
         walletInstance.addStableToken(USDT);
+        walletInstance.updateFee(50);
         vm.stopPrank();
     }
 
