@@ -312,8 +312,8 @@ contract HelperConfig is Script {
             nftBaseUri: "https://back.chatterpay.net/nft/metadata/opensea/",
             tokensConfig: tokenConfigs,
             uniswapConfig: UniswapConfig({
-                router: 0x595E7160858b1AdA94Bda790D8699C85e595117E, 
-                factory: 0x70C62C8b8e801124A4Aa81ce07b637A3e83cb919, 
+                router: 0x595E7160858b1AdA94Bda790D8699C85e595117E,
+                factory: 0x70C62C8b8e801124A4Aa81ce07b637A3e83cb919,
                 positionManager: 0xB39002E4033b162fAc607fc3471E205FA2aE5967
             })
         });
