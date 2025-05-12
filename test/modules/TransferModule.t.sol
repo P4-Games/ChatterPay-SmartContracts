@@ -35,6 +35,7 @@ contract TransferModule is BaseTest {
         walletInstance.setTokenWhitelistAndPriceFeed(USDT, true, USDT_USD_FEED);
         walletInstance.addStableToken(USDC);
         walletInstance.addStableToken(USDT);
+        walletInstance.updateFee(50);
 
         // Disable freshness check for price feeds in tests
         walletInstance.updatePriceConfig(1 days, 8);
