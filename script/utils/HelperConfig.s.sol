@@ -210,6 +210,13 @@ contract HelperConfig is Script {
             isStable: true
         });
 
+        tokenConfigs[3] = TokenConfig({
+            symbol: "WBTC",
+            token: 0xb81fe42de28e7452088b77f3EB9685487734e088,
+            priceFeed: 0x87dce67002e66C17BC0d723Fe20D736b80CAaFda,
+            isStable: false
+        });
+
         return NetworkConfig({
             entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
             backendSigner: BACKEND_SIGNER,
