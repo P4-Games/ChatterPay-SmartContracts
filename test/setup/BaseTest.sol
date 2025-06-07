@@ -64,9 +64,6 @@ abstract contract BaseTest is Test {
                         STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
 
-    // network to test
-    uint256 chainId = 421614;
-
     // Core contract instances
     ChatterPay public implementation;
     ChatterPayWalletFactory public factory;
@@ -100,7 +97,7 @@ abstract contract BaseTest is Test {
      */
     function setUp() public virtual {
         // Load network-specific constants
-        BaseConstants.Config memory config = BaseConstants.getConfig(chainId);
+        BaseConstants.Config memory config = BaseConstants.getConfig(block.chainid);
         ENTRY_POINT = config.ENTRY_POINT;
         UNISWAP_ROUTER = config.UNISWAP_ROUTER;
         UNISWAP_FACTORY = config.UNISWAP_FACTORY;
@@ -135,7 +132,7 @@ abstract contract BaseTest is Test {
                         GETTERS FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     function getUSDCAddress() public virtual returns (address) {
-        BaseConstants.Config memory config = BaseConstants.getConfig(chainId);
+        BaseConstants.Config memory config = BaseConstants.getConfig(block.chainid);
         return config.USDC;
     }
 
