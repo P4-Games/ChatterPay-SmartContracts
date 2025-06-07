@@ -209,11 +209,9 @@ contract DeployAllContracts is Script {
                 )
             );
         } else {
-            console2.log("Using existing NFT Contract!");
             chatterPayNFT = ChatterPayNFT(nftAddress);
+            console2.log("ChatterPayNFT Proxy alreadydeployed at address %s", address(chatterPayNFT));
         }
-
-        console2.log("ChatterPayNFT Proxy deployed at address %s", address(chatterPayNFT));
     }
 
     /**

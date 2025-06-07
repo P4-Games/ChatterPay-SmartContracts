@@ -152,6 +152,7 @@ contract ChatterPay is
         address indexed tokenIn, address indexed tokenOut, uint256 amountIn, uint256 amountOut, address recipient
     );
     event FeeUpdated(uint256 indexed oldFee, uint256 indexed newFee);
+    event FeeTransferred(address indexed from, address indexed to, address indexed token, uint256 amount);
     event TokenWhitelisted(address indexed token, bool indexed status);
     event PriceFeedUpdated(address indexed token, address indexed priceFeed);
     event CustomPoolFeeSet(address indexed tokenA, address indexed tokenB, uint24 fee);
@@ -898,12 +899,14 @@ contract ChatterPay is
     }
 
     /**
-     * @dev Transfers fee to owner
+     * @dev Transfers fee to chatterPay owner
      * @param token Token address to transfer
      * @param amount Amount to transfer
      */
     function _transferFee(address token, uint256 amount) internal {
-        IERC20(token).safeTransfer(owner(), amount);
+        address chatterPayOwner = getChatterPayOwner();
+        IERC20(token).safeTransfer(chatterPayOwner, amount);
+        emit FeeTransferred(address(this), chatterPayOwner, token, amount);
     }
 
     /**

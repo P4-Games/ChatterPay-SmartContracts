@@ -187,7 +187,7 @@ contract HelperConfig is Script {
      * @return NetworkConfig Configuration with Scroll Sepolia addresses
      */
     function getScrollSepoliaConfig() public view returns (NetworkConfig memory) {
-        TokenConfig[] memory tokenConfigs = new TokenConfig[](3);
+        TokenConfig[] memory tokenConfigs = new TokenConfig[](4);
 
         tokenConfigs[0] = TokenConfig({
             symbol: "UDST",
@@ -208,6 +208,13 @@ contract HelperConfig is Script {
             token: 0x7878290DB8C4f02bd06E0E249617871c19508bE6,
             priceFeed: 0xFadA8b0737D4A3AE7118918B7E69E689034c0127,
             isStable: true
+        });
+
+        tokenConfigs[3] = TokenConfig({
+            symbol: "WBTC",
+            token: 0xb81fe42de28e7452088b77f3EB9685487734e088,
+            priceFeed: 0x87dce67002e66C17BC0d723Fe20D736b80CAaFda,
+            isStable: false
         });
 
         return NetworkConfig({
@@ -312,7 +319,7 @@ contract HelperConfig is Script {
             nftBaseUri: "https://back.chatterpay.net/nft/metadata/opensea/",
             tokensConfig: tokenConfigs,
             uniswapConfig: UniswapConfig({
-                router: 0x595E7160858b1AdA94Bda790D8699C85e595117E,
+                router: 0xfc30937f5cDe93Df8d48aCAF7e6f5D8D8A31F636,
                 factory: 0x70C62C8b8e801124A4Aa81ce07b637A3e83cb919,
                 positionManager: 0xB39002E4033b162fAc607fc3471E205FA2aE5967
             })
