@@ -14,6 +14,28 @@ import {AggregatorV3Interface} from "../src/interfaces/AggregatorV3Interface.sol
 import {IUniswapV3Factory, IUniswapV3Pool, INonfungiblePositionManager} from "../test/setup/BaseTest.sol";
 import "forge-std/console2.sol";
 
+pragma solidity ^0.8.24;
+
+/**
+ * @title DeployAllContracts
+ * @notice Script to deploy the full ChatterPay contract suite for testing or production setup.
+ *
+ * This script:
+ *  - Deploys the Paymaster, NFT, WalletFactory, and ChatterPay implementation contracts.
+ *  - Initializes the ChatterPay contract with correct configuration.
+ *  - Registers the implementation in the factory.
+ *  - Logs gas usage and key contract addresses.
+ *
+ * 🔧 Configuration:
+ * Requires environment variables to be set as specified in `.env.example`.
+ *
+ * ⚠️ Important:
+ * If the following variables are already set:
+ *  - `DEPLOYED_PAYMASTER_ADDRESS`
+ *  - `DEPLOYED_NFT_ADDRESS`
+ * then **those contracts will NOT be deployed again** — the existing deployed addresses will be used
+ * for configuration and initialization instead.
+ */
 contract DeployAllContracts is Script {
     // Network Configuration
     HelperConfig helperConfig;
