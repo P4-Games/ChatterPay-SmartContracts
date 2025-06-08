@@ -121,7 +121,7 @@ contract ChatterPay is
     bytes32 internal constant IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("chatterpay.proxy.implementation")) - 1);
 
     /// @notice Public version identifier for upgrades
-    string public constant VERSION = "2.0.0";
+    string public constant VERSION = "2.0.1";
 
     /**
      * @notice Signature validation failed return code for ERC-4337 simulations.
