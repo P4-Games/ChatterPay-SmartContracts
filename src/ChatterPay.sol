@@ -121,7 +121,7 @@ contract ChatterPay is
     bytes32 internal constant IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("chatterpay.proxy.implementation")) - 1);
 
     /// @notice Public version identifier for upgrades
-    string public constant VERSION = "2.0.0";
+    string public constant VERSION = "2.0.1";
 
     /**
      * @notice Signature validation failed return code for ERC-4337 simulations.
@@ -152,6 +152,7 @@ contract ChatterPay is
         address indexed tokenIn, address indexed tokenOut, uint256 amountIn, uint256 amountOut, address recipient
     );
     event FeeUpdated(uint256 indexed oldFee, uint256 indexed newFee);
+    event FeeTransferred(address indexed from, address indexed to, address indexed token, uint256 amount);
     event TokenWhitelisted(address indexed token, bool indexed status);
     event PriceFeedUpdated(address indexed token, address indexed priceFeed);
     event CustomPoolFeeSet(address indexed tokenA, address indexed tokenB, uint24 fee);
@@ -898,12 +899,14 @@ contract ChatterPay is
     }
 
     /**
-     * @dev Transfers fee to owner
+     * @dev Transfers fee to chatterPay owner
      * @param token Token address to transfer
      * @param amount Amount to transfer
      */
     function _transferFee(address token, uint256 amount) internal {
-        IERC20(token).safeTransfer(owner(), amount);
+        address chatterPayOwner = getChatterPayOwner();
+        IERC20(token).safeTransfer(chatterPayOwner, amount);
+        emit FeeTransferred(address(this), chatterPayOwner, token, amount);
     }
 
     /**
