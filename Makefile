@@ -25,3 +25,18 @@ deploy_verify_all :; $(BUILD) && \
 	--etherscan-api-key $(NETWORK_EXPLORER_API_KEY) \
 	--broadcast
 
+# Deploy new ChatterPay Implementation and upgrade Factory
+upgrade_chatterpay_and_factory :; $(BUILD) && \
+	FOUNDRY_PROFILE=local forge script script/UpgradeImplementation.s.sol \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--broadcast
+
+# Deploy and verify all contracts
+upgrade_chatterpay_and_factory_wtih_verify :; $(BUILD) && \
+	FOUNDRY_PROFILE=local forge script script/UpgradeImplementation.s.sol \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--verify \
+	--etherscan-api-key $(NETWORK_EXPLORER_API_KEY) \
+	--broadcast
