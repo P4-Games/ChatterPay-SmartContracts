@@ -35,10 +35,10 @@ const factoryAbi = [
 ];
 
 // --- Configuration from .env ---
-const { RPC_URL, BACKEND_PK, DEPLOYED_FACTORY } = process.env;
+const { RPC_URL, BACKEND_PK, DEPLOYED_FACTORY, DEPLOYED_CHATTERPAY } = process.env;
 
-if (!RPC_URL || !BACKEND_PK || !DEPLOYED_FACTORY) {
-    throw new Error("Please ensure RPC_URL, BACKEND_PK, and DEPLOYED_FACTORY are set in your .env file");
+if (!RPC_URL || !BACKEND_PK || !DEPLOYED_FACTORY || !DEPLOYED_CHATTERPAY) {
+    throw new Error("Please ensure RPC_URL, BACKEND_PK, DEPLOYED_FACTORY and DEPLOYED_CHATTERPAY are set in your .env file");
 }
 
 const provider = new ethers.JsonRpcProvider(RPC_URL);
@@ -109,10 +109,22 @@ async function main(): Promise<void> {
     console.log(`Connecting to RPC: ${RPC_URL}`);
     console.log(`Using admin wallet: ${adminWallet.address}`);
     console.log(`Factory contract at: ${DEPLOYED_FACTORY}`);
+    console.log(`ChatterPay contract at: ${DEPLOYED_CHATTERPAY}`);
     console.log(`New fee to be set: ${NEW_FEE_IN_CENTS} cents`);
 
-    if (!DEPLOYED_FACTORY) {
-        throw new Error("DEPLOYED_FACTORY environment variable not set.");
+    if (!DEPLOYED_FACTORY || !DEPLOYED_CHATTERPAY) {
+        throw new Error("DEPLOYED_FACTORY and DEPLOYED_CHATTERPAY environment variables must be set.");
+    }
+
+    try {
+        console.log("\nUpdating fee on main ChatterPay contract...");
+        const chatterPayContract = new Contract(DEPLOYED_CHATTERPAY, chatterPayAbi, adminWallet);
+        const tx = await chatterPayContract.updateFee(NEW_FEE_IN_CENTS, { gasLimit: GAS_LIMIT_PER_TX });
+        await tx.wait();
+        console.log(`Fee on main contract updated successfully. Tx: ${tx.hash}`);
+    } catch (error) {
+        console.error("Error updating fee on main contract:", error);
+        throw error;
     }
 
     const factory = new Contract(DEPLOYED_FACTORY, factoryAbi, adminWallet);
