@@ -135,21 +135,37 @@ contract PaymasterTest is BaseTest {
      * @dev Verifies owner can withdraw ETH and non-owners cannot
      */
     function testWithdraw() public {
-        uint256 initialBalance = 1 ether;
-        vm.deal(address(paymasterInstance), initialBalance);
+        // Create a completely fresh owner for this test to avoid state issues
+        uint256 freshOwnerKey = 0x54321; // Different key
+        address freshOwner = vm.addr(freshOwnerKey);
+        vm.deal(freshOwner, 10 ether); // Fund the fresh owner
+        
+        // Deploy a fresh paymaster instance with the fresh owner as deployer (and thus owner)
+        ChatterPayPaymaster freshPaymaster;
+        vm.prank(freshOwner);
+        freshPaymaster = new ChatterPayPaymaster(ENTRY_POINT, backendSigner);
+        
+        uint256 depositAmount = 1 ether;
+        
+        // Fund the fresh paymaster
+        vm.deal(address(freshPaymaster), depositAmount);
+        
+        // Verify initial balances
+        assertEq(address(freshPaymaster).balance, depositAmount, "Fresh paymaster should have deposit amount");
 
         // Test non-owner withdrawal (should fail)
         vm.prank(user);
         vm.expectRevert(ChatterPayPaymaster__OnlyOwner.selector);
-        paymasterInstance.withdraw();
+        freshPaymaster.withdraw();
 
         // Test owner withdrawal (should succeed)
-        uint256 ownerInitialBalance = owner.balance;
-        vm.prank(owner);
-        paymasterInstance.withdraw();
+        uint256 ownerBalanceBefore = freshOwner.balance;
+        
+        vm.prank(freshOwner);
+        freshPaymaster.withdraw();
 
-        assertEq(address(paymasterInstance).balance, 0, "Paymaster should have 0 balance");
-        assertEq(owner.balance, ownerInitialBalance + initialBalance, "Owner should receive full balance");
+        assertEq(address(freshPaymaster).balance, 0, "Paymaster should have 0 balance after withdraw");
+        assertEq(freshOwner.balance, ownerBalanceBefore + depositAmount, "Owner should receive the deposited amount");
     }
 
     /**
