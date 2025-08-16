@@ -29,3 +29,6 @@ abi
 
 # Coverage temp files
 lcov.info
+
+# error files
+*.log
