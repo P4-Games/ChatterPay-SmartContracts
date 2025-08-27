@@ -108,8 +108,7 @@ abstract contract BaseTest is Test {
         USDT_USD_FEED = config.USDT_USD_FEED;
         INITIAL_LIQUIDITY = config.INITIAL_LIQUIDITY;
         POOL_FEE = config.POOL_FEE;
-
-        // Initialize test accounts
+        console.log("using config in chainId:", block.chainid);
 
         // Burned Key for local blk with adr: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
         ownerKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
@@ -202,7 +201,7 @@ abstract contract BaseTest is Test {
             pool = _createAndInitializePool();
             console.log("Pool created at:", pool);
 
-            console.log("Adding Pool liquidity...");
+            console.log("Adding Pool liquidity...", usdcAmount, usdtAmount);
             _addInitialLiquidity(usdcAmount, usdtAmount);
             console.log("Initial liquidity added");
         } else {
@@ -261,10 +260,12 @@ abstract contract BaseTest is Test {
      */
     function _addInitialLiquidity(uint256 usdcAmount, uint256 usdtAmount) internal {
         // Approve tokens
+        console.log("Approving tokens for liquidity...");
         IERC20(USDC).approve(POSITION_MANAGER, type(uint256).max);
         IERC20(USDT).approve(POSITION_MANAGER, type(uint256).max);
 
         // Calculate ticks
+        console.log("Calculating ticks for liquidity...");
         int24 tickSpacing = 60;
         int24 tickLower = (-887220 / tickSpacing) * tickSpacing;
         int24 tickUpper = (887220 / tickSpacing) * tickSpacing;
