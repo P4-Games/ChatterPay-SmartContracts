@@ -15,6 +15,8 @@
         "deploy:anvil": "make deploy_anvil_all",
         "deploy:all": "make deploy_all",
         "deploy:verify:all": "make deploy_verify_all",
+        "upgrade:chatterpay": "make upgrade_chatterpay_and_factory",
+        "upgrade:chatterpay:and:verify": "make upgrade_chatterpay_and_factory_wtih_verify",
         "generate-types": "typechain --target=ethers-v5 './src/artifacts/**/*.json'",
         "generate:abis": "bash script/generate_abis.sh"
     },

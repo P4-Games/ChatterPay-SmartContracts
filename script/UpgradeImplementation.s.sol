@@ -102,8 +102,13 @@ contract UpgradeImplementation is Script {
         ChatterPay chatterPay = ChatterPay(payable(proxy));
         console2.log("ChatterPay Proxy deployed at %s", address(chatterPay));
 
+        console2.log("To Put in bdd:");
+        console2.log('"chatterPayAddress": "%s"', address(chatterPay));
+
         uint256 gasUsed = gasStart - gasleft();
+        uint256 costInWei = gasUsed * tx.gasprice;
         console2.log("Total gas used:", gasUsed);
+        console2.log("Cost in ETH:", costInWei / 1e18);
 
         vm.stopBroadcast();
     }

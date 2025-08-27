@@ -39,7 +39,6 @@ error ChatterPay__InvalidSlippage();
 error ChatterPay__SwapFailed();
 error ChatterPay__TokenNotWhitelisted();
 error ChatterPay__ZeroAmount();
-error ChatterPay__InvalidRouter();
 error ChatterPay__ExceedsMaxFee();
 error ChatterPay__ZeroAddress();
 error ChatterPay__AmountTooLow();
@@ -47,8 +46,6 @@ error ChatterPay__InvalidTarget();
 error ChatterPay__InsufficientBalance();
 error ChatterPay__InvalidArrayLengths();
 error ChatterPay__InvalidPoolFee();
-error ChatterPay__ReentrantCall();
-error ChatterPay__TransferFailed();
 error ChatterPay__ImplementationInitialization();
 error ChatterPay__AlreadyStableToken();
 error ChatterPay__NotStableToken();
@@ -121,7 +118,7 @@ contract ChatterPay is
     bytes32 internal constant IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("chatterpay.proxy.implementation")) - 1);
 
     /// @notice Public version identifier for upgrades
-    string public constant VERSION = "2.0.0";
+    string public constant VERSION = "2.0.1";
 
     /**
      * @notice Signature validation failed return code for ERC-4337 simulations.
@@ -260,7 +257,7 @@ contract ChatterPay is
         _getChatterPayState().paymaster = _paymaster;
         _getChatterPayState().swapRouter = ISwapRouter(_router);
         _getChatterPayState().factory = IChatterPayWalletFactory(_factory);
-        _getChatterPayState().feeInCents = 20; // Default fee in cents
+        _getChatterPayState().feeInCents = 8; // Default fee in cents
 
         _getChatterPayState().uniswapPoolFeeLow = 500; // 0.05%
         _getChatterPayState().uniswapPoolFeeMedium = 3000; // 0.3%

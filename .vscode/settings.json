@@ -1,0 +1,20 @@
+{
+  "wake.compiler.solc.remappings": [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+    "forge-std/=lib/forge-std/src/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "account-abstraction/=lib/account-abstraction/contracts/",
+    "api3-contracts/=lib/api3-contracts/contracts/",
+    "ds-test/=lib/solidity-stringutils/lib/ds-test/src/",
+    "entry-point-v6/=lib/entry-point-v6/",
+    "erc4626-tests/=lib/openzeppelin-contracts-upgradeable/lib/erc4626-tests/",
+    "foundry-devops/=lib/foundry-devops/",
+    "halmos-cheatcodes/=lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/",
+    "openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/",
+    "openzeppelin-contracts/=lib/openzeppelin-contracts/",
+    "openzeppelin-foundry-upgrades/=lib/openzeppelin-foundry-upgrades/src/",
+    "solidity-stringutils/=lib/solidity-stringutils/"
+  ]
+}
