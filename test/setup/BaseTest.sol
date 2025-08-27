@@ -108,8 +108,7 @@ abstract contract BaseTest is Test {
         USDT_USD_FEED = config.USDT_USD_FEED;
         INITIAL_LIQUIDITY = config.INITIAL_LIQUIDITY;
         POOL_FEE = config.POOL_FEE;
-
-        // Initialize test accounts
+        console.log("using config in chainId:", block.chainid);
 
         // Burned Key for local blk with adr: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
         ownerKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
@@ -202,7 +201,7 @@ abstract contract BaseTest is Test {
             pool = _createAndInitializePool();
             console.log("Pool created at:", pool);
 
-            console.log("Adding Pool liquidity...");
+            console.log("Adding Pool liquidity...", usdcAmount, usdtAmount);
             _addInitialLiquidity(usdcAmount, usdtAmount);
             console.log("Initial liquidity added");
         } else {
@@ -246,11 +245,23 @@ abstract contract BaseTest is Test {
     function _createAndInitializePool() internal returns (address pool) {
         // Create pool
         pool = IUniswapV3Factory(UNISWAP_FACTORY).createPool(USDC, USDT, POOL_FEE);
-        console.log("Pool created at:", pool);
 
         // Initialize pool with price
+        // token0/token1 are ordered by address inside the pool (token0 < token1).
+        // We must set sqrtPriceX96 according to actual token0/token1 ordering and their decimals (USDC=6, USDT=18).
+        (address token0, address token1) = USDC < USDT ? (USDC, USDT) : (USDT, USDC);
+
         uint160 sqrtPriceX96 = 79228162514264337593543950336; // 2^96
-        sqrtPriceX96 = uint160(uint256(sqrtPriceX96) * 1000000); // Multiply by sqrt(10^12)
+
+        // If token0=USDC(6) and token1=USDT(18) → multiply by sqrt(10^12)=1e6
+        // If token0=USDT(18) and token1=USDC(6) → divide by 1e6
+        if (token0 == USDC && token1 == USDT) {
+            sqrtPriceX96 = uint160(uint256(sqrtPriceX96) * 1_000_000);
+        } else {
+            // token0 == USDT && token1 == USDC
+            sqrtPriceX96 = uint160(uint256(sqrtPriceX96) / 1_000_000);
+        }
+
         IUniswapV3Pool(pool).initialize(sqrtPriceX96);
 
         return pool;
@@ -261,24 +272,31 @@ abstract contract BaseTest is Test {
      */
     function _addInitialLiquidity(uint256 usdcAmount, uint256 usdtAmount) internal {
         // Approve tokens
+        console.log("Approving tokens for liquidity...");
         IERC20(USDC).approve(POSITION_MANAGER, type(uint256).max);
         IERC20(USDT).approve(POSITION_MANAGER, type(uint256).max);
 
         // Calculate ticks
+        console.log("Calculating ticks for liquidity...");
         int24 tickSpacing = 60;
         int24 tickLower = (-887220 / tickSpacing) * tickSpacing;
         int24 tickUpper = (887220 / tickSpacing) * tickSpacing;
 
         // Add liquidity
+        console.log("Adding liquidity to the pool...");
+        (address token0, address token1) = USDC < USDT ? (USDC, USDT) : (USDT, USDC);
+        uint256 amount0Desired = (token0 == USDC) ? usdcAmount : usdtAmount;
+        uint256 amount1Desired = (token1 == USDT) ? usdtAmount : usdcAmount;
+
         INonfungiblePositionManager(POSITION_MANAGER).mint(
             INonfungiblePositionManager.MintParams({
-                token0: USDC,
-                token1: USDT,
+                token0: token0,
+                token1: token1,
                 fee: POOL_FEE,
                 tickLower: tickLower,
                 tickUpper: tickUpper,
-                amount0Desired: usdcAmount,
-                amount1Desired: usdtAmount,
+                amount0Desired: amount0Desired,
+                amount1Desired: amount1Desired,
                 amount0Min: 0,
                 amount1Min: 0,
                 recipient: owner,
