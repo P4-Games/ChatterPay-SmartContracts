@@ -139,17 +139,17 @@ contract PaymasterTest is BaseTest {
         uint256 freshOwnerKey = 0x54321; // Different key
         address freshOwner = vm.addr(freshOwnerKey);
         vm.deal(freshOwner, 10 ether); // Fund the fresh owner
-        
+
         // Deploy a fresh paymaster instance with the fresh owner as deployer (and thus owner)
         ChatterPayPaymaster freshPaymaster;
         vm.prank(freshOwner);
         freshPaymaster = new ChatterPayPaymaster(ENTRY_POINT, backendSigner);
-        
+
         uint256 depositAmount = 1 ether;
-        
+
         // Fund the fresh paymaster
         vm.deal(address(freshPaymaster), depositAmount);
-        
+
         // Verify initial balances
         assertEq(address(freshPaymaster).balance, depositAmount, "Fresh paymaster should have deposit amount");
 
@@ -160,7 +160,7 @@ contract PaymasterTest is BaseTest {
 
         // Test owner withdrawal (should succeed)
         uint256 ownerBalanceBefore = freshOwner.balance;
-        
+
         vm.prank(freshOwner);
         freshPaymaster.withdraw();
 
