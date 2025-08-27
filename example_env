@@ -11,3 +11,4 @@ NETWORK_EXPLORER_API_KEY=Your Network Explorer api key, if you want to verify co
 DEPLOYED_PAYMASTER_ADDRESS=Address of an existing Paymaster contrct to avoid creating a new one in the deployment script
 DEPLOYED_NFT_ADDRESS=Address of an existing NFT Contract to avoid creating a new one in the deployment script
 DEPLOYED_FACTORY=Address of an existing ChatterPay Factory to use in upgrade ChatterPay Implementation
+DEPLOYED_CHATTERPAY=Address of an existing ChatterPay contract
