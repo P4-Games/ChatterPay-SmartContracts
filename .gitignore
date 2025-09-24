@@ -17,6 +17,8 @@ docs/
 # misc
 .DS_Store
 node_modules
+.vscode
+.wake
 
 #lock
 package-lock.json
