@@ -17,7 +17,7 @@ we will validate, fix it, and ensure the patch is merged into supported code.
 
 If you believe you’ve found a security vulnerability:
 
-- Use the **"Report a vulnerability"** option under the [Security tab](../../security) of this repository (preferred).  
+- Use the **"Report a vulnerability"** option under the [Security tab](https://github.com/P4-Games/ChatterPay-SmartContracts/security) of this repository (preferred).  
 - Or contact us via our official channels:  
   👉 [linktr.ee/chatterpay](https://linktr.ee/chatterpay)
 
