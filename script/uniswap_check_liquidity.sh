@@ -6,7 +6,7 @@
 # export PAYMASTER_ADDRESS=0x33F43e0165f2B6Ad829594649FbdA70d878F1462
 # export BACKEND_SIGNER_ADDRESS=0xe54b48F8caF88a08849dCdDE3D3d41Cd6D7ab369
 # export BACKEND_SIGNER_SK=0xxxxxxxxxxx
-# export RPC_URL=https://scroll-sepolia.g.alchemy.com/v2/cSwp__cy4eqSYmiiIMXtZ810r3AptmiL
+# export RPC_URL=https://scroll-sepolia.g.alchemy.com/v2/YOUR_KEY
 
 # run:
 # 
