@@ -276,7 +276,7 @@ contract HelperConfig is Script {
      * @return NetworkConfig Configuration with Scroll addresses
      */
     function getScrollConfig() public view returns (NetworkConfig memory) {
-        TokenConfig[] memory tokenConfigs = new TokenConfig[](5);
+        TokenConfig[] memory tokenConfigs = new TokenConfig[](9);
 
         tokenConfigs[0] = TokenConfig({
             symbol: "USDT",
@@ -311,6 +311,34 @@ contract HelperConfig is Script {
             token: 0xd29687c813D741E2F938F4aC377128810E217b1b,
             priceFeed: 0x26f6F7C468EE309115d19Aa2055db5A74F8cE7A5,
             isStable: false
+        });
+
+        tokenConfigs[5] = TokenConfig({
+            symbol: "wstETH",
+            token: 0xf610A9dfB7C89644979b4A0f27063E9e7d7Cda32,
+            priceFeed: 0x439a2b573C8Ecd215990Fc25B4F547E89CF67b79,
+            isStable: false
+        });
+
+        tokenConfigs[6] = TokenConfig({
+            symbol: "USX",
+            token: 0x3b005fefC63Ca7c8d25ee21fba3787229ba4CF03,
+            priceFeed: 0x43d12Fb3AfCAd5347fA764EeAB105478337b7200,
+            isStable: true
+        });
+
+        tokenConfigs[7] = TokenConfig({
+            symbol: "sUSX",
+            token: 0xcB14BcdF6cD483665D10dfD6f87d908996C7F922,
+            priceFeed: 0x43d12Fb3AfCAd5347fA764EeAB105478337b7200,
+            isStable: true
+        });
+
+        tokenConfigs[8] = TokenConfig({
+            symbol: "USDQ",
+            token: 0xdb9E8F82D6d45fFf803161F2a5f75543972B229a,
+            priceFeed: 0x43d12Fb3AfCAd5347fA764EeAB105478337b7200,
+            isStable: true
         });
 
         return NetworkConfig({
