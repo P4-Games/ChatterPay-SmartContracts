@@ -1,14 +1,39 @@
-CHAIN_ID=534351|421614 
-DEPLOY_NETWORK_ENV=LOCAL|TEST|PROD
+# ==============================================================================
+# ChatterPay Smart Contracts - Environment Configuration Example
+# Copy this file to .env and fill in the values
+# ==============================================================================
 
-PRIVATE_KEY=Your private key
-BACKEND_EOA=chatterpay backend EOA wallet address
-BACKEND_PK=chatterpay bachend private key
+# --- Network Configuration ---
+RPC_URL=https://rpc.scroll.io        # RPC endpoint for the target network
+CHAIN_ID=534351                      # Scroll Sepolia: 534351 | Scroll Mainnet: 534352
+DEPLOY_NETWORK_ENV=LOCAL             # LOCAL | TEST | PROD
 
-RPC_URL=Your node provider URL
-NETWORK_EXPLORER_API_KEY=Your Network Explorer api key, if you want to verify contracts
+# --- Credentials ---
+# The private key of the account performing deployments and migrations
+PRIVATE_KEY=0x...
+BACKEND_PK=0x...                   
 
-DEPLOYED_PAYMASTER_ADDRESS=Address of an existing Paymaster contrct to avoid creating a new one in the deployment script
-DEPLOYED_NFT_ADDRESS=Address of an existing NFT Contract to avoid creating a new one in the deployment script
-DEPLOYED_FACTORY=Address of an existing ChatterPay Factory to use in upgrade ChatterPay Implementation
-DEPLOYED_CHATTERPAY=Address of an existing ChatterPay contract
+# The public address of the backend/admin account (must match PRIVATE_KEY in many scripts)
+BACKEND_EOA=0x...                   
+
+# --- Verification ---
+# API key for the block explorer (e.g., Scrollscan) for contract verification
+NETWORK_EXPLORER_API_KEY=your_api_key_here
+
+# --- Migration & Batching Options ---
+# Comma-separated list of factory addresses to scan for wallets (Optional)
+FACTORIES=0xE17Ca047427557C3bdeD9d151a823D8e2B514e74,0x18F1978...
+
+# Address of the ChatterPayManageable bridge logic (Optional - used to resume migrations)
+BRIDGE_LOGIC=0x...                  
+
+# Batch processing configuration for large-scale updates
+OFFSET=0                            # Starting index for the batch
+BATCH_SIZE=50                       # Number of wallets to process per transaction
+
+# --- Deployment Overrides ---
+# Set these to skip re-deploying existing contracts during a run
+DEPLOYED_PAYMASTER_ADDRESS=0x...
+DEPLOYED_NFT_ADDRESS=0x...
+DEPLOYED_FACTORY=0x...
+DEPLOYED_CHATTERPAY=0x...
