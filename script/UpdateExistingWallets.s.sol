@@ -36,9 +36,6 @@ contract UpdateExistingWallets is Script {
         0x18F1978f64cbE69DF8B46934DD2f4Abb30268fD1,
         0xf3C022440b32e594F846f0E365Ef18Dc0059F5Af
     ];
-    /* address[] public mainnetFactories = [
-        0x489aa621F1C441568b82e428Ae9791EbE099E5B7
-    ];*/
 
     // New tokens to add
     struct TokenData {

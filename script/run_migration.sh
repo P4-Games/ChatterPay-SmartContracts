@@ -9,7 +9,7 @@
 
 # --- Configuration ---
 BATCH_SIZE=50
-TOTAL_WALLETS=1600 # Actual: ~1561, with buffer for new wallets
+TOTAL_WALLETS=1600 # Fallback value; script auto-detects actual count from factories
 START_OFFSET=0
 RPC_URL="${RPC_URL:-https://rpc.scroll.io}" # Default to Scroll Mainnet if not set
 
