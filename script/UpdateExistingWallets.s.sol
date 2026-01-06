@@ -71,7 +71,7 @@ contract UpdateExistingWallets is Script {
     function run() external {
         // Initialize new tokens array
         initializeNewTokens();
-        
+
         // Load config from environment
         admin = vm.envAddress("BACKEND_EOA");
 
@@ -102,9 +102,11 @@ contract UpdateExistingWallets is Script {
             manageableLogic = address(new ChatterPayManageable());
             vm.stopBroadcast();
             console.log("Deployed NEW bridge logic at: %s", manageableLogic);
-            console.log("--> IMPORTANT: Run next batches with BRIDGE_LOGIC=%s to save gas!", manageableLogic);
+            console.log(
+                "--> IMPORTANT: Run next batches with BRIDGE_LOGIC=%s to save gas!",
+                manageableLogic
+            );
         }
-
         console.log("=========================================");
         console.log("ChatterPay Wallet Token Whitelist Update");
         console.log("=========================================");
@@ -205,49 +207,90 @@ contract UpdateExistingWallets is Script {
      * @notice Enumerates all wallets from the old factories
      * @return allWallets Array of all wallet addresses
      */
-    function enumerateWallets() internal view returns (address[] memory) {
-        // First pass: count total wallets
-        uint256 totalCount = 0;
+    function enumerateWallets() internal returns (address[] memory) {
+        console.log("=== WALLET ENUMERATION (WITH DEDUPLICATION) ===");
+
+        // Use a temporary array to collect all addresses first
+        // We'll use a larger size to accommodate potential over-reporting
+        address[] memory tempWallets = new address[](5000);
+        uint256 uniqueCount = 0;
+
         for (uint256 i = 0; i < oldFactories.length; i++) {
+            console.log("");
+            console.log("Factory %d: %s", i + 1, oldFactories[i]);
+
+            // Get count first
+            uint256 reportedCount = 0;
             try
                 IChatterPayWalletFactory(oldFactories[i]).getProxiesCount()
             returns (uint256 count) {
-                totalCount += count;
-                console.log(
-                    "Factory %d (%s): %d wallets",
-                    i + 1,
-                    oldFactories[i],
-                    count
-                );
+                reportedCount = count;
+                console.log("  getProxiesCount() returned: %d", count);
             } catch {
-                console.log(
-                    "Failed to get count from factory %d (%s)",
-                    i + 1,
-                    oldFactories[i]
-                );
+                console.log("  ERROR: Failed to call getProxiesCount()");
+                continue;
             }
-        }
-
-        // Second pass: collect all wallets
-        address[] memory allWallets = new address[](totalCount);
-        uint256 currentIndex = 0;
-
-        for (uint256 i = 0; i < oldFactories.length; i++) {
-            console.log("Fetching wallets from factory %d...", i + 1);
+            // Get actual proxies array
             try IChatterPayWalletFactory(oldFactories[i]).getProxies() returns (
                 address[] memory proxies
             ) {
-                console.log("  Received %d proxies", proxies.length);
+                console.log("  getProxies() array length: %d", proxies.length);
+
+                if (reportedCount != proxies.length) {
+                    console.log(
+                        "  WARNING: Count mismatch! Using array length."
+                    );
+                }
+
+                // Add each proxy, checking for duplicates
+                uint256 addedFromFactory = 0;
                 for (uint256 j = 0; j < proxies.length; j++) {
-                    allWallets[currentIndex] = proxies[j];
-                    currentIndex++;
+                    address wallet = proxies[j];
+
+                    // Skip zero address
+                    if (wallet == address(0)) {
+                        continue;
+                    }
+
+                    // Check if already exists
+                    bool isDuplicate = false;
+                    for (uint256 k = 0; k < uniqueCount; k++) {
+                        if (tempWallets[k] == wallet) {
+                            isDuplicate = true;
+                            break;
+                        }
+                    }
+
+                    if (!isDuplicate) {
+                        tempWallets[uniqueCount] = wallet;
+                        uniqueCount++;
+                        addedFromFactory++;
+                    }
+                }
+
+                console.log("  Unique wallets added: %d", addedFromFactory);
+                if (addedFromFactory != proxies.length) {
+                    console.log(
+                        "  ** %d duplicates/zeros removed **",
+                        proxies.length - addedFromFactory
+                    );
                 }
             } catch {
-                console.log("Failed to get proxies from factory %d", i + 1);
+                console.log("  ERROR: Failed to call getProxies()");
             }
         }
 
-        return allWallets;
+        // Create final array with exact size
+        address[] memory finalWallets = new address[](uniqueCount);
+        for (uint256 i = 0; i < uniqueCount; i++) {
+            finalWallets[i] = tempWallets[i];
+        }
+
+        console.log("");
+        console.log("=== ENUMERATION COMPLETE ===");
+        console.log("Total unique wallets: %d", uniqueCount);
+
+        return finalWallets;
     }
 
     /**
@@ -271,10 +314,12 @@ contract UpdateExistingWallets is Script {
         console.log("[%d/%d] Updating wallet: %s", index, total, wallet);
 
         ChatterPay chatterPayWallet = ChatterPay(payable(wallet));
-        
+
         // 1. Detect existing logic to restore it later
         bytes32 implSlot = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
-        address auditedImpl = address(uint160(uint256(vm.load(wallet, implSlot))));
+        address auditedImpl = address(
+            uint160(uint256(vm.load(wallet, implSlot)))
+        );
 
         // 2. Prepare migration data
         address[] memory tokens = new address[](newTokens.length);
@@ -290,19 +335,31 @@ contract UpdateExistingWallets is Script {
         // 3. The "Flash Migration"
         // We upgrade to the manageable logic, run the migration, and stay there.
         // Then we immediately upgrade back to the audited logic.
-        try chatterPayWallet.upgradeToAndCall(
-            manageableLogic, 
-            abi.encodeWithSignature("migrateTokens(address[],address[],bool[])", tokens, feeds, stables)
-        ) {
+        try
+            chatterPayWallet.upgradeToAndCall(
+                manageableLogic,
+                abi.encodeWithSignature(
+                    "migrateTokens(address[],address[],bool[])",
+                    tokens,
+                    feeds,
+                    stables
+                )
+            )
+        {
             console.log("  [OK] Tokens migrated via bridge");
-            
+
             // 4. Restore audited logic
             // Using upgradeToAndCall with empty bytes since upgradeTo is deprecated in OZ 5.x
             try chatterPayWallet.upgradeToAndCall(auditedImpl, "") {
-                console.log("  [OK] Restored to audited logic: %s", auditedImpl);
+                console.log(
+                    "  [OK] Restored to audited logic: %s",
+                    auditedImpl
+                );
                 successfulUpdates++;
             } catch {
-                console.log("  [ERROR] Failed to restore audited logic! Wallet is stuck on manageable version.");
+                console.log(
+                    "  [ERROR] Failed to restore audited logic! Wallet is stuck on manageable version."
+                );
                 failedUpdates++;
             }
         } catch Error(string memory reason) {

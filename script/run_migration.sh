@@ -9,7 +9,7 @@
 
 # --- Configuration ---
 BATCH_SIZE=50
-TOTAL_WALLETS=1700 # Approximate, the script will handle the actual count
+TOTAL_WALLETS=1600 # Actual: ~1561, with buffer for new wallets
 START_OFFSET=0
 RPC_URL="${RPC_URL:-https://rpc.scroll.io}" # Default to Scroll Mainnet if not set
 
@@ -51,6 +51,19 @@ export BRIDGE_LOGIC=$BRIDGE_ADDR
 # 2. Start Looping
 echo -e "\n${BLUE}[2/2] Starting Execution Loop...${NC}"
 echo -e "----------------------------------------------------------------------"
+
+# Get actual wallet count dynamically
+echo -e "${BLUE}Counting total wallets from factories...${NC}"
+WALLET_LIST=$(OFFSET=0 BATCH_SIZE=0 make update_existing_wallets 2>&1 | grep -E "Total wallets found|wallets found")
+ACTUAL_WALLET_COUNT=$(echo "$WALLET_LIST" | grep -oE "[0-9]+" | tail -1)
+
+if [ -z "$ACTUAL_WALLET_COUNT" ] || [ "$ACTUAL_WALLET_COUNT" -eq 0 ]; then
+    echo -e "${YELLOW}Warning: Could not detect wallet count automatically. Using default: $TOTAL_WALLETS${NC}"
+    ACTUAL_WALLET_COUNT=$TOTAL_WALLETS
+else
+    echo -e "${GREEN}Detected $ACTUAL_WALLET_COUNT total wallets${NC}"
+    TOTAL_WALLETS=$ACTUAL_WALLET_COUNT
+fi
 
 # Calculate total iterations
 ITERATIONS=$(( (TOTAL_WALLETS + BATCH_SIZE - 1) / BATCH_SIZE ))
