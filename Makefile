@@ -1,7 +1,7 @@
 -include .env
 
-# Common build command with local profile to ensure AST generation
-BUILD = FOUNDRY_PROFILE=local forge clean && FOUNDRY_PROFILE=local forge build
+# Common build command - removed 'forge clean' to allow incremental builds
+BUILD = FOUNDRY_PROFILE=local forge build
 
 # Deploy all contracts (Anvil)
 deploy_anvil_all :; $(BUILD) && \
@@ -40,3 +40,17 @@ upgrade_chatterpay_and_factory_wtih_verify :; $(BUILD) && \
 	--verify \
 	--etherscan-api-key $(NETWORK_EXPLORER_API_KEY) \
 	--broadcast
+
+# Update existing wallets with new tokens (dry run)
+update_existing_wallets_dry_run :; $(BUILD) && \
+	FOUNDRY_PROFILE=local forge script script/UpdateExistingWallets.s.sol \
+	--rpc-url $(RPC_URL) \
+	-vvvv
+
+# Update existing wallets with new tokens (broadcasts transactions)
+update_existing_wallets :; $(BUILD) && \
+	FOUNDRY_PROFILE=local forge script script/UpdateExistingWallets.s.sol \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--broadcast \
+	-vvvv

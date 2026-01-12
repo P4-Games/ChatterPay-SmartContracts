@@ -64,7 +64,11 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
 
     event ProxyCreated(address indexed owner, address indexed proxyAddress);
     event NewImplementation(address indexed _walletImplementation);
-    event DefaultTokensUpdated(address[] tokens, address[] priceFeeds);
+    event DefaultTokensUpdated(address[] tokens, address[] priceFeeds, bool[] stables);
+
+    /*//////////////////////////////////////////////////////////////
+    // INITIALIZATION
+    //////////////////////////////////////////////////////////////*/
 
     /*//////////////////////////////////////////////////////////////
     // INITIALIZATION
@@ -232,14 +236,19 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
      * @param _tokens New list of whitelisted tokens
      * @param _priceFeeds New list of price feeds
      */
-    function setDefaultTokensAndFeeds(address[] calldata _tokens, address[] calldata _priceFeeds) external onlyOwner {
-        if (_tokens.length != _priceFeeds.length) {
+    function setDefaultTokensAndFeeds(
+        address[] calldata _tokens,
+        address[] calldata _priceFeeds,
+        bool[] calldata _stables
+    ) external onlyOwner {
+        if (_tokens.length != _priceFeeds.length || _tokens.length != _stables.length) {
             revert ChatterPayWalletFactory__InvalidArrayLengths();
         }
 
         defaultWhitelistedTokens = _tokens;
         defaultPriceFeeds = _priceFeeds;
-        emit DefaultTokensUpdated(_tokens, _priceFeeds);
+        defaultTokensStableFlags = _stables;
+        emit DefaultTokensUpdated(_tokens, _priceFeeds, _stables);
     }
 
     /*//////////////////////////////////////////////////////////////
