@@ -3,10 +3,7 @@ pragma solidity 0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {ChatterPay} from "../src/ChatterPay.sol";
-import {
-    ChatterPayWalletFactory,
-    IChatterPayWalletFactory
-} from "../src/ChatterPayWalletFactory.sol";
+import {ChatterPayWalletFactory, IChatterPayWalletFactory} from "../src/ChatterPayWalletFactory.sol";
 import {ChatterPayManageable} from "../src/ChatterPayManageable.sol";
 
 /**
@@ -99,10 +96,7 @@ contract UpdateExistingWallets is Script {
             manageableLogic = address(new ChatterPayManageable());
             vm.stopBroadcast();
             console.log("Deployed NEW bridge logic at: %s", manageableLogic);
-            console.log(
-                "--> IMPORTANT: Run next batches with BRIDGE_LOGIC=%s to save gas!",
-                manageableLogic
-            );
+            console.log("--> IMPORTANT: Run next batches with BRIDGE_LOGIC=%s to save gas!", manageableLogic);
         }
         console.log("=========================================");
         console.log("ChatterPay Wallet Token Whitelist Update");
@@ -116,21 +110,14 @@ contract UpdateExistingWallets is Script {
         // Enumerate all wallets from old factories
         address[] memory allWallets = enumerateWallets();
         totalWallets = allWallets.length;
-        console.log(
-            "Total wallets found across all factories: %d",
-            totalWallets
-        );
+        console.log("Total wallets found across all factories: %d", totalWallets);
 
         // Calculate slice
         uint256 end = offset + batchSize;
         if (end > allWallets.length) end = allWallets.length;
 
         if (offset >= allWallets.length) {
-            console.log(
-                "Offset %d is beyond total wallets %d. Nothing to do.",
-                offset,
-                allWallets.length
-            );
+            console.log("Offset %d is beyond total wallets %d. Nothing to do.", offset, allWallets.length);
             return;
         }
 
@@ -218,9 +205,7 @@ contract UpdateExistingWallets is Script {
 
             // Get count first
             uint256 reportedCount = 0;
-            try
-                IChatterPayWalletFactory(oldFactories[i]).getProxiesCount()
-            returns (uint256 count) {
+            try IChatterPayWalletFactory(oldFactories[i]).getProxiesCount() returns (uint256 count) {
                 reportedCount = count;
                 console.log("  getProxiesCount() returned: %d", count);
             } catch {
@@ -228,15 +213,11 @@ contract UpdateExistingWallets is Script {
                 continue;
             }
             // Get actual proxies array
-            try IChatterPayWalletFactory(oldFactories[i]).getProxies() returns (
-                address[] memory proxies
-            ) {
+            try IChatterPayWalletFactory(oldFactories[i]).getProxies() returns (address[] memory proxies) {
                 console.log("  getProxies() array length: %d", proxies.length);
 
                 if (reportedCount != proxies.length) {
-                    console.log(
-                        "  WARNING: Count mismatch! Using array length."
-                    );
+                    console.log("  WARNING: Count mismatch! Using array length.");
                 }
 
                 // Add each proxy, checking for duplicates
@@ -267,10 +248,7 @@ contract UpdateExistingWallets is Script {
 
                 console.log("  Unique wallets added: %d", addedFromFactory);
                 if (addedFromFactory != proxies.length) {
-                    console.log(
-                        "  ** %d duplicates/zeros removed **",
-                        proxies.length - addedFromFactory
-                    );
+                    console.log("  ** %d duplicates/zeros removed **", proxies.length - addedFromFactory);
                 }
             } catch {
                 console.log("  ERROR: Failed to call getProxies()");
@@ -302,11 +280,7 @@ contract UpdateExistingWallets is Script {
      * @param index Current wallet index
      * @param total Total wallets
      */
-    function updateWallet(
-        address wallet,
-        uint256 index,
-        uint256 total
-    ) internal {
+    function updateWallet(address wallet, uint256 index, uint256 total) internal {
         console.log("---");
         console.log("[%d/%d] Updating wallet: %s", index, total, wallet);
 
@@ -314,9 +288,7 @@ contract UpdateExistingWallets is Script {
 
         // 1. Detect existing logic to restore it later
         bytes32 implSlot = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
-        address auditedImpl = address(
-            uint160(uint256(vm.load(wallet, implSlot)))
-        );
+        address auditedImpl = address(uint160(uint256(vm.load(wallet, implSlot))));
 
         // 2. Prepare migration data
         address[] memory tokens = new address[](newTokens.length);
@@ -332,31 +304,19 @@ contract UpdateExistingWallets is Script {
         // 3. The "Flash Migration"
         // We upgrade to the manageable logic, run the migration, and stay there.
         // Then we immediately upgrade back to the audited logic.
-        try
-            chatterPayWallet.upgradeToAndCall(
-                manageableLogic,
-                abi.encodeWithSignature(
-                    "migrateTokens(address[],address[],bool[])",
-                    tokens,
-                    feeds,
-                    stables
-                )
-            )
-        {
+        try chatterPayWallet.upgradeToAndCall(
+            manageableLogic,
+            abi.encodeWithSignature("migrateTokens(address[],address[],bool[])", tokens, feeds, stables)
+        ) {
             console.log("  [OK] Tokens migrated via bridge");
 
             // 4. Restore audited logic
             // Using upgradeToAndCall with empty bytes since upgradeTo is deprecated in OZ 5.x
             try chatterPayWallet.upgradeToAndCall(auditedImpl, "") {
-                console.log(
-                    "  [OK] Restored to audited logic: %s",
-                    auditedImpl
-                );
+                console.log("  [OK] Restored to audited logic: %s", auditedImpl);
                 successfulUpdates++;
             } catch {
-                console.log(
-                    "  [ERROR] Failed to restore audited logic! Wallet is stuck on manageable version."
-                );
+                console.log("  [ERROR] Failed to restore audited logic! Wallet is stuck on manageable version.");
                 failedUpdates++;
             }
         } catch Error(string memory reason) {
@@ -371,9 +331,7 @@ contract UpdateExistingWallets is Script {
     /**
      * @notice Parses a comma-separated string of addresses
      */
-    function parseAddressList(
-        string memory fList
-    ) internal pure returns (address[] memory) {
+    function parseAddressList(string memory fList) internal pure returns (address[] memory) {
         // Simple manual split (Foundry doesn't have split())
         bytes memory b = bytes(fList);
         uint256 count = 1;
@@ -404,13 +362,18 @@ contract UpdateExistingWallets is Script {
         uint256 result = 0;
         for (uint256 i = 2; i < b.length; i++) {
             uint256 val = uint256(uint8(b[i]));
-            if (val >= 48 && val <= 57)
-                val -= 48; // 0-9
-            else if (val >= 65 && val <= 70)
-                val -= 55; // A-F
-            else if (val >= 97 && val <= 102)
-                val -= 87; // a-f
-            else continue;
+            if (val >= 48 && val <= 57) {
+                val -= 48;
+            } // 0-9
+            else if (val >= 65 && val <= 70) {
+                val -= 55;
+            } // A-F
+            else if (val >= 97 && val <= 102) {
+                val -= 87;
+            } // a-f
+            else {
+                continue;
+            }
             result = result * 16 + val;
         }
         return address(uint160(result));

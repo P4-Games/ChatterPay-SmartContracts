@@ -70,10 +70,6 @@ contract ChatterPayWalletFactory is Ownable, IChatterPayWalletFactory {
     // INITIALIZATION
     //////////////////////////////////////////////////////////////*/
 
-    /*//////////////////////////////////////////////////////////////
-    // INITIALIZATION
-    //////////////////////////////////////////////////////////////*/
-
     /**
      * @notice Initializes the factory with required addresses
      * @param _walletImplementation Address of the wallet implementation contract
