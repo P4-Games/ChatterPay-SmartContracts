@@ -44,7 +44,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly
+          version: v1.7.1
 
       - name: Export all required environment variables to .env
         run: env | grep -E '^(FOUNDRY_PROFILE|RPC_URL|PRIVATE_KEY|BACKEND_EOA|BACKEND_PK|FOUNDRY_DISABLE_NIGHTLY_WARNING)=' > .env
