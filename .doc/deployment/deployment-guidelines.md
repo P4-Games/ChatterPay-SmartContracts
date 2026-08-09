@@ -38,7 +38,17 @@ cast send paymaster_contract_address "addStake(uint32)" 100000 --value 100000000
    - Make sure you have enough ETH in the backend signer wallet to cover the stake.
    - The staking process is required for security validation and interaction with the EntryPoint.
 
-2. **To check the balance and verify the stake:**
+2. **Deposit ETH so the Paymaster can actually pay for sponsored gas:**
+
+   `addStake` alone is not enough — it only covers the security stake, not the balance the Paymaster spends on sponsored UserOperations. Without a deposit, `getDepositInfo` will show `deposit=0` and every sponsored transaction will fail.
+
+```sh
+cast send entrypoint_contract_address "depositTo(address)" paymaster_contract_address --value 50000000000000000 --from backend_signer_wallet_address --rpc-url https://arb-sepolia.g.alchemy.com/v2/API_KEY_ALCHEMY --private-key _backend_signer_wallet_private_key
+```
+
+   - `50000000000000000` equals **0.05 ETH** deposited (adjust based on expected sponsored gas volume).
+
+3. **To check the balance and verify the stake and deposit:**
 
 ```sh
 cast call entrypoint_contract_address "getDepositInfo(address)(uint112,bool,uint112,uint32,uint48)" paymaster_contract_address --rpc-url https://arb-sepolia.g.alchemy.com/v2/API_KEY_ALCHEMY
