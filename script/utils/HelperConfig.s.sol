@@ -187,7 +187,7 @@ contract HelperConfig is Script {
      * @return NetworkConfig Configuration with Scroll Sepolia addresses
      */
     function getScrollSepoliaConfig() public view returns (NetworkConfig memory) {
-        TokenConfig[] memory tokenConfigs = new TokenConfig[](4);
+        TokenConfig[] memory tokenConfigs = new TokenConfig[](9);
 
         tokenConfigs[0] = TokenConfig({
             symbol: "UDST",
