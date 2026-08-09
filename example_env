@@ -5,7 +5,7 @@
 
 # --- Network Configuration ---
 RPC_URL=https://rpc.scroll.io        # RPC endpoint for the target network
-CHAIN_ID=534351                      # Scroll Sepolia: 534351 | Scroll Mainnet: 534352
+CHAIN_ID=534351                      # Scroll Sepolia: 534351 | Scroll Mainnet: 534352 | Arbitrum Sepolia (dev/test): 421614
 DEPLOY_NETWORK_ENV=LOCAL             # LOCAL | TEST | PROD
 
 # --- Credentials ---
